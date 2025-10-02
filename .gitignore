@@ -1,0 +1,22 @@
+# Lean/Mathlib artifacts
+/.lake/
+/build/
+/.oleans/
+/.elan/
+
+# Editors/OS
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.vscode/
+.idea/
+
+# Logs and cache
+logs/
+*.log
+
+# Project-specific
+/_build_logs/
+/artifacts/
+
