@@ -1,5 +1,5 @@
 /-
-Collatz Conjecture: Ord-Факт Theorem
+Collatz Conjecture: Ord‑Fact Theorem
 Main theorem: ord_{2^t}(3) = 2^{t-2} for t ≥ 3
 
 This is the foundational theorem for phase mixing analysis.
@@ -23,7 +23,7 @@ def Q_t (t : ℕ) : ℕ := 2^(t-2)
 /-!
 ## Helper Lemmas
 
-These lemmas are used to prove the main ord-факт theorem.
+These lemmas are used to prove the main Ord‑Fact theorem.
 -/
 
 /-- 3^{2^{t-2}} ≡ 1 (mod 2^t) for t ≥ 3 -/
@@ -383,7 +383,7 @@ lemma three_pow_lt_Qt_ne_one (t : ℕ) (ht : t ≥ 3) (k : ℕ) (hkpos : 0 < k) 
   exact h_base this
 
 /-!
-## Main Theorem: Ord-Факт
+## Main Theorem: Ord‑Fact
 
 For t ≥ 3, the multiplicative order of 3 modulo 2^t equals 2^{t-2}.
 -/

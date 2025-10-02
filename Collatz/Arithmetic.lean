@@ -2,7 +2,7 @@
 Collatz Conjecture: Arithmetic Lemmas
 Foundational lemmas for modular arithmetic and powers of 2
 
-This file contains basic arithmetic lemmas needed for the ord-факт proof.
+This file contains basic arithmetic lemmas needed for the Ord‑Fact proof.
 -/
 
 import Mathlib.Data.Nat.ModEq
@@ -67,7 +67,7 @@ lemma modEq_symm {a b : ℕ} {m : ℕ} (h : a ≡ b [MOD m]) :
 lemma modEq_refl (a m : ℕ) : a ≡ a [MOD m] := by
   exact Nat.ModEq.refl a
 
--- Additional lemmas for ord-факт proof
+-- Additional lemmas for Ord‑Fact proof
 
 /-- If m is odd, then 3m is odd -/
 lemma three_mul_odd_is_odd {m : ℕ} (h : Odd m) : Odd (3 * m) := by

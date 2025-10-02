@@ -6,7 +6,7 @@ Formal verification of critical theorems for the epoch-based deterministic frame
 
 This repository contains Lean 4 formalizations of key mathematical results related to the Collatz conjecture (3x+1 problem). The formalization focuses on three core components:
 
-1. **Ord-факт**: Multiplicative order of 3 modulo powers of 2
+1. **Ord‑Fact**: Multiplicative order of 3 modulo powers of 2
 2. **Semigroup ⟨Δ⟩**: Junction shift generation of cyclic groups  
 3. **SEDT**: Scaled Epoch Drift Theorem (negative drift envelope)
 
@@ -14,7 +14,7 @@ This repository contains Lean 4 formalizations of key mathematical results relat
 
 | Theorem | File | Status | Description |
 |---------|------|--------|-------------|
-| **Ord-fact** | `Collatz/OrdFact.lean` | ✅ Proven | ord_{2^t}(3) = 2^{t-2} for t ≥ 3 |
+| **Ord‑Fact** | `Collatz/OrdFact.lean` | ✅ Proven | ord_{2^t}(3) = 2^{t-2} for t ≥ 3 |
 | **⟨Δ⟩ generates Z/Q_t Z** | `Collatz/Semigroup.lean` | 🟡 Structured | Junction shifts additively generate full group |
 | **SEDT envelope** | `Collatz/SEDT.lean` | ✅ Statement formalized | Negative drift ΔV ≤ -ε·L + β·C for long epochs |
 
@@ -30,7 +30,7 @@ collatz-lean4/
 ├── Collatz/
 │   ├── Basic.lean              # Core Collatz definitions (T_odd, e, depth_minus)
 │   ├── Arithmetic.lean         # Foundational arithmetic lemmas (20/23 proven)
-│   ├── OrdFact.lean            # Ord-факт theorem + examples t=3,4,5 (proven!)
+│   ├── OrdFact.lean            # Ord‑Fact theorem + examples t=3,4,5 (proven!)
 │   ├── Epoch.lean              # Epoch and Phase type definitions
 │   ├── Semigroup.lean          # Junction shift semigroup ⟨Δ⟩
 │   ├── SEDT.lean               # SEDT envelope theorem
@@ -66,7 +66,7 @@ If everything is configured, `lake build` should complete successfully.
 
 ## 📚 Key Results
 
-### 1. Ord-факт (Multiplicative Order)
+### 1. Ord‑Fact (Multiplicative Order)
 
 **Theorem (`OrdFact.lean`):**  
 For t ≥ 3, the multiplicative order of 3 modulo 2^t equals 2^{t-2}.
@@ -159,7 +159,7 @@ See `../collatz-paper/` for the main mathematical paper and computational verifi
 
 | Lean Theorem | Paper Reference |
 |--------------|----------------|
-| `ord_three_mod_pow_two` | Lemma A.LOG.1 (Ord-факт) |
+| `ord_three_mod_pow_two` | Lemma A.LOG.1 (Ord‑Fact) |
 | `delta_generates` | Theorem A.HMix(t) + A.MIX.4 |
 | `sedt_envelope` | Theorem A.E4 (SEDT) |
 
@@ -186,7 +186,7 @@ Priority areas for contributions:
 
 ## 📊 Status Snapshot
 
-- Ord-fact main theorem: proven  
+- Ord‑Fact main theorem: proven  
 - Arithmetic lemmas: complete  
 - CI: builds on push/PR via GitHub Actions
 

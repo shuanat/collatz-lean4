@@ -24,7 +24,7 @@ example : (2 : ℕ) ^ 5 = 32 := by norm_num
 example : 0 < (2 : ℕ) ^ 5 := by norm_num
 
 /-!
-## Example 2: ZMod computations (key for ord-факт)
+## Example 2: ZMod computations (key for Ord‑Fact)
 -/
 
 /-- 3^2 ≡ 1 (mod 8) -/
