@@ -14,7 +14,7 @@ This repository contains Lean 4 formalizations of key mathematical results relat
 
 | Theorem | File | Status | Description |
 |---------|------|--------|-------------|
-| **Ord-факт** | `Collatz/OrdFact.lean` | ✅ Examples proven | ord_{2^t}(3) = 2^{t-2} for t ≥ 3 |
+| **Ord-fact** | `Collatz/OrdFact.lean` | ✅ Proven | ord_{2^t}(3) = 2^{t-2} for t ≥ 3 |
 | **⟨Δ⟩ generates Z/Q_t Z** | `Collatz/Semigroup.lean` | 🟡 Structured | Junction shifts additively generate full group |
 | **SEDT envelope** | `Collatz/SEDT.lean` | ✅ Statement formalized | Negative drift ΔV ≤ -ε·L + β·C for long epochs |
 
@@ -58,18 +58,11 @@ cd collatz-lean4
 # Build the project
 lake build
 
-# Run examples
-lake env lean --run Collatz/Examples.lean
+# Build examples module (optional)
+lake build Collatz.Examples
 ```
 
-### Expected Output
-
-```
-Build completed successfully (3084 jobs).
-✅ Basic.lean: 100% proven (0 sorry)
-✅ OrdFact examples t=3,4,5: PROVEN
-🟡 Arithmetic.lean: 87% proven (20/23 lemmas)
-```
+If everything is configured, `lake build` should complete successfully.
 
 ## 📚 Key Results
 
@@ -140,28 +133,16 @@ lake build Collatz.OrdFact
 lake env lean Collatz/Arithmetic.lean
 ```
 
-### Working with `sorry` Placeholders
+### `sorry` Status
 
-Some lemmas contain `sorry` placeholders with detailed proof strategies documented in comments. These represent:
-
-1. **Advanced techniques** (e.g., Hensel lifting in `pow_lift_double`)  
-2. **Known results** requiring extensive formalization (e.g., 2-adic valuation lemma)  
-3. **Future work** explicitly marked as deferred
-
-Example:
-```lean
-lemma pow_lift_double {a k t : ℕ} (ha : Odd a) (ht : t ≥ 1) 
-  (h : (a : ZMod (2^t))^k = 1) :
-  (a : ZMod (2^(t+1)))^(2*k) = 1 := by
-  -- PROOF STRATEGY:
-  -- Case 1: x = 1 (where x = (a : ZMod (2^{t+1}))^k) → trivial
-  -- Case 2: x ≠ 1 → x = 1 + 2^t → use (1 + 2^t)^2 ≡ 1 (mod 2^{t+1})
-  sorry  -- Full proof requires advanced ZMod cast manipulation
-```
+- `Collatz/Arithmetic.lean`: 0 `sorry` (complete)
+- `Collatz/OrdFact.lean`: 0 `sorry` (complete; main theorem proven)
+- `Collatz/Semigroup.lean`, `Collatz/SEDT.lean`: may contain remaining `sorry` items marked for future work
 
 ### CI/CD
 
 GitHub Actions automatically:
+
 - ✅ Builds the project on push/PR  
 - ✅ Caches Lake dependencies  
 - ✅ Runs examples  
@@ -184,8 +165,8 @@ See `../collatz-paper/` for the main mathematical paper and computational verifi
 
 ### Dependencies
 
-- **Lean 4**: v4.24.0-rc1  
-- **mathlib4**: Latest (automatically fetched by Lake)
+- **Lean 4**: v4.24.0-rc1 or later  
+- **mathlib4**: latest (resolved by Lake)
 
 ## 🤝 Contributing
 
@@ -199,29 +180,26 @@ See `../collatz-paper/` for the main mathematical paper and computational verifi
 ### Completing `sorry` Proofs
 
 Priority areas for contributions:
-1. `pow_lift_double` in `Arithmetic.lean` (Hensel lifting)  
-2. `three_pow_valuation` in `OrdFact.lean` (2-adic valuation)  
-3. `odd_is_generator` in `Semigroup.lean` (cyclic group theory)
 
-## 📊 Statistics
+1. `Semigroup.lean`: cyclic generation details and supporting lemmas  
+2. `SEDT.lean`: strengthening envelope bounds and completing deferred steps
 
-| Metric | Value |
-|--------|-------|
-| **Total files** | 7 |
-| **Total lemmas/theorems** | 50+ |
-| **Proven lemmas** | 35+ (70%) |
-| **Examples** | 15 (100% proven) |
-| **Build jobs** | 3084 |
-| **Build time** | ~16s (cached) |
+## 📊 Status Snapshot
+
+- Ord-fact main theorem: proven  
+- Arithmetic lemmas: complete  
+- CI: builds on push/PR via GitHub Actions
 
 ## 🎯 Future Work
 
 ### Short-term
+
 - [ ] Complete `pow_lift_double` full proof (~2-3 hours)  
 - [ ] Finalize Semigroup ZMod cast details (~1 hour)  
 - [ ] Add more worked examples for SEDT
 
 ### Long-term
+
 - [ ] Full SEDT proof (multi-step induction)  
 - [ ] Cycle exclusion formalization (Appendix B)  
 - [ ] Coercivity proof (Appendix C)  
@@ -229,7 +207,7 @@ Priority areas for contributions:
 
 ## 📝 License
 
-[Your license here]
+MIT — see `LICENSE`.
 
 ## 🙏 Acknowledgments
 
