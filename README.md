@@ -15,7 +15,7 @@ This repository contains Lean 4 formalizations of key mathematical results relat
 | Theorem | File | Status | Description |
 |---------|------|--------|-------------|
 | **Ord‑Fact** | `Collatz/OrdFact.lean` | ✅ Proven | ord_{2^t}(3) = 2^{t-2} for t ≥ 3 |
-| **⟨Δ⟩ generates Z/Q_t Z** | `Collatz/Semigroup.lean` | 🟡 Structured | Junction shifts additively generate full group |
+| **⟨Δ⟩ generates Z/Q_t Z** | `Collatz/Semigroup.lean` | ✅ Proven | Junction shifts additively generate full group |
 | **SEDT envelope** | `Collatz/SEDT.lean` | ✅ Statement formalized | Negative drift ΔV ≤ -ε·L + β·C for long epochs |
 
 ### Formalization Status Legend
@@ -137,7 +137,8 @@ lake env lean Collatz/Arithmetic.lean
 
 - `Collatz/Arithmetic.lean`: 0 `sorry` (complete)
 - `Collatz/OrdFact.lean`: 0 `sorry` (complete; main theorem proven)
-- `Collatz/Semigroup.lean`, `Collatz/SEDT.lean`: may contain remaining `sorry` items marked for future work
+- `Collatz/Semigroup.lean`: 0 `sorry` (complete; junction shift generation proven)
+- `Collatz/SEDT.lean`: may contain remaining `sorry` items marked for future work
 
 ### CI/CD
 
@@ -181,12 +182,12 @@ See `../collatz-paper/` for the main mathematical paper and computational verifi
 
 Priority areas for contributions:
 
-1. `Semigroup.lean`: cyclic generation details and supporting lemmas  
-2. `SEDT.lean`: strengthening envelope bounds and completing deferred steps
+1. `SEDT.lean`: strengthening envelope bounds and completing deferred steps
 
 ## 📊 Status Snapshot
 
 - Ord‑Fact main theorem: proven  
+- Semigroup generation: proven
 - Arithmetic lemmas: complete  
 - CI: builds on push/PR via GitHub Actions
 
@@ -194,8 +195,7 @@ Priority areas for contributions:
 
 ### Short-term
 
-- [ ] Complete `pow_lift_double` full proof (~2-3 hours)  
-- [ ] Finalize Semigroup ZMod cast details (~1 hour)  
+- [ ] Complete SEDT envelope proof (~5-10 hours)  
 - [ ] Add more worked examples for SEDT
 
 ### Long-term

@@ -1,6 +1,8 @@
 import Mathlib.GroupTheory.OrderOfElement
 import Mathlib.Data.ZMod.Basic
 import Mathlib.Algebra.Group.Subgroup.Basic
+import Mathlib.Data.Nat.GCD.Basic
+import Mathlib.Data.Nat.Prime.Basic
 import Collatz.Epoch
 import Collatz.OrdFact
 
@@ -53,7 +55,46 @@ For additive cyclic groups Z/n Z:
 -/
 lemma odd_is_generator {t : ℕ} (ht : t ≥ 3) (d : ZMod (2^(t-2))) (h_odd : Odd d.val) :
   AddSubgroup.closure {d} = ⊤ := by
-  sorry  -- Requires: coprime → generator in cyclic additive groups
+  -- Strategy: Show d has additive order 2^(t-2), which means it generates the full group
+  -- Key: addOrderOf d = (2^(t-2)) / gcd(2^(t-2), d.val) = 2^(t-2) since gcd = 1
+
+  -- Step 1: Show gcd(d.val, 2^(t-2)) = 1 (odd and power of 2 are coprime)
+  have h_coprime : Nat.Coprime d.val (2^(t-2)) := by
+    -- d.val is odd, 2^(t-2) is even (for t ≥ 3), so they're coprime
+    rw [Nat.coprime_pow_right_iff (by omega : t-2 > 0)]
+    refine ((Nat.Prime.coprime_iff_not_dvd Nat.prime_two).mpr ?_).symm
+    intro h_div
+    have h_even : Even d.val := even_iff_two_dvd.mpr h_div
+    obtain ⟨k, hk⟩ := h_odd
+    obtain ⟨r, hr⟩ := h_even
+    omega
+
+  -- Step 2: Use addOrderOf formula for ZMod
+  have h_order : addOrderOf d = 2^(t-2) := by
+    have h_pos : 0 < 2^(t-2) := by
+      exact Nat.pow_pos (by norm_num : 0 < 2)
+    have h_cast : d = (d.val : ZMod (2^(t-2))) := by simp
+    rw [h_cast, ZMod.addOrderOf_coe d.val (ne_of_gt h_pos)]
+    rw [Nat.gcd_comm]
+    rw [Nat.coprime_iff_gcd_eq_one.mp h_coprime]
+    simp
+
+  -- Step 3: Element with order equal to group size generates the whole group
+  have h_group_size : Fintype.card (ZMod (2^(t-2))) = 2^(t-2) := by
+    simp [ZMod.card]
+
+  -- In a cyclic group, element of order n generates the whole group of size n
+  -- Use cardinality argument: if closure has same cardinality as group, it equals the group
+  classical
+  -- Finish: compare cardinalities for H = closure {d}
+  refine
+    AddSubgroup.eq_top_of_card_eq
+      (H := AddSubgroup.closure ({d} : Set (ZMod (2^(t-2))))) ?_
+  -- Nat.card (closure {d}) = Nat.card (ZMod (2^(t-2)))
+  have hG : Nat.card (ZMod (2^(t-2))) = 2^(t-2) := by
+    simp [Nat.card_eq_fintype_card, ZMod.card]
+  simpa [AddSubgroup.zmultiples_eq_closure (g := d), hG, h_order]
+    using (Nat.card_zmultiples d)
 
 /-!
 ## Main Theorem: Junction Shifts Generate Z/Q_t Z
