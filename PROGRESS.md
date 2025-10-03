@@ -1,7 +1,7 @@
 # Lean 4 Formalization Progress
 
 **Last Updated:** October 3, 2025  
-**Status:** ✅ SEDT Progress - short_epoch_potential_bounded formalized!
+**Status:** ✅ SEDT Progress - depth_drop_one_shortcut formalized!
 
 ---
 
@@ -57,8 +57,13 @@
   - Uses trivial witness strategy
   - Bounds potential change for short epochs
   - No `sorry`
+- **`depth_drop_one_shortcut`** ✅ PROVEN (2025-10-03)
+  - Depth drops by exactly 1 for shortcut step
+  - Multiply-and-cancel strategy (expert solution)
+  - Uses factorization API + `Nat.mul_right_cancel`
+  - No `sorry`
 - **Helper constants:** `c`, `c_pos`, `c_le_one` ✅ PROVEN
-- **Helper lemmas:** `pow_two_split`, `pow_nonneg_two` ✅ PROVEN
+- **Helper lemmas:** `pow_two_split`, `pow_nonneg_two`, `helper_shortcut_arithmetic` ✅ PROVEN
 
 ### 6. Code Quality (ALL FIXED)
 
