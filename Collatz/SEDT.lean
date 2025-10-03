@@ -1,48 +1,34 @@
--- Re-export everything from the original formalization
-import Collatz.SEDT_Original
+-- Import all SEDT modules
+import Collatz.SEDT.Core
+import Collatz.SEDT.Axioms
+import Collatz.SEDT.Theorems
 
 /-!
-# SEDT (Scaled Epoch Drift Theorem)
+# SEDT (Scaled Epoch Drift Theorem) - Modular Structure
 
-Main module for SEDT formalization.
-
-This file re-exports the complete SEDT formalization with clear organization.
+This file provides the main entry point for the SEDT formalization.
+All components are now organized into focused modules:
 
 ## Module Structure
 
-### Core Components (Lines 1-703 in original)
+### Core Components (`Collatz.SEDT.Core`)
 - **Constants**: α, β₀, ε, C, L₀, K_glue
 - **Potential Function**: V(n) = log₂(n) + β·depth⁻(n)
 - **Helper Lemmas**: alpha_gt_one, beta_zero_pos, epsilon_pos, etc.
 - **Proven Bounds**: two_mul_le_two_pow, max_K_glue_le_pow_two, etc.
 - **Touch Lemmas**: touch_provides_onebit_bonus (PROVEN ✅)
+- **Technical Lemmas**: sedt_overhead_bound, t_log_bound_for_sedt
 
-### Modeling Axioms (3 remaining)
-1. **`plateau_touch_count_bounded`** (Line 527)
-   - Touch frequency ~1/Q_t (ergodic theory)
-   - Requires: Appendix A.E3 formalization
+### Modeling Axioms (`Collatz.SEDT.Axioms`)
+- **`plateau_touch_count_bounded`**: Touch frequency ~1/Q_t (ergodic theory)
+- **`SEDTEpoch_head_overhead_bounded`**: Head overhead bound (structural)
+- **`SEDTEpoch_boundary_overhead_bounded`**: Boundary glue bound (structural)
+- **Technical Helper**: sedt_full_bound_technical (PROVEN ✅)
 
-2. **`SEDTEpoch_head_overhead_bounded`** (Line 1120)
-   - Head overhead bound (structural)
-   - Mathematically sound, awaits epoch construction
-
-3. **`SEDTEpoch_boundary_overhead_bounded`** (Line 1196)
-   - Boundary glue bound (structural)
-   - Depends on explicit boundary algorithm
-
-### Main Theorems (PROVEN ✅)
-- **`sedt_envelope_bound`** (Line 1338)
-  - Envelope theorem: ΔV ≤ -ε·L + β·C
-  - Fully proven without sorry
-
-- **`sedt_envelope_negative_for_very_long`** (Line 1379)
-  - Negativity for very long epochs
-  - Fully proven without sorry
-
-- **`period_sum_with_density_negative`** (Line 1615)
-  - **MAIN CYCLE EXCLUSION THEOREM**
-  - Fully proven without sorry! 🏆
-  - Uses density argument and helper lemmas
+### Main Theorems (`Collatz.SEDT.Theorems`)
+- **`sedt_envelope_bound`**: Envelope theorem ΔV ≤ -ε·L + β·C
+- **`sedt_envelope_negative_for_very_long`**: Negativity for very long epochs
+- **`period_sum_with_density_negative`**: **MAIN CYCLE EXCLUSION THEOREM** 🏆
 
 ## Status Summary
 
@@ -63,6 +49,9 @@ import Collatz.SEDT  -- Import everything
 -- Use main theorems
 #check period_sum_with_density_negative
 #check sedt_envelope_bound
+
+-- Use axioms (for future formalization)
+#check plateau_touch_count_bounded
 ```
 
 ## References
@@ -77,6 +66,12 @@ The 3 remaining axioms require:
 3. Ergodic theory infrastructure
 
 This is a separate substantial project (Appendix A formalization).
+
+## Build Status
+
+✅ All modules compile successfully
+✅ No circular dependencies
+✅ Clean modular structure
 -/
 
 /-!
