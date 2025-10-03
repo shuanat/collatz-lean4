@@ -367,8 +367,7 @@ lemma touch_provides_onebit_bonus (r : ℕ) (t : ℕ) (ht : t ≥ 3) (h_touch : 
     have h2pos : (2 ^ 1) ≠ 0 := by decide
     have hmul := Nat.factorization_mul h2pos hrp1_ne0
     -- evaluate both sides at prime 2
-    have := congrArg (fun f => f 2) hmul
-    simpa [pow_one]
+    exact congrArg (fun f => f 2) hmul
 
   have hR :
       (3 * (r + 1)).factorization 2
