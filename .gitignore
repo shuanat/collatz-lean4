@@ -19,7 +19,6 @@ logs/
 # Project-specific
 /_build_logs/
 /artifacts/
-/reports/
 
 # Expert questions (private, not for public repo)
 EXPERT_QUESTION_*.md
