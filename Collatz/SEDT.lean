@@ -1486,6 +1486,52 @@ lemma short_epoch_bounded (t U : ℕ) (e : SEDTEpoch) (β : ℝ)
   ∃ (ΔV : ℝ), abs ΔV ≤ β * (C t U : ℝ) + 2 * (2^(t-2) : ℝ) := by
   exact short_epoch_potential_bounded t U e β ht hU hβ h_short
 
+/-!
+## Period Sum Theorem - Helper Lemmas
+-/
+
+/-- Helper: Long epochs have total length at least n_long × L₀ -/
+lemma long_epochs_min_total_length (t U : ℕ) (epochs : List SEDTEpoch)
+  (_ht : t ≥ 3) (_hU : U ≥ 1) :
+  let long := epochs.filter (fun e => e.length ≥ L₀ t U)
+  let total_L := (long.map SEDTEpoch.length).sum
+  (total_L : ℝ) ≥ (long.length : ℝ) * (L₀ t U : ℝ) := by
+  -- Each long epoch has length ≥ L₀, so sum ≥ count × L₀
+  -- Proof: induction on list
+  let long := epochs.filter (fun e => e.length ≥ L₀ t U)
+  let total_L := (long.map SEDTEpoch.length).sum
+
+  -- Key: every element in long satisfies e.length ≥ L₀
+  -- So sum of lengths ≥ sum of L₀ (count times)
+
+  -- For now, use sorry - this requires list induction
+  -- Will prove in next iteration
+  sorry
+
+/-- Helper: Convert axiom to theorem by building proof from components
+
+    This is the MAIN PROOF of period_sum theorem.
+    Strategy: Split into long/short, bound each, use density to show negativity.
+-/
+lemma period_sum_from_components (t U : ℕ) (epochs : List SEDTEpoch) (β : ℝ)
+  (ht : t ≥ 3) (hU : U ≥ 1) (hβ : β > β₀ t U) (hβ_ge_one : β ≥ 1)
+  (h_many_long : (epochs.filter (fun e => e.length ≥ L₀ t U)).length ≥
+                  epochs.length / (2^(t-2) + 8*t*(2^t))) :
+  ∃ (total_ΔV : ℝ), total_ΔV < 0 := by
+  -- Define long and short epochs
+  let long := epochs.filter (fun e => e.length ≥ L₀ t U)
+  let short := epochs.filter (fun e => e.length < L₀ t U)
+
+  -- Step 1: For now, construct a witness that we'll prove is negative
+  -- TODO: Build actual bounds from sedt_envelope_bound and short_epoch_bounded
+
+  -- The idea:
+  -- - Each long epoch: ΔV ≤ -ε·L + β·C
+  -- - Each short epoch: |ΔV| ≤ β·C + overhead
+  -- - High density of long ⇒ negative drift dominates
+
+  sorry  -- TODO: Complete proof using density argument
+
 /-- Modeling axiom: Period sum with sufficient long-epoch density is negative
 
     **Mathematical Justification:**
