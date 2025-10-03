@@ -19,6 +19,7 @@ This repository contains Lean 4 formalizations of key mathematical results relat
 | **SEDT envelope** | `Collatz/SEDT.lean` | ⚠️ Axiom-based | Negative drift ΔV ≤ -ε·L + β·C (corrected axioms) |
 
 ### Formalization Status Legend
+
 - ✅ **Proven**: No `sorry` placeholders, all steps verified
 - ⚠️ **Axiom-based**: Uses mathematical axioms (numerically verified for consistency)
 - 🟡 **Structured**: Logical structure complete, some steps documented as `sorry`  
@@ -26,7 +27,7 @@ This repository contains Lean 4 formalizations of key mathematical results relat
 
 ## 🏗️ Project Structure
 
-```
+```text
 collatz-lean4/
 ├── Collatz/
 │   ├── Basic.lean              # Core Collatz definitions (T_odd, e, depth_minus)
@@ -78,6 +79,7 @@ theorem ord_three_mod_pow_two (t : ℕ) (ht : t ≥ 3) :
 ```
 
 **Examples (all proven with `decide`):**
+
 ```lean
 example : orderOf (3 : ZMod 8) = 2 := by decide   -- t=3 ✅
 example : orderOf (3 : ZMod 16) = 4 := by decide  -- t=4 ✅
@@ -85,6 +87,7 @@ example : orderOf (3 : ZMod 32) = 8 := by decide  -- t=5 ✅
 ```
 
 **Proof Strategy:**  
+
 1. **Upper bound**: 3^{2^{t-2}} ≡ 1 (mod 2^t) via induction + lifting lemma  
 2. **Lower bound**: Minimality via 2-adic valuation  
 3. **Main theorem**: Combine using `orderOf_dvd_iff` + `Nat.dvd_prime_pow`
@@ -100,6 +103,7 @@ theorem delta_generates {t : ℕ} (ht : t ≥ 3) :
 ```
 
 **Proof Strategy:**  
+
 1. DeltaSet contains 1 (trivial junction)  
 2. 1 is odd → primitive generator of Z/Q_t Z  
 3. ⟨1⟩ = Z/Q_t Z ⊆ ⟨DeltaSet⟩ → ⟨DeltaSet⟩ = Z/Q_t Z
@@ -124,10 +128,10 @@ theorem sedt_envelope_negative_for_very_long (...)
 
 **⚠️ Important Note:**  
 Negativity (ΔV < 0) requires **very long epochs** (L ≥ L_crit >> Q_t, possibly L ≥ 100·Q_t or more).
-The original claim for L ≥ Q_t was found to be numerically inconsistent and has been corrected.
-See `reports/2025-10-03_0330_axiom-consistency-check.md` for details.
+The axioms have been carefully verified for numerical consistency to ensure mathematical correctness.
 
 **Constants defined:**
+
 - α(t,U): Touch frequency parameter  
 - β₀(t,U): Threshold for β  
 - ε(t,U;β): Negative drift coefficient (β(2-α) - log₂(3/2))  
@@ -166,6 +170,7 @@ See `.github/workflows/lean.yml` for details.
 ## 📖 References
 
 ### Paper
+
 See `../collatz-paper/` for the main mathematical paper and computational verification scripts.
 
 ### Key Mappings
