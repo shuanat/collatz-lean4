@@ -1218,7 +1218,7 @@ lemma sedt_negativity_from_bound (ε β C L L₀ : ℝ)
 -/
 theorem sedt_envelope_bound (t U : ℕ) (e : SEDTEpoch) (β : ℝ)
   (ht : t ≥ 3) (hU : U ≥ 1)
-  (hβ : β > β₀ t U) :
+  (hβ : β > β₀ t U) (hβ_ge_one : β ≥ 1) :
   ∃ (ΔV : ℝ), ΔV ≤ -(ε t U β) * (e.length : ℝ) + β * (C t U : ℝ) := by
   -- Proof structure (bound only, no negativity claim):
   -- 1. Head accounting: ΔV_head ≤ β·C_head
@@ -1241,14 +1241,7 @@ theorem sedt_envelope_bound (t U : ℕ) (e : SEDTEpoch) (β : ℝ)
 
   use ΔV_total
 
-  -- Prove the bound (need β ≥ 1, which follows from β > β₀ > 0)
-  have hβ_ge_one : β ≥ 1 := by
-    -- β > β₀ > 0, and β₀ is designed so that β ≥ 1 is required in practice
-    -- For now, we can derive this from hβ : β > β₀ and beta_zero_pos
-    have hβ₀_pos : β₀ t U > 0 := beta_zero_pos t U ht hU
-    -- In actual SEDT usage, β > β₀ implies β ≥ 1 (from envelope requirements)
-    -- This is a modeling assumption consistent with the paper
-    sorry  -- TODO: formalize the relationship β₀ ≤ 1 or add as explicit requirement
+  -- Prove the bound (β ≥ 1 now explicit in signature)
 
   calc ΔV_total
       = ΔV_head + drift_per_step * (e.length : ℝ) + ΔV_boundary := rfl
@@ -1266,14 +1259,14 @@ theorem sedt_envelope_bound (t U : ℕ) (e : SEDTEpoch) (β : ℝ)
 -/
 theorem sedt_envelope_negative_for_very_long (t U : ℕ) (e : SEDTEpoch) (β : ℝ)
   (ht : t ≥ 3) (hU : U ≥ 1)
-  (hβ : β > β₀ t U)
+  (hβ : β > β₀ t U) (hβ_ge_one : β ≥ 1)
   (h_very_long : ∃ (L_crit : ℕ),
      (∀ (L : ℕ), L ≥ L_crit → ε t U β * (L : ℝ) > β * (C t U : ℝ)) ∧
      e.length ≥ L_crit) :
   ∃ (ΔV : ℝ), ΔV ≤ -(ε t U β) * (e.length : ℝ) + β * (C t U : ℝ) ∧
               ΔV < 0 := by
   -- Get the bound from sedt_envelope_bound
-  obtain ⟨ΔV_total, h_bound⟩ := sedt_envelope_bound t U e β ht hU hβ
+  obtain ⟨ΔV_total, h_bound⟩ := sedt_envelope_bound t U e β ht hU hβ hβ_ge_one
 
   use ΔV_total
 
