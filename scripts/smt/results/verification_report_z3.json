@@ -1,13 +1,29 @@
 {
-  "timestamp": "2025-10-03 08:56:00 UTC",
+  "timestamp": "2025-10-03 09:03:17 UTC",
   "solver": "Z3",
-  "total_axioms": 2,
+  "total_axioms": 4,
   "results": [
+    {
+      "solver": "Z3",
+      "file": "boundary_overhead_bounded.smt2",
+      "result": "UNSAT",
+      "time_ms": 114,
+      "model": null,
+      "error": null
+    },
+    {
+      "solver": "Z3",
+      "file": "head_overhead_bounded.smt2",
+      "result": "UNSAT",
+      "time_ms": 114,
+      "model": null,
+      "error": null
+    },
     {
       "solver": "Z3",
       "file": "sedt_overhead_bound.smt2",
       "result": "UNSAT",
-      "time_ms": 117,
+      "time_ms": 106,
       "model": null,
       "error": null
     },
@@ -15,13 +31,13 @@
       "solver": "Z3",
       "file": "t_log_bound.smt2",
       "result": "UNSAT",
-      "time_ms": 130,
+      "time_ms": 116,
       "model": null,
       "error": null
     }
   ],
   "summary": {
-    "UNSAT": 2,
+    "UNSAT": 4,
     "SAT": 0,
     "UNKNOWN": 0,
     "TIMEOUT": 0,

@@ -154,15 +154,22 @@ lake env lean Collatz/Arithmetic.lean
 - `Collatz/Arithmetic.lean`: 0 `sorry`, 0 `axiom` (fully proven)
 - `Collatz/OrdFact.lean`: 0 `sorry`, 0 `axiom` (fully proven; main theorem proven)
 - `Collatz/Semigroup.lean`: 0 `sorry`, 0 `axiom` (fully proven; junction shift generation proven)
-- `Collatz/SEDT.lean`: 0 `sorry`, 13 `axiom` (2 axioms proven as lemmas; 2/13 axioms SMT-verified; remaining 11 numerically checked)
+- `Collatz/SEDT.lean`: 0 `sorry`, 13 `axiom` (2 axioms proven as lemmas; 4/13 axioms SMT-verified; remaining 9 numerically checked)
 
 ### SMT Verification
 
 Numerical axioms in `SEDT.lean` are being verified using Z3 SMT solver:
 
+**Priority 0 (Arithmetic):**
 - ✅ `t_log_bound_for_sedt` — UNSAT (verified for t ∈ [3,20])
 - ✅ `sedt_overhead_bound` — UNSAT (verified for t ∈ [3,20], U ∈ [1,100])
-- ⏳ 11 remaining axioms (in progress)
+
+**Priority 1 (Structural):**
+- ✅ `SEDTEpoch_head_overhead_bounded` — UNSAT (conservative worst-case)
+- ✅ `SEDTEpoch_boundary_overhead_bounded` — UNSAT (tautological verification)
+
+**Progress:** 4/13 axioms SMT-verified (31%)  
+⏳ 9 remaining axioms (dynamics/existential — in progress)
 
 **Run verification:**
 ```bash
