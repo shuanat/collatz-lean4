@@ -424,7 +424,7 @@ lemma log_part_le_one (r : ℕ) (hr : r > 0) (_hr_odd : Odd r) :
           · exact le_of_lt (Real.log_pos (by norm_num : (1 : ℝ) < 2))
     _ = 1 := by field_simp
 
-/-- Modeling axiom: Single Collatz step (shortcut) has bounded potential change
+/-- Single Collatz step (shortcut) has bounded potential change (PROVEN LEMMA)
 
     For odd r with β ≥ 1, the shortcut step T(r) = (3r+1)/2 gives:
     - Depth drops by exactly 1: ν₂(T(r)+1) = ν₂(r+1) - 1
@@ -433,11 +433,45 @@ lemma log_part_le_one (r : ℕ) (hr : r > 0) (_hr_odd : Odd r) :
 
     ⚠️ NOTE: Requires β ≥ 1 for the final inequality to hold.
 
-    TODO: Replace with proven lemma using expert solution.
+    Proof combines depth_drop_one_shortcut and log_part_le_one.
     Reference: Expert solution 2025-10-03 (shortcut step analysis)
 -/
-axiom single_step_potential_bounded (r : ℕ) (β : ℝ) (hr : r > 0) (hr_odd : Odd r) (hβ : β ≥ 1) :
-  single_step_ΔV r β ≤ log (3/2) / log 2 + β * 2
+lemma single_step_potential_bounded (r : ℕ) (β : ℝ) (hr : r > 0) (hr_odd : Odd r) (hβ : β ≥ 1) :
+  single_step_ΔV r β ≤ log (3/2) / log 2 + β * 2 := by
+  unfold single_step_ΔV V
+
+  -- Step 1: Use depth_drop_one_shortcut
+  have h_depth : depth_minus (T_shortcut r) + 1 = depth_minus r :=
+    depth_drop_one_shortcut r hr_odd
+
+  -- Convert to ℝ inequality
+  have h_depth_real : (depth_minus (T_shortcut r) : ℝ) = (depth_minus r : ℝ) - 1 := by
+    have : (depth_minus (T_shortcut r) : ℝ) + 1 = (depth_minus r : ℝ) := by
+      exact_mod_cast h_depth
+    linarith
+
+  -- Step 2: Use log_part_le_one
+  have h_log : (log (T_shortcut r) - log r) / log 2 ≤ 1 :=
+    log_part_le_one r hr hr_odd
+
+  -- Step 3: Combine
+  calc log (T_shortcut r) / log 2 + β * (depth_minus (T_shortcut r) : ℝ)
+          - (log r / log 2 + β * (depth_minus r : ℝ))
+        = (log (T_shortcut r) - log r) / log 2 + β * ((depth_minus (T_shortcut r) : ℝ) - (depth_minus r : ℝ)) := by ring
+      _ = (log (T_shortcut r) - log r) / log 2 + β * (-1) := by rw [h_depth_real]; ring
+      _ = (log (T_shortcut r) - log r) / log 2 - β := by ring
+      _ ≤ 1 - β := by linarith [h_log]
+      _ ≤ log (3/2) / log 2 + β * 2 := by
+          -- For β ≥ 1: 1 - β ≤ 0 ≤ log(3/2)/log(2) + 2β
+          have h1 : 1 - β ≤ 0 := by linarith [hβ]
+          have h2 : (0 : ℝ) ≤ log (3/2) / log 2 + β * 2 := by
+            have : log (3/2) / log 2 > 0 := by
+              have log_pos : log (3/2) > 0 := Real.log_pos (by norm_num : (1 : ℝ) < 3/2)
+              have log2_pos : log 2 > 0 := Real.log_pos (by norm_num : (1 : ℝ) < 2)
+              exact div_pos log_pos log2_pos
+            have : β * 2 ≥ 2 := by linarith [hβ]
+            linarith
+          linarith
 
 /-- Potential change is bounded by log ratio and depth change -/
 lemma single_step_ΔV_bound (r : ℕ) (β : ℝ) (hr : r > 0) (hr_odd : Odd r) (hβ : β ≥ 1) :
