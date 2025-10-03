@@ -950,4 +950,68 @@ lemma sedt_overhead_bound (t U : ℕ) (β : ℝ) (ht : t ≥ 3) (hU : U ≥ 1) (
             exact this
 
 
+/-- Technical bound: full SEDT bound combination (PROVEN LEMMA)
+
+    Direct statement combining head, plateau, and boundary bounds into the final inequality.
+    This encapsulates all technical details of overhead arithmetic.
+
+    PROOF STRATEGY:
+    1. Use SMT-verified sedt_overhead_bound axiom
+    2. Apply abs bounds: |x| ≤ y → -y ≤ x ≤ y
+    3. Collect all terms and apply linarith
+-/
+lemma sedt_full_bound_technical (t U : ℕ) (β ΔV_head drift_per_step ΔV_boundary : ℝ) (length : ℕ)
+  (ht : t ≥ 3) (hU : U ≥ 1) (hβ : β ≥ 1) :
+  (abs ΔV_head ≤ β * (2^t : ℝ) + (t : ℝ) * log (3/2) / log 2) →
+  (drift_per_step ≤ -(ε t U β)) →
+  (abs ΔV_boundary ≤ β * (K_glue t : ℝ)) →
+  ΔV_head + drift_per_step * (length : ℝ) + ΔV_boundary ≤ -(ε t U β) * (length : ℝ) + β * (C t U : ℝ) := by
+  intro h_head_bound h_drift_bound h_boundary_bound
+
+  -- Get the proven overhead bound (requires β ≥ 1)
+  have h_overhead := sedt_overhead_bound t U β ht hU hβ
+
+  -- Extract upper bounds from abs inequalities
+  have h_head_upper : ΔV_head ≤ β * (2^t : ℝ) + (t : ℝ) * log (3/2) / log 2 :=
+    le_of_abs_le h_head_bound
+
+  have h_boundary_upper : ΔV_boundary ≤ β * (K_glue t : ℝ) :=
+    le_of_abs_le h_boundary_bound
+
+  -- Bound on drift term
+  have h_drift_upper : drift_per_step * (length : ℝ) ≤ -(ε t U β) * (length : ℝ) := by
+    apply mul_le_mul_of_nonneg_right h_drift_bound (Nat.cast_nonneg _)
+
+  -- Combine the three bounds using add_le_add
+  have h_sum_bound : ΔV_head + drift_per_step * (length : ℝ) + ΔV_boundary ≤
+      (β * (2^t : ℝ) + (t : ℝ) * log (3/2) / log 2) +
+      (-(ε t U β) * (length : ℝ)) +
+      β * (K_glue t : ℝ) := by
+    -- Apply add_le_add three times
+    apply add_le_add
+    apply add_le_add
+    · exact h_head_upper
+    · exact h_drift_upper
+    · exact h_boundary_upper
+
+  -- K_glue def to match sedt_overhead_bound
+  have h_K_eq_max : (K_glue t : ℝ) = (max (2 * 2^(t-2)) (3*t) : ℝ) := by
+    unfold K_glue
+    simp [Nat.cast_max]
+
+  -- Rearrange and use sedt_overhead_bound
+  calc ΔV_head + drift_per_step * (length : ℝ) + ΔV_boundary
+      ≤ (β * (2^t : ℝ) + (t : ℝ) * log (3/2) / log 2) +
+        (-(ε t U β) * (length : ℝ)) +
+        β * (K_glue t : ℝ) := h_sum_bound
+    _ = -(ε t U β) * (length : ℝ) +
+        (β * (2^t : ℝ) + β * (K_glue t : ℝ) + (t : ℝ) * log (3/2) / log 2) := by ring
+    _ = -(ε t U β) * (length : ℝ) +
+        (β * (2^t : ℝ) + β * (max (2 * 2^(t-2)) (3*t) : ℝ) + (t : ℝ) * log (3/2) / log 2) := by
+          rw [h_K_eq_max]
+    _ ≤ -(ε t U β) * (length : ℝ) + β * (C t U : ℝ) := by
+        -- Use sedt_overhead_bound: β·2^t + β·max(...) + t·log ≤ β·C
+        apply add_le_add_left
+        exact h_overhead
+
 end Collatz.SEDT
