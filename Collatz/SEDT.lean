@@ -760,13 +760,79 @@ lemma max_K_glue_le_pow_two (t : ℕ) (ht : t ≥ 4) : max (2 * 2^(t-2)) (3*t) �
     have h2 : 3 * t ≤ 2^t := three_mul_le_two_pow_of_ge8 t ht8
     exact (max_le_iff.mpr ⟨h1, h2⟩)
 
-/-- Technical bound: t·log₂(3/2) ≤ β·(2^t + 3U) for β ≥ 1, t ≥ 3, U ≥ 1
+/-- Technical bound: t·log₂(3/2) ≤ β·(2^t + 3U) for β ≥ 1, t ≥ 3, U ≥ 1 (PROVEN LEMMA)
 
-    Follows from: log₂(3/2) < 1, so t·log₂(3/2) < t < 2^t ≤ 2^t + 3U ≤ β·(2^t + 3U)
+    PROOF STRATEGY:
+    1. log₂(3/2) < 1 (since 3/2 < 2)
+    2. Therefore: t·log₂(3/2) < t
+    3. For t ≥ 3: t < 2^t (exponential dominates linear)
+    4. For U ≥ 1: 2^t < 2^t + 3U
+    5. For β ≥ 1: 2^t + 3U ≤ β·(2^t + 3U)
+    6. Chain: t·log₂(3/2) < 2^t + 3U ≤ β·(2^t + 3U)
 -/
-axiom t_log_bound_for_sedt (t U : ℕ) (β : ℝ)
+lemma t_log_bound_for_sedt (t U : ℕ) (β : ℝ)
   (ht : t ≥ 3) (hU : U ≥ 1) (hβ : β ≥ 1) :
-  (t : ℝ) * log (3/2) / log 2 ≤ β * ((2^t : ℝ) + (3*U : ℝ))
+  (t : ℝ) * log (3/2) / log 2 ≤ β * ((2^t : ℝ) + (3*U : ℝ)) := by
+  -- Key constants
+  have h_log_ratio : log (3/2) / log 2 < 1 := by
+    have h1 : log (3/2) < log 2 := by
+      apply Real.log_lt_log
+      · norm_num
+      · norm_num
+    have h2 : 0 < log 2 := Real.log_pos (by norm_num : (1 : ℝ) < 2)
+    calc log (3/2) / log 2
+        < log 2 / log 2 := by exact div_lt_div_of_pos_right h1 h2
+      _ = 1 := by field_simp
+
+  -- Step 1: t·log₂(3/2) < t
+  have h_tlog_lt_t : (t : ℝ) * log (3/2) / log 2 < (t : ℝ) := by
+    calc (t : ℝ) * log (3/2) / log 2
+        = (t : ℝ) * (log (3/2) / log 2) := by ring
+      _ < (t : ℝ) * 1 := by
+          apply mul_lt_mul_of_pos_left h_log_ratio
+          exact Nat.cast_pos.mpr (lt_of_lt_of_le (by decide : 0 < 3) ht)
+      _ = (t : ℝ) := by ring
+
+  -- Step 2: t < 2^t for t ≥ 3
+  have h_t_lt_pow : (t : ℝ) < (2^t : ℝ) := by
+    have h_nat : t < 2^t := by
+      -- Use induction or direct verification
+      match t with
+      | 0 | 1 | 2 => omega  -- contradicts ht
+      | 3 => norm_num  -- 3 < 8
+      | 4 => norm_num  -- 4 < 16
+      | t' + 5 =>
+        -- For t ≥ 5: use 2t ≤ 2^t (proven lemma) and t < 2t
+        have h1 : 2 * (t' + 5) ≤ 2^(t' + 5) := two_mul_le_two_pow (t' + 5) (by omega)
+        calc t' + 5
+            < 2 * (t' + 5) := by omega
+          _ ≤ 2^(t' + 5) := h1
+    exact_mod_cast h_nat
+
+  -- Step 3: 2^t < 2^t + 3U for U ≥ 1
+  have h_pow_lt_sum : (2^t : ℝ) < (2^t : ℝ) + (3*U : ℝ) := by
+    have h_U_pos : 0 < (3*U : ℝ) := by
+      have : 0 < U := Nat.pos_of_ne_zero (fun h => by omega)
+      have : 0 < 3 * U := Nat.mul_pos (by decide) this
+      positivity
+    linarith
+
+  -- Step 4: Combine with β ≥ 1 and convert < to ≤
+  have h_sum_pos : 0 < (2^t : ℝ) + (3*U : ℝ) := by linarith [h_pow_lt_sum]
+  have h_intermediate : (2^t : ℝ) + (3*U : ℝ) ≤ β * ((2^t : ℝ) + (3*U : ℝ)) := by
+    calc (2^t : ℝ) + (3*U : ℝ)
+        = 1 * ((2^t : ℝ) + (3*U : ℝ)) := by ring
+      _ ≤ β * ((2^t : ℝ) + (3*U : ℝ)) := by
+          apply mul_le_mul_of_nonneg_right hβ (le_of_lt h_sum_pos)
+
+  -- Chain all inequalities, convert final < to ≤
+  have h_strict : (t : ℝ) * log (3/2) / log 2 < β * ((2^t : ℝ) + (3*U : ℝ)) := by
+    calc (t : ℝ) * log (3/2) / log 2
+        < (t : ℝ) := h_tlog_lt_t
+      _ < (2^t : ℝ) := h_t_lt_pow
+      _ < (2^t : ℝ) + (3*U : ℝ) := h_pow_lt_sum
+      _ ≤ β * ((2^t : ℝ) + (3*U : ℝ)) := h_intermediate
+  exact le_of_lt h_strict
 
 /-- Technical bound: overhead collection for SEDT
 
