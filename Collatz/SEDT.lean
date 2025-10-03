@@ -359,6 +359,71 @@ lemma depth_drop_one_shortcut (r : ℕ) (hr_odd : Odd r) :
     _   = (2 * k).factorization 2 := by simp [h_mul2]
     _   = depth_minus r := by simp [h_fac_r]
 
+/-- Logarithmic part bounded by 1 for shortcut step (PROVEN LEMMA)
+
+    For odd r > 0, the shortcut step T(r) = (3r+1)/2 gives:
+    log₂(T(r)/r) ≤ 1
+
+    Proof: T(r)/r = (3r+1)/(2r) ≤ 2 for r ≥ 1, hence log₂(T(r)/r) ≤ log₂(2) = 1
+
+    Reference: Expert solution 2025-10-03 (Anatoliy)
+-/
+lemma log_part_le_one (r : ℕ) (hr : r > 0) (_hr_odd : Odd r) :
+  (log (T_shortcut r) - log r) / log 2 ≤ 1 := by
+  -- Key: T(r)/r ≤ (3r+1)/(2r) ≤ 2
+  have hrpos : (0 : ℝ) < r := Nat.cast_pos.mpr hr
+  have hTpos : (0 : ℝ) < T_shortcut r := by
+    unfold T_shortcut
+    have : 0 < (3 * r + 1) / 2 := by omega
+    exact Nat.cast_pos.mpr this
+
+  -- Upper bound: (3r+1)/(2r) ≤ 2 for r ≥ 1
+  have h_ratio_bound : ((3 * r + 1) : ℝ) / (2 * r) ≤ 2 := by
+    have h1le : (1 : ℝ) ≤ r := by exact_mod_cast (Nat.one_le_iff_ne_zero.mpr (ne_of_gt hr))
+    calc ((3 * r + 1) : ℝ) / (2 * r)
+        ≤ (3 * r + r) / (2 * r) := by
+            apply div_le_div_of_nonneg_right
+            · linarith
+            · positivity
+      _ = (4 * r) / (2 * r) := by ring
+      _ = 2 := by
+          have : (2 : ℝ) * r ≠ 0 := by positivity
+          field_simp [this]
+          ring
+
+  -- T(r) ≤ (3r+1)/2 < 2r for r ≥ 1, hence T(r)/r < 2
+  have h_final : (T_shortcut r : ℝ) / r ≤ 2 := by
+    unfold T_shortcut
+    -- In ℝ: 3r+1 ≤ 4r for r ≥ 1
+    have h2 : (3 * r + 1 : ℝ) ≤ 4 * r := by
+      have : (1 : ℝ) ≤ r := by exact_mod_cast (Nat.one_le_iff_ne_zero.mpr (ne_of_gt hr))
+      linarith
+    -- Therefore (3r+1)/2 ≤ 2r
+    have h3 : ((3 * r + 1) : ℝ) / 2 ≤ 2 * r := by
+      have : (0 : ℝ) < 2 := by norm_num
+      calc ((3 * r + 1) : ℝ) / 2
+          ≤ (4 * r) / 2 := by apply div_le_div_of_nonneg_right h2; linarith
+        _ = 2 * r := by ring
+    -- ℕ division rounds down, so cast is ≤
+    have h4 : (((3 * r + 1) / 2 : ℕ) : ℝ) ≤ ((3 * r + 1) : ℝ) / 2 := by
+      norm_cast
+      exact Nat.cast_div_le
+    -- Combine
+    calc (((3 * r + 1) / 2 : ℕ) : ℝ) / r
+        ≤ (((3 * r + 1) : ℝ) / 2) / r := by apply div_le_div_of_nonneg_right h4; exact le_of_lt hrpos
+      _ ≤ (2 * r) / r := by apply div_le_div_of_nonneg_right h3; exact le_of_lt hrpos
+      _ = 2 := by field_simp
+
+  -- log₂(T(r)/r) ≤ log₂(2) = 1
+  calc (log (T_shortcut r) - log r) / log 2
+      = log ((T_shortcut r : ℝ) / r) / log 2 := by
+          rw [log_div (ne_of_gt hTpos) (ne_of_gt hrpos)]
+    _ ≤ log 2 / log 2 := by
+          apply div_le_div_of_nonneg_right
+          · exact Real.log_le_log (by positivity) h_final
+          · exact le_of_lt (Real.log_pos (by norm_num : (1 : ℝ) < 2))
+    _ = 1 := by field_simp
+
 /-- Modeling axiom: Single Collatz step (shortcut) has bounded potential change
 
     For odd r with β ≥ 1, the shortcut step T(r) = (3r+1)/2 gives:
