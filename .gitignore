@@ -21,3 +21,6 @@ logs/
 /artifacts/
 /reports/
 
+# Expert questions (private, not for public repo)
+EXPERT_QUESTION_*.md
+
