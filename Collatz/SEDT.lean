@@ -215,27 +215,41 @@ def SEDTEpoch.length (e : SEDTEpoch) : ℕ :=
 ## Helper Lemmas for Potential Changes
 -/
 
-/-- Potential change for a single Collatz step (odd number)
-    ΔV = V(T_odd(r)) - V(r) where T_odd(r) = (3r+1)/2^e
+/-- Shortcut Collatz map: T(r) = (3r+1)/2 for odd r
+
+    ⚠️ CRITICAL: This is the SHORTCUT step, not the accelerated step!
+    The accelerated step r' = (3r+1)/2^e does NOT satisfy the bound depth⁻(r') ≤ 2.
+    Counterexample: r=41 gives depth⁻(r') = 5 > 2.
+
+    Reference: Expert analysis 2025-10-03 (Anatoliy)
+-/
+def T_shortcut (r : ℕ) : ℕ := (3 * r + 1) / 2
+
+/-- Potential change for a single Collatz step (shortcut version)
+    ΔV = V(T(r)) - V(r) where T(r) = (3r+1)/2
 -/
 noncomputable def single_step_ΔV (r : ℕ) (β : ℝ) : ℝ :=
-  let r' := (3 * r + 1) / (2 ^ ((3 * r + 1).factorization 2))
-  V r' β - V r β
+  V (T_shortcut r) β - V r β
 
-/-- Modeling axiom: Single Collatz step has bounded potential change
+/-- Modeling axiom: Single Collatz step (shortcut) has bounded potential change
 
-    For odd r, one step r → r' = (3r+1)/2^e contributes:
-    - Value growth: log(r'/r) ≤ log(3/2) asymptotically
-    - Depth change: worst case ≤ 2
-    Total: ΔV ≤ log₂(3/2) + 2β
+    For odd r with β ≥ 1, the shortcut step T(r) = (3r+1)/2 gives:
+    - Depth drops by exactly 1: ν₂(T(r)+1) = ν₂(r+1) - 1
+    - Log part bounded by 1: log₂(T(r)/r) ≤ 1  (NOT log₂(3/2)!)
+    - Total: ΔV ≤ 1 - β ≤ log₂(3/2) + 2β for β ≥ 1
+
+    ⚠️ NOTE: Requires β ≥ 1 for the final inequality to hold.
+
+    TODO: Replace with proven lemma using expert solution.
+    Reference: Expert solution 2025-10-03 (shortcut step analysis)
 -/
-axiom single_step_potential_bounded (r : ℕ) (β : ℝ) (hr : r > 0) (hr_odd : Odd r) :
+axiom single_step_potential_bounded (r : ℕ) (β : ℝ) (hr : r > 0) (hr_odd : Odd r) (hβ : β ≥ 1) :
   single_step_ΔV r β ≤ log (3/2) / log 2 + β * 2
 
 /-- Potential change is bounded by log ratio and depth change -/
-lemma single_step_ΔV_bound (r : ℕ) (β : ℝ) (hr : r > 0) (hr_odd : Odd r) :
+lemma single_step_ΔV_bound (r : ℕ) (β : ℝ) (hr : r > 0) (hr_odd : Odd r) (hβ : β ≥ 1) :
   single_step_ΔV r β ≤ log (3/2) / log 2 + β * (2 : ℝ) := by
-  exact single_step_potential_bounded r β hr hr_odd
+  exact single_step_potential_bounded r β hr hr_odd hβ
 
 /-- Modeling axiom: Touch frequency on plateau is deterministic (1/Q_t)
 
