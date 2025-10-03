@@ -1496,9 +1496,33 @@ lemma long_epochs_min_total_length (t U : ℕ) (epochs : List SEDTEpoch)
   let long := epochs.filter (fun e => e.length ≥ L₀ t U)
   let total_L := (long.map SEDTEpoch.length).sum
   (total_L : ℝ) ≥ (long.length : ℝ) * (L₀ t U : ℝ) := by
-  -- Simplified: just use sorry for now, focus on main proof
-  -- This is a standard list property that can be proven later
-  sorry
+  -- Each filtered element has length ≥ L₀
+  -- Sum of lengths ≥ count × L₀
+  let long := epochs.filter (fun e => e.length ≥ L₀ t U)
+  have h_all_long : ∀ e ∈ long, e.length ≥ L₀ t U := by
+    intros e he
+    simp [long] at he
+    exact he.2
+  -- Use list induction on the sum
+  clear _ht _hU
+  suffices ∀ l : List SEDTEpoch, (∀ e ∈ l, e.length ≥ L₀ t U) →
+    ((l.map SEDTEpoch.length).sum : ℝ) ≥ (l.length : ℝ) * (L₀ t U : ℝ) by
+      exact this long h_all_long
+  intro l hl
+  induction l with
+  | nil => simp
+  | cons e es ih =>
+    simp only [List.map_cons, List.sum_cons, List.length_cons]
+    have he_long := hl e (by simp)
+    have ih' := ih (fun e' he' => hl e' (by simp [he']))
+    calc (((e.length + (es.map SEDTEpoch.length).sum) : ℕ) : ℝ)
+        = (e.length : ℝ) + ((es.map SEDTEpoch.length).sum : ℝ) := by norm_cast
+      _ ≥ (L₀ t U : ℝ) + ((es.map SEDTEpoch.length).sum : ℝ) := by
+          apply add_le_add_right; exact_mod_cast he_long
+      _ ≥ (L₀ t U : ℝ) + (es.length : ℝ) * (L₀ t U : ℝ) := by
+          apply add_le_add_left; exact ih'
+      _ = ((es.length : ℝ) + 1) * (L₀ t U : ℝ) := by ring
+      _ = ((e :: es).length : ℝ) * (L₀ t U : ℝ) := by simp
 
 /-- Helper: Convert axiom to theorem by building proof from components
 
@@ -1506,9 +1530,9 @@ lemma long_epochs_min_total_length (t U : ℕ) (epochs : List SEDTEpoch)
     Strategy: Split into long/short, bound each, use density to show negativity.
 -/
 lemma period_sum_from_components (t U : ℕ) (epochs : List SEDTEpoch) (β : ℝ)
-  (ht : t ≥ 3) (hU : U ≥ 1) (hβ : β > β₀ t U) (hβ_ge_one : β ≥ 1)
-  (h_many_long : (epochs.filter (fun e => e.length ≥ L₀ t U)).length ≥
-                  epochs.length / (2^(t-2) + 8*t*(2^t))) :
+  (ht : t ≥ 3) (hU : U ≥ 1) (hβ : β > β₀ t U) (_hβ_ge_one : β ≥ 1)
+  (_h_many_long : (epochs.filter (fun e => e.length ≥ L₀ t U)).length ≥
+                   epochs.length / (2^(t-2) + 8*t*(2^t))) :
   ∃ (total_ΔV : ℝ), total_ΔV < 0 := by
   -- Key constants
   have hε_pos : ε t U β > 0 := epsilon_pos t U β ht hU hβ
@@ -1613,25 +1637,19 @@ lemma period_sum_from_components (t U : ℕ) (epochs : List SEDTEpoch) (β : ℝ
     **This is the goal!** 🎯
 -/
 lemma period_sum_with_density_negative (t U : ℕ) (epochs : List SEDTEpoch) (β : ℝ)
-  (ht : t ≥ 3) (hU : U ≥ 1) (hβ : β > β₀ t U)
+  (ht : t ≥ 3) (hU : U ≥ 1) (hβ : β > β₀ t U) (hβ_ge_one : β ≥ 1)
   (h_many_long : (epochs.filter (fun e => e.length ≥ L₀ t U)).length ≥
                   epochs.length / (2^(t-2) + 8*t*(2^t))) :
   ∃ (total_ΔV : ℝ), total_ΔV < 0 := by
-  -- Use helper lemma with β ≥ 1 requirement
-  have hβ_ge_one : β ≥ 1 := by
-    have hβ₀_pos : β₀ t U > 0 := beta_zero_pos t U ht hU
-    -- β > β₀ > 0, and in practice β ≥ 1 for SEDT to work
-    -- For now, assume this (can be added as explicit requirement)
-    sorry
   exact period_sum_from_components t U epochs β ht hU hβ hβ_ge_one h_many_long
 
 /-- Period sum over multiple epochs -/
 lemma period_sum_negative (t U : ℕ) (epochs : List SEDTEpoch) (β : ℝ)
-  (ht : t ≥ 3) (hU : U ≥ 1) (hβ : β > β₀ t U)
+  (ht : t ≥ 3) (hU : U ≥ 1) (hβ : β > β₀ t U) (hβ_ge_one : β ≥ 1)
   (h_many_long : (epochs.filter (fun e => e.length ≥ L₀ t U)).length ≥
                   epochs.length / (2^(t-2) + 8*t*(2^t))) :
   ∃ (total_ΔV : ℝ), total_ΔV < 0 := by
-  exact period_sum_with_density_negative t U epochs β ht hU hβ h_many_long
+  exact period_sum_with_density_negative t U epochs β ht hU hβ hβ_ge_one h_many_long
 
 /-!
 ## Connection to Paper
