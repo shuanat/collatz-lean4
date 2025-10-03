@@ -276,9 +276,71 @@ lemma touch_multibit_bonus (r : ℕ) (t : ℕ) (ht : t ≥ 3)
 /-- Standard fact: exponential growth dominates linear for t ≥ 3
 
     This is a well-known inequality: 2t ≤ 2^t for t ≥ 3.
-    Can be proven by induction. For formalization purposes, accepted as axiom.
+    Proven by strong induction on t.
 -/
-axiom two_mul_le_two_pow (t : ℕ) (ht : t ≥ 3) : 2 * t ≤ 2^t
+lemma two_mul_le_two_pow (t : ℕ) (ht : t ≥ 3) : 2 * t ≤ 2^t := by
+  -- Base cases: t = 3, 4, 5
+  match t with
+  | 0 | 1 | 2 => omega  -- contradicts ht : t ≥ 3
+  | 3 => norm_num  -- 6 ≤ 8
+  | 4 => norm_num  -- 8 ≤ 16
+  | 5 => norm_num  -- 10 ≤ 32
+  | t' + 6 =>
+    -- Inductive step: assume for t' + 5, prove for t' + 6
+    -- Need: 2(t'+6) ≤ 2^(t'+6)
+    -- From IH: 2(t'+5) ≤ 2^(t'+5)
+    have ih : 2 * (t' + 5) ≤ 2^(t' + 5) := two_mul_le_two_pow (t' + 5) (by omega)
+    calc 2 * (t' + 6)
+        = 2 * (t' + 5) + 2 := by ring
+      _ ≤ 2^(t' + 5) + 2 := by linarith [ih]
+      _ ≤ 2^(t' + 5) + 2^(t' + 5) := by
+          have : 2 ≤ 2^(t' + 5) := by
+            have : 2^1 ≤ 2^(t' + 5) := Nat.pow_le_pow_right (by decide) (by omega)
+            simpa using this
+          linarith
+      _ = 2 * 2^(t' + 5) := by ring
+      _ = 2^(t' + 6) := by
+          rw [show t' + 6 = (t' + 5) + 1 by omega]
+          rw [pow_succ]
+          ring
+
+/-- Helper: For t ≥ 8, we have 3t ≤ 2^t -/
+private lemma three_mul_le_two_pow_of_ge8 (t : ℕ) (ht : 8 ≤ t) : 3 * t ≤ 2^t := by
+  -- Induction on n ≥ 8
+  induction t, ht using Nat.le_induction with
+  | base => decide  -- 3*8 = 24 ≤ 256 = 2^8
+  | succ n hn ih =>
+    -- step: from IH at n prove for n+1
+    -- Show 3 ≤ 2^n using 8 ≤ 2^n (and 3 ≤ 8)
+    have h3le : 3 ≤ 2^n := by
+      have h3n : 3 ≤ n := le_trans (by decide : 3 ≤ 8) hn
+      have h8le : 2^3 ≤ 2^n := Nat.pow_le_pow_right (by decide : 1 ≤ 2) h3n
+      calc 3
+          ≤ 8 := by decide
+        _ = 2^3 := by decide
+        _ ≤ 2^n := h8le
+    calc
+      3 * (n+1) = 3*n + 3 := by ring
+      _ ≤ 2^n + 3 := add_le_add_right ih 3
+      _ ≤ 2^n + 2^n := add_le_add_left h3le _
+      _ = 2 * 2^n := by ring
+      _ = 2^(n+1) := by rw [pow_succ]; ring
+
+/-- Helper: For t ≥ 2, we have 2·2^{t-2} ≤ 2^t -/
+private lemma two_mul_pow_sub_two_le_pow (t : ℕ) (ht : 2 ≤ t) : 2 * 2^(t-2) ≤ 2^t := by
+  -- 2 * 2^(t-2) ≤ 4 * 2^(t-2) = 2^(t-2) * 2^2 = 2^(t-2+2) = 2^t
+  have step : 2 * 2^(t-2) ≤ 4 * 2^(t-2) :=
+    Nat.mul_le_mul_right (2^(t-2)) (by decide : 2 ≤ 4)
+  have heq : 2^(t-2+2) = 2^t := by
+    -- t-2+2 = t for t ≥ 2
+    have h := Nat.sub_add_cancel ht
+    rw [h]
+  calc 2 * 2^(t-2)
+      ≤ 4 * 2^(t-2) := step
+    _ = 2^2 * 2^(t-2) := by ring
+    _ = 2^(2 + (t-2)) := by rw [← pow_add]
+    _ = 2^(t-2+2) := by ring
+    _ = 2^t := heq
 
 /-- Standard fact: K_glue bound for t ≥ 4
 
@@ -286,8 +348,25 @@ axiom two_mul_le_two_pow (t : ℕ) (ht : t ≥ 3) : 2 * t ≤ 2^t
 
     Note: For t=3, max(4, 9) = 9 > 8, so this fails!
     The bound holds starting from t=4.
+
+    Proven by explicit cases for t ∈ {4,5,6,7} and induction for t ≥ 8.
 -/
-axiom max_K_glue_le_pow_two (t : ℕ) (ht : t ≥ 4) : max (2 * 2^(t-2)) (3*t) ≤ 2^t
+lemma max_K_glue_le_pow_two (t : ℕ) (ht : t ≥ 4) : max (2 * 2^(t-2)) (3*t) ≤ 2^t := by
+  -- Split: small cases (4,5,6,7) vs. tail (t ≥ 8)
+  by_cases hlt8 : t < 8
+  · -- Small cases: 4 ≤ t < 8
+    -- Pattern match on the four cases
+    match t, ht, hlt8 with
+    | 4, _, _ => norm_num  -- max(8, 12) = 12 ≤ 16
+    | 5, _, _ => norm_num  -- max(16, 15) = 16 ≤ 32
+    | 6, _, _ => norm_num  -- max(32, 18) = 32 ≤ 64
+    | 7, _, _ => norm_num  -- max(64, 21) = 64 ≤ 128
+  · -- Tail: t ≥ 8
+    have ht8 : 8 ≤ t := le_of_not_gt hlt8
+    have h1 : 2 * 2^(t-2) ≤ 2^t :=
+      two_mul_pow_sub_two_le_pow t (le_trans (by decide : 2 ≤ 4) ht)
+    have h2 : 3 * t ≤ 2^t := three_mul_le_two_pow_of_ge8 t ht8
+    exact (max_le_iff.mpr ⟨h1, h2⟩)
 
 /-- Technical bound: t·log₂(3/2) ≤ β·(2^t + 3U) for β ≥ 1, t ≥ 3, U ≥ 1
 

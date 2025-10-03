@@ -1,0 +1,30 @@
+{
+  "timestamp": "2025-10-03 08:56:00 UTC",
+  "solver": "Z3",
+  "total_axioms": 2,
+  "results": [
+    {
+      "solver": "Z3",
+      "file": "sedt_overhead_bound.smt2",
+      "result": "UNSAT",
+      "time_ms": 117,
+      "model": null,
+      "error": null
+    },
+    {
+      "solver": "Z3",
+      "file": "t_log_bound.smt2",
+      "result": "UNSAT",
+      "time_ms": 130,
+      "model": null,
+      "error": null
+    }
+  ],
+  "summary": {
+    "UNSAT": 2,
+    "SAT": 0,
+    "UNKNOWN": 0,
+    "TIMEOUT": 0,
+    "ERROR": 0
+  }
+}
