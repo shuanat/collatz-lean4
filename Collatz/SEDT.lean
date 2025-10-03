@@ -231,6 +231,134 @@ def T_shortcut (r : ℕ) : ℕ := (3 * r + 1) / 2
 noncomputable def single_step_ΔV (r : ℕ) (β : ℝ) : ℝ :=
   V (T_shortcut r) β - V r β
 
+/-- Helper: Arithmetic identity for shortcut step
+
+    From r+1 = k+k and 2 ∣ 3r+1, we get (3r+1)/2 + 1 = 3k.
+
+    Key trick (from expert): multiply both sides by 2 and cancel,
+    avoiding fragile division lemmas.
+
+    Reference: Expert solution 2025-10-03 (Anatoliy)
+-/
+private lemma helper_shortcut_arithmetic (r k : ℕ) (_hr_odd : Odd r) (hk : r + 1 = k + k)
+  (h2_dvd : 2 ∣ 3 * r + 1) :
+  (3 * r + 1) / 2 + 1 = 3 * k := by
+  -- turn `k + k` into `2*k`
+  have hk2 : r + 1 = 2 * k := by simpa [two_mul] using hk
+  -- cancel after multiplying both sides by 2
+  have h2pos : 0 < 2 := by decide
+  refine (Nat.mul_right_cancel h2pos ?_)   -- goal: 2*lhs = 2*rhs
+  calc
+    ((3 * r + 1) / 2 + 1) * 2
+        = (((3 * r + 1) / 2) + 1) * 2 := rfl
+    _   = ((3 * r + 1) / 2) * 2 + 1 * 2 := by rw [add_mul]
+    _   = ((3 * r + 1) / 2) * 2 + 2 := by simp
+    _   = (3 * r + 1) + 2 := by
+            have hmdc : ((3 * r + 1) / 2) * 2 = 3 * r + 1 :=
+              Nat.div_mul_cancel h2_dvd
+            rw [hmdc]
+    _   = 3 * r + 3 := by omega
+    _   = 3 * (r + 1) := by ring
+    _   = 3 * (2 * k) := by rw [hk2]
+    _   = (3 * 2) * k := by rw [mul_assoc]
+    _   = (2 * 3) * k := by rw [mul_comm 3 2]
+    _   = 2 * (3 * k) := by rw [mul_assoc]
+    _   = (3 * k) * 2 := by rw [mul_comm]
+
+/-- Depth drops by exactly 1 for shortcut step (PROVEN LEMMA)
+
+    For odd r, T(r)+1 = 3(r+1)/2, so:
+    ν₂(T(r)+1) = ν₂(3) + ν₂((r+1)/2) = 0 + (ν₂(r+1) - 1)
+
+    This is the KEY lemma for the shortcut step correctness.
+
+    Reference: Expert solution 2025-10-03 (Anatoliy)
+-/
+lemma depth_drop_one_shortcut (r : ℕ) (hr_odd : Odd r) :
+  depth_minus (T_shortcut r) + 1 = depth_minus r := by
+  classical
+  -- `r` odd ⇒ `r+1` even, so `r+1 = k + k`
+  obtain ⟨k, hk⟩ := (hr_odd.add_one)
+  -- also `2 ∣ 3r+1`
+  have h2_dvd : 2 ∣ 3 * r + 1 := by
+    have : Odd (3 * r) := Nat.odd_mul.mpr ⟨by decide, hr_odd⟩
+    exact even_iff_two_dvd.mp this.add_one
+  -- the arithmetic identity `(3r+1)/2 + 1 = 3k`
+  have h_tr1 : (3 * r + 1) / 2 + 1 = 3 * k :=
+    helper_shortcut_arithmetic r k hr_odd hk h2_dvd
+
+  -- Convert `k+k` to `2*k`
+  have hk2 : r + 1 = 2 * k := by simpa [two_mul] using hk
+
+  -- factorization of both sides at 2
+  have h_fac_T : depth_minus (T_shortcut r)
+      = (3 * k).factorization 2 := by
+    -- depth_minus (T r) = (T r + 1).factorization 2 = (3k).factorization 2
+    simp [depth_minus, T_shortcut, h_tr1]
+
+  have h_fac_r : depth_minus r
+      = (2 * k).factorization 2 := by
+    -- depth_minus r = (r+1).factorization 2 = (2*k).factorization 2
+    simp [depth_minus, hk2]
+
+  -- multiplicativity on products, projected at prime 2
+  have h_mul3 :
+      (3 * k).factorization 2
+        = (3).factorization 2 + k.factorization 2 := by
+    have h3ne : (3 : ℕ) ≠ 0 := by decide
+    have hkne : k ≠ 0 := by
+      -- from r odd ⇒ r ≥ 1 ⇒ r+1 ≥ 2 ⇒ k ≥ 1 via r+1 = 2*k
+      have hr1_ge : 2 ≤ r + 1 := by
+        have : 1 ≤ r := hr_odd.pos
+        exact Nat.succ_le_succ this
+      -- From r+1 = 2*k and r+1 ≥ 2, get k ≥ 1
+      have : 1 ≤ k := by
+        have : 2 * k = r + 1 := hk2.symm
+        have : 2 * k ≥ 2 := by omega
+        omega
+      exact ne_of_gt (Nat.zero_lt_of_lt (Nat.succ_le_iff.mp this))
+    have := Nat.factorization_mul h3ne hkne
+    simpa using congrArg (fun f => f 2) this
+
+  have h_mul2 :
+      (2 * k).factorization 2
+        = (2).factorization 2 + k.factorization 2 := by
+    have h2ne : (2 : ℕ) ≠ 0 := by decide
+    have hkne : k ≠ 0 := by
+      -- same as above
+      have hr1_ge : 2 ≤ r + 1 := by
+        have : 1 ≤ r := hr_odd.pos
+        exact Nat.succ_le_succ this
+      have : 1 ≤ k := by
+        have : 2 * k = r + 1 := hk2.symm
+        have : 2 * k ≥ 2 := by omega
+        omega
+      exact ne_of_gt (Nat.zero_lt_of_lt (Nat.succ_le_iff.mp this))
+    have := Nat.factorization_mul h2ne hkne
+    simpa using congrArg (fun f => f 2) this
+
+  -- constants at prime 2: 2 ∤ 3 ⇒ exponent 0, and (2).factorization 2 = 1
+  have h3fac0 : (3).factorization 2 = 0 := by
+    have : ¬ 2 ∣ (3 : ℕ) := by decide
+    simpa using Nat.factorization_eq_zero_of_not_dvd this
+
+  have h2fac1 : (2).factorization 2 = 1 := by
+    -- via prime-power factorization, project at 2
+    have h := @Nat.Prime.factorization_pow 2 1 Nat.prime_two
+    have := congrArg (fun f => f 2) h
+    simp [pow_one, Finsupp.single_eq_same] at this
+    exact this
+
+  -- Assemble: depth_minus (T r) + 1 = depth_minus r
+  calc
+    depth_minus (T_shortcut r) + 1
+        = ((3 * k).factorization 2) + 1 := by simp [h_fac_T]
+    _   = ((3).factorization 2 + k.factorization 2) + 1 := by simp [h_mul3]
+    _   = (0 + k.factorization 2) + 1 := by simp [h3fac0]
+    _   = ((2).factorization 2 + k.factorization 2) := by simp [h2fac1, add_comm]
+    _   = (2 * k).factorization 2 := by simp [h_mul2]
+    _   = depth_minus r := by simp [h_fac_r]
+
 /-- Modeling axiom: Single Collatz step (shortcut) has bounded potential change
 
     For odd r with β ≥ 1, the shortcut step T(r) = (3r+1)/2 gives:
