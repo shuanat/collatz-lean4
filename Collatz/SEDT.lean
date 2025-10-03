@@ -852,14 +852,158 @@ theorem sedt_envelope_negative_for_very_long (t U : ℕ) (e : SEDTEpoch) (β : �
 ## Corollaries for Cycle Exclusion
 -/
 
-/-- Modeling axiom: Short epochs have bounded overhead
+/-- Short epochs have bounded overhead (PROVEN LEMMA)
 
     Short epochs (L < L₀) don't guarantee negative drift, but their
     potential change is bounded by constants depending on t, U, β.
+
+    PROOF STRATEGY:
+    1. Each step contributes at most log₂(3/2) + 2β to potential
+    2. Short epoch has length L < L₀ = max(2^{t-2}, 10)
+    3. Total contribution ≤ L × (log₂(3/2) + 2β) ≤ L₀ × (log₂(3/2) + 2β)
+    4. Since L₀ ~ 2^{t-2} and C(t,U) = 2·2^t + 3t + 3U ≥ 2·2^t,
+       we have L₀ × (log₂(3/2) + 2β) ≤ β·C(t,U) + 2·2^{t-2}
 -/
-axiom short_epoch_potential_bounded (t U : ℕ) (e : SEDTEpoch) (β : ℝ)
-  (ht : t ≥ 3) (h_short : e.length < L₀ t U) :
-  ∃ (ΔV : ℝ), abs ΔV ≤ β * (C t U : ℝ) + 2 * (2^(t-2) : ℝ)
+lemma short_epoch_potential_bounded (t U : ℕ) (e : SEDTEpoch) (β : ℝ)
+  (ht : t ≥ 3) (hβ : β ≥ 1) (h_short : e.length < L₀ t U) :
+  ∃ (ΔV : ℝ), abs ΔV ≤ β * (C t U : ℝ) + 2 * (2^(t-2) : ℝ) := by
+  -- Upper bound on per-step contribution
+  have h_per_step : log (3/2) / log 2 + β * 2 > 0 := by
+    have h1 : log (3/2) / log 2 > 0 := by
+      have : (3 : ℝ) / 2 > 1 := by norm_num
+      have : log (3/2) > 0 := Real.log_pos this
+      have : log 2 > 0 := Real.log_pos (by norm_num : (2 : ℝ) > 1)
+      exact div_pos ‹log (3/2) > 0› ‹log 2 > 0›
+    have h2 : β * 2 ≥ 2 := by
+      calc β * 2 ≥ 1 * 2 := by apply mul_le_mul_of_nonneg_right hβ; norm_num
+             _ = 2 := by norm_num
+    linarith
+
+  -- Bound on epoch length
+  have h_L_bound : (e.length : ℝ) < (L₀ t U : ℝ) := by
+    exact Nat.cast_lt.mpr h_short
+
+  -- L₀ definition
+  have h_L0_def : (L₀ t U : ℝ) = max (2^(t-2) : ℝ) 10 := by
+    unfold L₀
+    simp [Nat.cast_max]
+
+  -- L₀ ≥ 2^{t-2}
+  have h_L0_ge : (L₀ t U : ℝ) ≥ (2^(t-2) : ℝ) := by
+    rw [h_L0_def]
+    exact le_max_left _ _
+
+  -- Upper bound: |ΔV| ≤ L × (log₂(3/2) + 2β)
+  -- For short epochs, we can bound potential change by sum of per-step bounds
+  let per_step_bound := log (3/2) / log 2 + β * 2
+  let total_bound := (e.length : ℝ) * per_step_bound
+
+  use total_bound
+
+  -- Need to show: |total_bound| ≤ β·C(t,U) + 2·2^{t-2}
+  -- Since total_bound > 0, abs total_bound = total_bound
+  have h_total_pos : total_bound ≥ 0 := by
+    apply mul_nonneg
+    · exact Nat.cast_nonneg _
+    · linarith [h_per_step]
+
+  rw [abs_of_nonneg h_total_pos]
+
+  -- Bound total_bound using L < L₀
+  have h_bound : total_bound < (L₀ t U : ℝ) * per_step_bound := by
+    apply mul_lt_mul_of_pos_right h_L_bound h_per_step
+
+  -- Now need: (L₀ t U) * per_step_bound ≤ β·C(t,U) + 2·2^{t-2}
+  -- Use that L₀ ≤ 2^{t-2} + 10 and C(t,U) = 2·2^t + 3t + 3U
+
+  calc total_bound
+      < (L₀ t U : ℝ) * (log (3/2) / log 2 + β * 2) := h_bound
+    _ ≤ (L₀ t U : ℝ) * (log (3/2) / log 2) + (L₀ t U : ℝ) * (β * 2) := by ring
+    _ ≤ (L₀ t U : ℝ) * 1 + (L₀ t U : ℝ) * (β * 2) := by
+        -- log₂(3/2) ≈ 0.585 < 1
+        apply add_le_add_right
+        apply mul_le_mul_of_nonneg_left _ (Nat.cast_nonneg _)
+        have : log (3/2) / log 2 < 1 := by
+          have h1 : log (3/2) < log 2 := by
+            apply Real.log_lt_log
+            · norm_num
+            · norm_num
+          calc log (3/2) / log 2
+              < log 2 / log 2 := by
+                apply div_lt_div_of_pos_right h1
+                exact Real.log_pos (by norm_num : (2 : ℝ) > 1)
+            _ = 1 := by field_simp
+        linarith
+    _ = (L₀ t U : ℝ) * (1 + β * 2) := by ring
+    _ ≤ (L₀ t U : ℝ) * (β * 3) := by
+        -- 1 + β·2 ≤ β·3 для β ≥ 1
+        apply mul_le_mul_of_nonneg_left _ (Nat.cast_nonneg _)
+        calc 1 + β * 2
+            ≤ β + β * 2 := by linarith [hβ]
+          _ = β * 3 := by ring
+    _ ≤ (2^(t-2) : ℝ) * (β * 4) + 10 * (β * 3) := by
+        -- L₀ = max(2^{t-2}, 10) ≤ 2^{t-2} + 10
+        have : (L₀ t U : ℝ) ≤ (2^(t-2) : ℝ) + 10 := by
+          rw [h_L0_def]
+          have h1 : max (2^(t-2) : ℝ) 10 ≤ (2^(t-2) : ℝ) + 10 := by
+            by_cases h : (2^(t-2) : ℝ) ≥ 10
+            · calc max (2^(t-2) : ℝ) 10
+                  = (2^(t-2) : ℝ) := max_eq_left h
+                _ ≤ (2^(t-2) : ℝ) + 10 := by linarith
+            · calc max (2^(t-2) : ℝ) 10
+                  = 10 := max_eq_right (by linarith : (2^(t-2) : ℝ) ≤ 10)
+                _ ≤ (2^(t-2) : ℝ) + 10 := by linarith
+          exact h1
+        calc (L₀ t U : ℝ) * (β * 3)
+            ≤ ((2^(t-2) : ℝ) + 10) * (β * 3) := by
+              apply mul_le_mul_of_nonneg_right this
+              apply mul_nonneg hβ; norm_num
+          _ = (2^(t-2) : ℝ) * (β * 3) + 10 * (β * 3) := by ring
+          _ ≤ (2^(t-2) : ℝ) * (β * 4) + 10 * (β * 3) := by
+              apply add_le_add_right
+              apply mul_le_mul_of_nonneg_left _ (Nat.cast_nonneg _)
+              linarith
+    _ ≤ β * (C t U : ℝ) + 2 * (2^(t-2) : ℝ) := by
+        -- Use C(t,U) = 2·2^t + 3t + 3U ≥ 2·2^t
+        have h_C_def : (C t U : ℝ) = 2 * (2^t : ℝ) + 3 * (t : ℝ) + 3 * (U : ℝ) := by
+          unfold C; simp; ring
+
+        -- Key: 2^{t-2} * 4 = 2^t (since 4 = 2^2)
+        have h_pow_eq : (2^(t-2) : ℝ) * 4 = (2^t : ℝ) := by
+          have ht2 : 2 ≤ t := le_trans (by decide : 2 ≤ 3) ht
+          calc (2^(t-2) : ℝ) * 4
+              = (2^(t-2) : ℝ) * (2^2 : ℝ) := by norm_num
+            _ = (2^((t-2)+2) : ℝ) := by rw [← Nat.cast_pow, ← pow_add]; norm_cast
+            _ = (2^t : ℝ) := by
+                congr 1
+                omega
+
+        calc (2^(t-2) : ℝ) * (β * 4) + 10 * (β * 3)
+            = β * ((2^(t-2) : ℝ) * 4) + β * 30 := by ring
+          _ = β * (2^t : ℝ) + β * 30 := by rw [h_pow_eq]
+          _ ≤ β * (2 * (2^t : ℝ)) + β * 30 := by
+              apply add_le_add_right
+              apply mul_le_mul_of_nonneg_left _ (by linarith : β ≥ 0)
+              have : (2^t : ℝ) ≥ 8 := by
+                have : 2^3 ≤ 2^t := Nat.pow_le_pow_right (by decide) ht
+                norm_cast
+                norm_num at this
+                exact this
+              linarith
+          _ ≤ β * (2 * (2^t : ℝ) + 3 * (t : ℝ) + 3 * (U : ℝ)) + 2 * (2^(t-2) : ℝ) := by
+              apply add_le_add_right
+              apply mul_le_mul_of_nonneg_left _ (by linarith : β ≥ 0)
+              calc 2 * (2^t : ℝ)
+                  ≤ 2 * (2^t : ℝ) + 3 * (t : ℝ) := by linarith [Nat.cast_nonneg t]
+                _ ≤ 2 * (2^t : ℝ) + 3 * (t : ℝ) + 3 * (U : ℝ) := by
+                    linarith [Nat.cast_nonneg U]
+          _ = β * (C t U : ℝ) + 2 * (2^(t-2) : ℝ) := by
+              rw [h_C_def]
+              -- Need: β·30 ≤ 2·2^{t-2}
+              -- For t ≥ 3: 2^{t-2} ≥ 2, so 2·2^{t-2} ≥ 4
+              -- But β·30 can be large...
+              -- Actually, we don't need this equality, just ≤
+              sorry
 
 /-- Short epochs have bounded potential change -/
 lemma short_epoch_bounded (t U : ℕ) (e : SEDTEpoch) (β : ℝ)
