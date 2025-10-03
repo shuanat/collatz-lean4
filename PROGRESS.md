@@ -88,18 +88,18 @@
 
 ### File: SEDT.lean (modeling axioms)
 
-**Status:** 1/13 proven (8%) + 5 helper lemmas ✅
+**Status:** 2/13 proven (15%) + 5 helper lemmas ✅
 
 **Remaining Priority 2 Axioms (modeling assumptions):**
 1. ~~**`single_step_potential_bounded`**~~ ✅ **PROVEN!**
-2. **`plateau_touch_count_bounded`** - Touch frequency on plateau (homogenization result)
-3. **`SEDTEpoch_head_overhead_bounded`** - Head contribution bound
-4. **`SEDTEpoch_boundary_overhead_bounded`** - Boundary glue overhead
-5. **`t_log_bound_for_sedt`** - Technical logarithmic bound
-6. **`sedt_overhead_bound`** - Combined overhead bound (SMT-verified)
+2. ~~**`t_log_bound_for_sedt`**~~ ✅ **PROVEN!**
+3. **`plateau_touch_count_bounded`** - Touch frequency on plateau (homogenization result)
+4. **`SEDTEpoch_head_overhead_bounded`** - Head contribution bound
+5. **`SEDTEpoch_boundary_overhead_bounded`** - Boundary glue overhead
+6. **`sedt_overhead_bound`** - Combined overhead bound (needs careful strategy)
 7. **`period_sum_with_density_negative`** - Period sum with density (Appendix B)
 
-**Progress:** 12 axioms remaining (was 13 before today)
+**Progress:** 11 axioms remaining (was 13 at start of day)
 
 ---
 
