@@ -51,14 +51,26 @@ noncomputable def β₀ (t U : ℕ) : ℝ :=
 noncomputable def ε (t U : ℕ) (β : ℝ) : ℝ :=
   β * (2 - α t U) - log (3/2) / log 2
 
-/-- Constant C(t,U) - maximum cumulative overhead per epoch -/
-def C (t U : ℕ) : ℕ :=
-  -- Simplified bound: 2^t + 3*U (conservative)
-  2^t + 3*U
+/-- Constant C(t,U) - maximum cumulative overhead per epoch
 
-/-- Threshold length L₀(t,U) for "long" epochs -/
+    CORRECTED: Must account for head (2^t), boundary (K_glue ≤ 2^t), and logarithmic terms.
+    Previous value 2^t + 3*U was insufficient.
+-/
+def C (t U : ℕ) : ℕ :=
+  -- Head: ~2^t, Boundary: ~2^t, Log terms: ~t, U terms: 3*U
+  2 * 2^t + 3 * t + 3 * U
+
+/-- Threshold length L₀(t,U) for "long" epochs
+
+    ⚠️ WARNING: This value is TOO SMALL for mathematical correctness!
+    Numerical verification shows that negative drift dominance requires
+    L >> Q_t (possibly L ≥ 100·Q_t or more).
+
+    This definition is kept minimal for structural formalization,
+    but axioms below use existential quantifiers for correct thresholds.
+-/
 def L₀ (t _U : ℕ) : ℕ :=
-  -- Long epochs have length ≥ Q_t
+  -- Minimal definition for structure (NOT mathematically sufficient!)
   max (2^(t-2)) 10
 
 /-- Glue constant K_glue(t) for boundary overhead -/
@@ -268,11 +280,14 @@ lemma touch_multibit_bonus (r : ℕ) (t : ℕ) (ht : t ≥ 3)
 -/
 axiom two_mul_le_two_pow (t : ℕ) (ht : t ≥ 3) : 2 * t ≤ 2^t
 
-/-- Standard fact: K_glue bound for t ≥ 3
+/-- Standard fact: K_glue bound for t ≥ 4
 
-    max(2·2^{t-2}, 3t) ≤ 2^t for t ≥ 3.
+    max(2·2^{t-2}, 3t) ≤ 2^t for t ≥ 4.
+
+    Note: For t=3, max(4, 9) = 9 > 8, so this fails!
+    The bound holds starting from t=4.
 -/
-axiom max_K_glue_le_pow_two (t : ℕ) (ht : t ≥ 3) : max (2 * 2^(t-2)) (3*t) ≤ 2^t
+axiom max_K_glue_le_pow_two (t : ℕ) (ht : t ≥ 4) : max (2 * 2^(t-2)) (3*t) ≤ 2^t
 
 /-- Technical bound: t·log₂(3/2) ≤ β·(2^t + 3U) for β ≥ 1, t ≥ 3, U ≥ 1
 
@@ -361,25 +376,39 @@ lemma boundary_overhead_bound (t : ℕ) (e : SEDTEpoch) (β : ℝ) (_ht : t ≥ 
 ## Main SEDT Theorem
 -/
 
-/-- Modeling axiom: For long epochs, negative drift dominates overhead
+/-- ⚠️ CORRECTED AXIOM: Existence of sufficient epoch length for negative drift dominance
 
-    This captures the key numerical inequality: for L ≥ L₀ = max(2^{t-2}, 10),
-    the negative drift term ε·L dominates the overhead β·C.
+    PREVIOUS FORMULATION WAS INCORRECT! It claimed dominance at L = Q_t = 2^{t-2},
+    but numerical verification shows this is FALSE.
 
-    Mathematically: ε·2^{t-2} > β·4·2^t when parameters satisfy t ≥ 3, U ≥ 1, β > β₀.
-    This requires detailed numerical analysis of ε, β₀, α dependencies.
+    CORRECT FORMULATION: There exists a threshold L_crit (much larger than Q_t)
+    such that for epochs L ≥ L_crit, negative drift dominates overhead.
+
+    Mathematical intuition: ε is small (≈ 0.01-0.1 for reasonable β), C is large (≈ 2^{t+1}),
+    so we need L >> C/ε ≈ 10·2^t / 0.01 ≈ 1000·2^t >> 2^{t-2}.
+
+    For formalization: we assert existence of such threshold without computing exact value.
 -/
-axiom sedt_long_epoch_dominance_axiom (t U : ℕ) (β : ℝ)
+axiom exists_very_long_epoch_threshold (t U : ℕ) (β : ℝ)
   (ht : t ≥ 3) (hU : U ≥ 1) (hβ : β > β₀ t U) :
-  ε t U β * (2^(t-2) : ℝ) > β * (4 * 2^t : ℝ)
+  ∃ (L_crit : ℕ),
+    L_crit ≥ 100 * 2^(t-2) ∧  -- At least 100x the minimal Q_t
+    ∀ (L : ℕ), L ≥ L_crit →
+      ε t U β * (L : ℝ) > β * (C t U : ℝ)
 
-/-- Modeling axiom: Bound negativity for long epochs
+/-- ⚠️ CORRECTED AXIOM: Bound negativity for VERY long epochs
 
-    For long epochs (L ≥ L₀), the bound -ε·L + β·C is negative.
-    This follows from sedt_long_epoch_dominance_axiom and arithmetic.
+    PREVIOUS: Claimed negativity for L ≥ L₀ (too weak!)
+    CORRECTED: Uses the existence of L_crit from above axiom.
+
+    For epochs with length L ≥ L_crit (where L_crit comes from
+    exists_very_long_epoch_threshold), the bound -ε·L + β·C is negative.
 -/
-axiom sedt_bound_negative (t U : ℕ) (β : ℝ) (length : ℕ)
-  (ht : t ≥ 3) (hU : U ≥ 1) (hβ : β > β₀ t U) (h_long : length ≥ L₀ t U) :
+axiom sedt_bound_negative_for_very_long_epochs (t U : ℕ) (β : ℝ) (length : ℕ)
+  (ht : t ≥ 3) (hU : U ≥ 1) (hβ : β > β₀ t U)
+  (h_very_long : ∃ (L_crit : ℕ),
+     (∀ (L : ℕ), L ≥ L_crit → ε t U β * (L : ℝ) > β * (C t U : ℝ)) ∧
+     length ≥ L_crit) :
   -(ε t U β) * (length : ℝ) + β * (C t U : ℝ) < 0
 
 /-- Modeling axiom: Combined dominance for negativity
@@ -390,13 +419,19 @@ axiom sedt_negativity_from_bound (ε β C L L₀ : ℝ)
   (hε : ε > 0) (hL : L ≥ L₀) (h_bound : -ε * L + β * C < 0) :
   ∀ (ΔV : ℝ), ΔV ≤ -ε * L + β * C → ΔV < 0
 
-/-- SEDT Envelope Theorem
+/-- ⚠️ SEDT Envelope Theorem (WEAKENED VERSION)
 
-    For any long t-epoch (L ≥ L₀(t,U)) with β > β₀(t,U):
+    IMPORTANT: This theorem now provides only the UPPER BOUND on potential change,
+    without guaranteeing ΔV < 0 for all "long" epochs.
+
+    For any t-epoch with β > β₀(t,U):
 
     ΔV ≤ -ε(t,U;β)·L + β·C(t,U)
 
     where ε > 0 is the negative drift coefficient.
+
+    NEGATIVITY (ΔV < 0) is guaranteed ONLY for VERY long epochs
+    (L ≥ L_crit where L_crit >> Q_t, see exists_very_long_epoch_threshold).
 
     **Mathematical Proof Strategy:**
     1. Decompose epoch into head + plateau + tail
@@ -404,22 +439,19 @@ axiom sedt_negativity_from_bound (ε β C L L₀ : ℝ)
     3. Plateau: deterministic t-touch frequency (1/Q_t) → multibit bonus
     4. Per-step accounting: log₂(3/2) growth vs β·(2-α) depth decrease
     5. Net per-step: -ε where ε = β(2-α) - log₂(3/2) > 0
-    6. Long epoch (L ≥ L₀): negative term -ε·L dominates overhead β·C
+    6. ONLY for L ≥ L_crit: negative term -ε·L dominates overhead β·C
 
-    **Formalization Status:** Statement formalized, proof deferred (see paper Appendix A)
+    **Formalization Status:** Bound formalized; negativity requires L >> Q_t
 -/
-theorem sedt_envelope (t U : ℕ) (e : SEDTEpoch) (β : ℝ)
+theorem sedt_envelope_bound (t U : ℕ) (e : SEDTEpoch) (β : ℝ)
   (ht : t ≥ 3) (hU : U ≥ 1)
-  (hβ : β > β₀ t U)
-  (h_long : e.length ≥ L₀ t U) :
-  ∃ (ΔV : ℝ), ΔV ≤ -(ε t U β) * (e.length : ℝ) + β * (C t U : ℝ) ∧
-              ΔV < 0 := by
-  -- Full proof structure:
+  (hβ : β > β₀ t U) :
+  ∃ (ΔV : ℝ), ΔV ≤ -(ε t U β) * (e.length : ℝ) + β * (C t U : ℝ) := by
+  -- Proof structure (bound only, no negativity claim):
   -- 1. Head accounting: ΔV_head ≤ β·C_head
   -- 2. Plateau accounting: per-step -ε (via touch frequency and multibit bonus)
   -- 3. Boundary: ΔV_boundary ≤ β·K_glue
-  -- 4. Sum: ΔV_total ≤ -ε·L + β·(C_head + K_glue) ≤ -ε·L + β·C
-  -- 5. For L ≥ L₀, ε·L > β·C, so ΔV < 0
+  -- 4. Sum: ΔV_total ≤ -ε·L + β·C
 
   -- Step 1: Get head contribution
   obtain ⟨ΔV_head, h_head⟩ := head_contribution_bound t U e β ht hU
@@ -431,29 +463,47 @@ theorem sedt_envelope (t U : ℕ) (e : SEDTEpoch) (β : ℝ)
   -- Step 3: Get boundary overhead
   obtain ⟨ΔV_boundary, h_boundary⟩ := boundary_overhead_bound t e β ht
 
-  -- Step 4: Construct total ΔV (simplified model)
-  -- ΔV_total ≈ ΔV_head + drift_per_step * L_plateau + ΔV_boundary
-  -- For simplification, assume L_plateau ≈ L (dominant term)
+  -- Step 4: Construct total ΔV
   let ΔV_total := ΔV_head + drift_per_step * (e.length : ℝ) + ΔV_boundary
 
   use ΔV_total
 
-  have h_bound : ΔV_total ≤ -(ε t U β) * (e.length : ℝ) + β * (C t U : ℝ) := by
-    calc ΔV_total
-        = ΔV_head + drift_per_step * (e.length : ℝ) + ΔV_boundary := rfl
-      _ ≤ -(ε t U β) * (e.length : ℝ) + β * (C t U : ℝ) :=
-        sedt_full_bound_technical t U β ΔV_head drift_per_step ΔV_boundary e.length ht hU
-          h_head h_drift_neg h_boundary
+  -- Prove the bound
+  calc ΔV_total
+      = ΔV_head + drift_per_step * (e.length : ℝ) + ΔV_boundary := rfl
+    _ ≤ -(ε t U β) * (e.length : ℝ) + β * (C t U : ℝ) :=
+      sedt_full_bound_technical t U β ΔV_head drift_per_step ΔV_boundary e.length ht hU
+        h_head h_drift_neg h_boundary
+
+/-- ⚠️ SEDT Envelope Theorem with Negativity (VERY LONG EPOCHS ONLY)
+
+    For VERY long epochs (L ≥ L_crit, where L_crit >> Q_t),
+    the potential change is STRICTLY NEGATIVE.
+
+    This is the version that provides cycle exclusion, but requires
+    much stronger assumptions on epoch length than the original L₀.
+-/
+theorem sedt_envelope_negative_for_very_long (t U : ℕ) (e : SEDTEpoch) (β : ℝ)
+  (ht : t ≥ 3) (hU : U ≥ 1)
+  (hβ : β > β₀ t U)
+  (h_very_long : ∃ (L_crit : ℕ),
+     (∀ (L : ℕ), L ≥ L_crit → ε t U β * (L : ℝ) > β * (C t U : ℝ)) ∧
+     e.length ≥ L_crit) :
+  ∃ (ΔV : ℝ), ΔV ≤ -(ε t U β) * (e.length : ℝ) + β * (C t U : ℝ) ∧
+              ΔV < 0 := by
+  -- Get the bound from sedt_envelope_bound
+  obtain ⟨ΔV_total, h_bound⟩ := sedt_envelope_bound t U e β ht hU hβ
+
+  use ΔV_total
 
   constructor
   · exact h_bound
   · -- Show: ΔV_total < 0
     have hε_pos : ε t U β > 0 := epsilon_pos t U β ht hU hβ
-    have hL_lower : (e.length : ℝ) ≥ (L₀ t U : ℝ) := Nat.cast_le.mpr h_long
     have h_bound_neg : -(ε t U β) * (e.length : ℝ) + β * (C t U : ℝ) < 0 :=
-      sedt_bound_negative t U β e.length ht hU hβ h_long
-    exact sedt_negativity_from_bound (ε t U β) β (C t U : ℝ) (e.length : ℝ) (L₀ t U : ℝ)
-      hε_pos hL_lower h_bound_neg ΔV_total h_bound
+      sedt_bound_negative_for_very_long_epochs t U β e.length ht hU hβ h_very_long
+    -- From bound and negativity of bound, get negativity of ΔV
+    linarith [h_bound, h_bound_neg]
 
 /-!
 ## Corollaries for Cycle Exclusion

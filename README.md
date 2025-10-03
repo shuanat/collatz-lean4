@@ -16,10 +16,11 @@ This repository contains Lean 4 formalizations of key mathematical results relat
 |---------|------|--------|-------------|
 | **Ord‑Fact** | `Collatz/OrdFact.lean` | ✅ Proven | ord_{2^t}(3) = 2^{t-2} for t ≥ 3 |
 | **⟨Δ⟩ generates Z/Q_t Z** | `Collatz/Semigroup.lean` | ✅ Proven | Junction shifts additively generate full group |
-| **SEDT envelope** | `Collatz/SEDT.lean` | ✅ Statement formalized | Negative drift ΔV ≤ -ε·L + β·C for long epochs |
+| **SEDT envelope** | `Collatz/SEDT.lean` | ⚠️ Axiom-based | Negative drift ΔV ≤ -ε·L + β·C (corrected axioms) |
 
 ### Formalization Status Legend
 - ✅ **Proven**: No `sorry` placeholders, all steps verified
+- ⚠️ **Axiom-based**: Uses mathematical axioms (numerically verified for consistency)
 - 🟡 **Structured**: Logical structure complete, some steps documented as `sorry`  
 - 📝 **Statement only**: Theorem formalized, proof deferred as future work
 
@@ -103,23 +104,34 @@ theorem delta_generates {t : ℕ} (ht : t ≥ 3) :
 2. 1 is odd → primitive generator of Z/Q_t Z  
 3. ⟨1⟩ = Z/Q_t Z ⊆ ⟨DeltaSet⟩ → ⟨DeltaSet⟩ = Z/Q_t Z
 
-### 3. SEDT Envelope Theorem
+### 3. SEDT Envelope Theorem ⚠️
 
 **Theorem (`SEDT.lean`):**  
-For long t-epochs (L ≥ L₀) with β > β₀(t,U):  
+For t-epochs with β > β₀(t,U), potential change is bounded:  
 ΔV ≤ -ε(t,U;β)·L + β·C(t,U), where ε > 0
 
 ```lean
-theorem sedt_envelope (t U : ℕ) (e : SEDTEpoch) (β : ℝ)
-  (ht : t ≥ 3) (hU : U ≥ 1) (hβ : β > β₀ t U) (h_long : e.length ≥ L₀ t U) :
-  ∃ (ΔV : ℝ), ΔV ≤ -(ε t U β) * (e.length : ℝ) + β * (C t U : ℝ) ∧ ΔV < 0
+-- Bound (always holds)
+theorem sedt_envelope_bound (t U : ℕ) (e : SEDTEpoch) (β : ℝ)
+  (ht : t ≥ 3) (hU : U ≥ 1) (hβ : β > β₀ t U) :
+  ∃ (ΔV : ℝ), ΔV ≤ -(ε t U β) * (e.length : ℝ) + β * (C t U : ℝ)
+
+-- Negativity (only for very long epochs: L >> Q_t)
+theorem sedt_envelope_negative_for_very_long (...)
+  (h_very_long : L ≥ L_crit where L_crit >> 100·Q_t) :
+  ∃ (ΔV : ℝ), ΔV < 0
 ```
+
+**⚠️ Important Note:**  
+Negativity (ΔV < 0) requires **very long epochs** (L ≥ L_crit >> Q_t, possibly L ≥ 100·Q_t or more).
+The original claim for L ≥ Q_t was found to be numerically inconsistent and has been corrected.
+See `reports/2025-10-03_0330_axiom-consistency-check.md` for details.
 
 **Constants defined:**
 - α(t,U): Touch frequency parameter  
 - β₀(t,U): Threshold for β  
 - ε(t,U;β): Negative drift coefficient (β(2-α) - log₂(3/2))  
-- C(t,U), L₀(t,U), K_glue(t): Overhead bounds
+- C(t,U), L₀(t,U), K_glue(t): Overhead bounds (C corrected: 2·2^t + 3t + 3U)
 
 ## 🔧 Development
 
@@ -133,12 +145,12 @@ lake build Collatz.OrdFact
 lake env lean Collatz/Arithmetic.lean
 ```
 
-### `sorry` Status
+### `sorry` and `axiom` Status
 
-- `Collatz/Arithmetic.lean`: 0 `sorry` (complete)
-- `Collatz/OrdFact.lean`: 0 `sorry` (complete; main theorem proven)
-- `Collatz/Semigroup.lean`: 0 `sorry` (complete; junction shift generation proven)
-- `Collatz/SEDT.lean`: may contain remaining `sorry` items marked for future work
+- `Collatz/Arithmetic.lean`: 0 `sorry`, 0 `axiom` (fully proven)
+- `Collatz/OrdFact.lean`: 0 `sorry`, 0 `axiom` (fully proven; main theorem proven)
+- `Collatz/Semigroup.lean`: 0 `sorry`, 0 `axiom` (fully proven; junction shift generation proven)
+- `Collatz/SEDT.lean`: 0 `sorry`, 15 `axiom` (structure complete, uses numerically-verified axioms)
 
 ### CI/CD
 
