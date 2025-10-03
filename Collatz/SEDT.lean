@@ -507,40 +507,96 @@ lemma boundary_overhead_bound (t : ℕ) (e : SEDTEpoch) (β : ℝ) (_ht : t ≥ 
 ## Main SEDT Theorem
 -/
 
-/-- ⚠️ CORRECTED AXIOM: Existence of sufficient epoch length for negative drift dominance
+/-- Existence of sufficient epoch length for negative drift dominance (PROVEN LEMMA)
 
-    PREVIOUS FORMULATION WAS INCORRECT! It claimed dominance at L = Q_t = 2^{t-2},
-    but numerical verification shows this is FALSE.
+    CONSTRUCTIVE PROOF: We explicitly construct L_crit as ⌈β·C/ε⌉ + 1.
 
-    CORRECT FORMULATION: There exists a threshold L_crit (much larger than Q_t)
-    such that for epochs L ≥ L_crit, negative drift dominates overhead.
+    For epochs L ≥ L_crit, negative drift dominates overhead:
+    ε·L > β·C (since L > β·C/ε by construction)
 
-    Mathematical intuition: ε is small (≈ 0.01-0.1 for reasonable β), C is large (≈ 2^{t+1}),
-    so we need L >> C/ε ≈ 10·2^t / 0.01 ≈ 1000·2^t >> 2^{t-2}.
+    The lower bound L_crit ≥ 100·2^{t-2} follows from:
+    - ε > 0 (from β > β₀)
+    - C = 2·2^t + 3t + 3U ≥ 2·2^t (for U ≥ 1)
+    - β ≥ β₀ > 0
+    Therefore β·C/ε is large enough
 
-    For formalization: we assert existence of such threshold without computing exact value.
+    PROOF STRATEGY:
+    1. Use explicit formula: L_crit = max(⌈β·C/ε⌉ + 1, 100·2^{t-2})
+    2. Part 1: L_crit ≥ 100·2^{t-2} by construction (max)
+    3. Part 2: For L ≥ L_crit, use ε·L ≥ ε·L_crit > β·C
 -/
-axiom exists_very_long_epoch_threshold (t U : ℕ) (β : ℝ)
+lemma exists_very_long_epoch_threshold (t U : ℕ) (β : ℝ)
   (ht : t ≥ 3) (hU : U ≥ 1) (hβ : β > β₀ t U) :
   ∃ (L_crit : ℕ),
-    L_crit ≥ 100 * 2^(t-2) ∧  -- At least 100x the minimal Q_t
+    L_crit ≥ 100 * 2^(t-2) ∧
     ∀ (L : ℕ), L ≥ L_crit →
-      ε t U β * (L : ℝ) > β * (C t U : ℝ)
+      ε t U β * (L : ℝ) > β * (C t U : ℝ) := by
+  -- Key: ε > 0 from β > β₀
+  have hε_pos : ε t U β > 0 := epsilon_pos t U β ht hU hβ
 
-/-- ⚠️ CORRECTED AXIOM: Bound negativity for VERY long epochs
+  -- Explicit construction using max to satisfy both constraints
+  set threshold := β * (C t U : ℝ) / ε t U β with h_threshold_def
+  set L_crit := max (Nat.ceil threshold + 1) (100 * 2^(t-2)) with hL_def
 
-    PREVIOUS: Claimed negativity for L ≥ L₀ (too weak!)
-    CORRECTED: Uses the existence of L_crit from above axiom.
+  use L_crit
+  constructor
+
+  · -- Part 1: L_crit ≥ 100·2^{t-2} (by max construction)
+    rw [hL_def]
+    exact Nat.le_max_right _ _
+
+  · -- Part 2: ∀ L ≥ L_crit, ε·L > β·C
+    intro L hL
+
+    -- Since L ≥ L_crit and L_crit ≥ ⌈threshold⌉ + 1
+    have hL_ge_ceil : L ≥ Nat.ceil threshold + 1 := by
+      calc L ≥ L_crit := hL
+           _ ≥ Nat.ceil threshold + 1 := by rw [hL_def]; exact Nat.le_max_left _ _
+
+    -- From ceiling property: threshold < ⌈threshold⌉ + 1 ≤ L
+    have h_threshold_lt : threshold < (L : ℝ) := by
+      have h1 : threshold ≤ (Nat.ceil threshold : ℝ) := Nat.le_ceil _
+      have h2 : ((Nat.ceil threshold + 1 : ℕ) : ℝ) ≤ (L : ℝ) := by
+        apply Nat.cast_le.mpr
+        exact hL_ge_ceil
+      -- Key: ⌈threshold⌉ + 1 > threshold (ceiling property)
+      have h3 : threshold < (Nat.ceil threshold : ℝ) + 1 := by
+        calc threshold
+            ≤ (Nat.ceil threshold : ℝ) := h1
+          _ < (Nat.ceil threshold : ℝ) + 1 := by linarith
+      calc threshold
+          < (Nat.ceil threshold : ℝ) + 1 := h3
+        _ = ((Nat.ceil threshold + 1 : ℕ) : ℝ) := by norm_cast
+        _ ≤ (L : ℝ) := h2
+
+    -- Multiply both sides by ε > 0
+    calc ε t U β * (L : ℝ)
+        > ε t U β * threshold := by
+          apply mul_lt_mul_of_pos_left h_threshold_lt hε_pos
+      _ = β * (C t U : ℝ) := by
+          rw [h_threshold_def]
+          field_simp
+
+/-- Bound negativity for VERY long epochs (PROVEN LEMMA)
 
     For epochs with length L ≥ L_crit (where L_crit comes from
     exists_very_long_epoch_threshold), the bound -ε·L + β·C is negative.
+
+    PROOF: Direct consequence of the existential witness.
+    If ε·L > β·C, then -ε·L + β·C < 0 by simple arithmetic.
 -/
-axiom sedt_bound_negative_for_very_long_epochs (t U : ℕ) (β : ℝ) (length : ℕ)
-  (ht : t ≥ 3) (hU : U ≥ 1) (hβ : β > β₀ t U)
+lemma sedt_bound_negative_for_very_long_epochs (t U : ℕ) (β : ℝ) (length : ℕ)
+  (_ht : t ≥ 3) (_hU : U ≥ 1) (_hβ : β > β₀ t U)
   (h_very_long : ∃ (L_crit : ℕ),
      (∀ (L : ℕ), L ≥ L_crit → ε t U β * (L : ℝ) > β * (C t U : ℝ)) ∧
      length ≥ L_crit) :
-  -(ε t U β) * (length : ℝ) + β * (C t U : ℝ) < 0
+  -(ε t U β) * (length : ℝ) + β * (C t U : ℝ) < 0 := by
+  -- Extract witness and property
+  obtain ⟨L_crit, h_L_prop, h_len_ge⟩ := h_very_long
+  -- Apply property to length
+  have h_inequality := h_L_prop length h_len_ge
+  -- Arithmetic: ε·length > β·C ⟹ -ε·length + β·C < 0
+  linarith [h_inequality]
 
 /-- Combined dominance for negativity (PROVEN LEMMA)
 
