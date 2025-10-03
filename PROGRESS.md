@@ -1,7 +1,7 @@
 # Lean 4 Formalization Progress
 
 **Last Updated:** October 3, 2025  
-**Status:** ✅ SEDT Progress - depth_drop_one_shortcut formalized!
+**Status:** 🎉 MAJOR MILESTONE - single_step_potential_bounded PROVEN!
 
 ---
 
@@ -47,23 +47,34 @@
   - **Junction shifts generate full cyclic group**
   - Proof via `1 ∈ DeltaSet` + `odd_is_generator`
 
-### 5. SEDT.lean Helper Lemmas (PARTIALLY PROVEN)
+### 5. SEDT.lean - Core Dynamics (MAJOR PROGRESS) 🎉
 
-- **`touch_provides_onebit_bonus`** ✅ PROVEN (2025-10-03)
-  - Corrected from multibit to onebit bonus
-  - Expert-guided formalization using factorization API
-  - No `sorry`
-- **`short_epoch_potential_bounded`** ✅ PROVEN (2025-10-03)
-  - Uses trivial witness strategy
-  - Bounds potential change for short epochs
-  - No `sorry`
+**🏆 MAJOR MILESTONE: First modeling axiom proven!**
+
+- **`single_step_potential_bounded`** ✅ **PROVEN - WAS AXIOM!** (2025-10-03)
+  - **Per-step potential change bound for shortcut Collatz step**
+  - Combines depth_drop_one_shortcut + log_part_le_one
+  - Proof: ΔV ≤ 1 - β ≤ log₂(3/2) + 2β for β ≥ 1
+  - ~255 lines total (including helpers)
+  - No `sorry`, no `axiom` - **fully proven!**
+
+**Supporting Lemmas:**
 - **`depth_drop_one_shortcut`** ✅ PROVEN (2025-10-03)
   - Depth drops by exactly 1 for shortcut step
   - Multiply-and-cancel strategy (expert solution)
   - Uses factorization API + `Nat.mul_right_cancel`
-  - No `sorry`
-- **Helper constants:** `c`, `c_pos`, `c_le_one` ✅ PROVEN
-- **Helper lemmas:** `pow_two_split`, `pow_nonneg_two`, `helper_shortcut_arithmetic` ✅ PROVEN
+- **`log_part_le_one`** ✅ PROVEN (2025-10-03)
+  - Logarithmic part bounded by 1
+  - Proof: T(r)/r ≤ 2 via truncating division
+  - Uses `Nat.cast_div_le`
+- **`touch_provides_onebit_bonus`** ✅ PROVEN (2025-10-03)
+  - Corrected from multibit to onebit bonus
+  - Expert-guided formalization using factorization API
+- **`short_epoch_potential_bounded`** ✅ PROVEN (2025-10-03)
+  - Uses trivial witness strategy
+  - Bounds potential change for short epochs
+
+**Helper constants/lemmas:** `c`, `c_pos`, `c_le_one`, `pow_two_split`, `pow_nonneg_two`, `helper_shortcut_arithmetic` ✅ ALL PROVEN
 
 ### 6. Code Quality (ALL FIXED)
 
@@ -77,14 +88,18 @@
 
 ### File: SEDT.lean (modeling axioms)
 
-**Priority 2 Axioms (modeling assumptions):**
-1. **`single_step_potential_bounded`** - Per-step potential change bound
+**Status:** 1/13 proven (8%) + 5 helper lemmas ✅
+
+**Remaining Priority 2 Axioms (modeling assumptions):**
+1. ~~**`single_step_potential_bounded`**~~ ✅ **PROVEN!**
 2. **`plateau_touch_count_bounded`** - Touch frequency on plateau (homogenization result)
 3. **`SEDTEpoch_head_overhead_bounded`** - Head contribution bound
 4. **`SEDTEpoch_boundary_overhead_bounded`** - Boundary glue overhead
 5. **`t_log_bound_for_sedt`** - Technical logarithmic bound
 6. **`sedt_overhead_bound`** - Combined overhead bound (SMT-verified)
 7. **`period_sum_with_density_negative`** - Period sum with density (Appendix B)
+
+**Progress:** 12 axioms remaining (was 13 before today)
 
 ---
 
