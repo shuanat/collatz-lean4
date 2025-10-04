@@ -5,12 +5,12 @@ import Mathlib.Data.Nat.ModEq
 import Mathlib.Tactic.IntervalCases
 import Mathlib.Data.ZMod.Basic
 import Mathlib.Data.Finset.Basic
-import Collatz.Stratified  -- теперь собирается
+import Collatz.Foundations
 
 noncomputable section
 open Classical
 
-namespace Collatz.Coordinates
+namespace Collatz.Stratified
 
 open Collatz
 open Collatz.Stratified
@@ -38,4 +38,4 @@ theorem parametric_bijection
   -- сюръективность: сводится к вашему описанию S_n/S_n_star
   sorry
 
-end Collatz.Coordinates
+end Collatz.Stratified

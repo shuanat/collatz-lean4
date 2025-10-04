@@ -8,7 +8,7 @@ It states that the multiplicative order of 3 modulo 2^t is exactly Q_t = 2^{t-2}
 
 import Mathlib.Data.ZMod.Basic
 import Mathlib.GroupTheory.OrderOfElement
-import Collatz.Arithmetic
+import Collatz.Foundations.Arithmetic
 import Mathlib.Data.ZMod.Basic
 
 

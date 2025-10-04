@@ -3,8 +3,8 @@ import Mathlib.Data.ZMod.Basic
 import Mathlib.Algebra.Group.Subgroup.Basic
 import Mathlib.Data.Nat.GCD.Basic
 import Mathlib.Data.Nat.Prime.Basic
-import Collatz.Epoch
-import Collatz.OrdFact
+import Collatz.Epochs.Structure
+import Collatz.Epochs.OrdFact
 
 /-!
 # Semigroup ⟨Δ⟩ Generation

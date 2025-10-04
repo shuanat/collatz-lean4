@@ -1,6 +1,6 @@
-import Collatz.Basic
-import Collatz.Arithmetic
-import Collatz.OrdFact
+import Collatz.Foundations.Basic
+import Collatz.Foundations.Arithmetic
+import Collatz.Epochs.OrdFact
 
 /-!
 # Worked Examples for Collatz Formalization

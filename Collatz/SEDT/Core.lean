@@ -6,8 +6,8 @@ import Mathlib.Data.Nat.Factorization.Basic
 import Mathlib.Algebra.Ring.Parity
 import Mathlib.Data.Nat.GCD.Basic
 import Init.Data.Nat.Div.Basic
-import Collatz.Basic
-import Collatz.Epoch
+import Collatz.Foundations.Basic
+import Collatz.Epochs.Structure
 
 /-!
 # SEDT (Scaled Epoch Drift Theorem)

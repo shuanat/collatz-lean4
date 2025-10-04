@@ -11,6 +11,7 @@ import Mathlib.Algebra.Order.Ring.Nat
 import Mathlib.Data.Nat.Factorization.Defs
 import Mathlib.Data.Nat.Prime.Basic
 import Mathlib.Tactic
+import Mathlib.Data.Nat.Factorization.Basic
 
 namespace Collatz.Arithmetic
 
@@ -347,5 +348,10 @@ lemma natCast_pow_zmod_eq_one {a n k : ℕ} :
 lemma natCast_pow_eq_intCast_pow {a k n : ℕ} :
   ((a^k : ℕ) : ZMod n) = ((a : ℕ) : ZMod n)^k := by
   norm_cast
+
+/-- Exponent at step m: e(m) = ν_2(3m+1) -/
+def e (m : ℕ) : ℕ :=
+  if m = 0 then 0
+  else (3 * m + 1).factorization 2
 
 end Collatz.Arithmetic

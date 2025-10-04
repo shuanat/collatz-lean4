@@ -10,9 +10,13 @@ This file contains the foundational definitions for the Collatz framework:
 
 import Mathlib.Data.Nat.Factorization.Basic
 import Mathlib.NumberTheory.Padics.PadicVal.Defs
-import Collatz.Arithmetic
+import Collatz.Foundations.Arithmetic
+import Collatz.Foundations.TwoAdicDepth
 
 namespace Collatz
+
+-- Import e function from Arithmetic
+open Arithmetic (e)
 
 /-- Collatz function for odd integers: T_odd(m) = (3m+1) / 2^e where e = ν_2(3m+1) -/
 def T_odd (m : ℕ) : ℕ :=
@@ -21,13 +25,7 @@ def T_odd (m : ℕ) : ℕ :=
     let numerator := 3 * m + 1
     numerator / (2 ^ (numerator.factorization 2))
 
-/-- Exponent at step m: e(m) = ν_2(3m+1) -/
-def e (m : ℕ) : ℕ :=
-  if m = 0 then 0
-  else (3 * m + 1).factorization 2
 
-/-- Depth to -1 (2-adic depth): depth_-(r) = ν_2(r+1) -/
-def depth_minus (r : ℕ) : ℕ := (r + 1).factorization 2
 
 /-- Collatz sequence starting from r₀ -/
 def collatz_seq (r₀ : ℕ) : ℕ → ℕ

@@ -9,7 +9,7 @@ import Mathlib.Data.Set.Lattice
 import Mathlib.Data.Finset.Basic
 import Mathlib.Data.Real.Basic
 import Mathlib.Analysis.SpecialFunctions.Log.Basic
-import Collatz.Basic
+import Collatz.Foundations.Basic
 
 noncomputable section
 open Classical

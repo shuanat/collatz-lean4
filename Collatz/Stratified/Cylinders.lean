@@ -9,18 +9,18 @@ import Mathlib.Data.Nat.Factorization.Defs
 import Mathlib.Data.Set.Lattice
 import Mathlib.Data.Nat.Basic
 import Mathlib.Algebra.Ring.Parity
-import Collatz.Basic
-import Collatz.Arithmetic
-import Collatz.Coordinates
+import Collatz.Foundations.Basic
+import Collatz.Foundations.Arithmetic
+import Collatz.Stratified.Parametrization
 
 noncomputable section
 open Classical
 
-namespace Collatz.Cylinders
+namespace Collatz.Stratified
 
 open Collatz
 open Collatz.Arithmetic
-open Collatz.Coordinates
+open Collatz.Stratified
 
 /-- 2-adic cylinder C_ℓ: all odd integers m with ν₂(3m+1) = ℓ -/
 def C_ell (ℓ : ℕ) : Set ℕ :=
@@ -80,5 +80,5 @@ lemma cylinder_coordinate_relation (n t : ℕ) (hn_odd : Odd n) (hn_not_div3 : �
   m n t ∈ C_ell (k_0 n + 2 * t) := by
   sorry
 
-end Collatz.Cylinders
+end Collatz.Stratified
 end  -- закрывает noncomputable section

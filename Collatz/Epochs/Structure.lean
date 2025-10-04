@@ -5,8 +5,8 @@ Definitions for epoch-based analysis and phase mixing
 
 import Mathlib.Data.ZMod.Basic
 import Mathlib.Logic.Function.Basic
-import Collatz.OrdFact
-import Collatz.Basic
+import Collatz.Epochs.OrdFact
+import Collatz.Foundations.Basic
 
 namespace Collatz
 
