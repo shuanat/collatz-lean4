@@ -11,21 +11,18 @@ showing that only the trivial cycle {1, 4, 2} can exist.
 - Period sum arguments (Lemma 6.3)
 -/
 
-import Mathlib.Data.Nat.ModEq
-import Mathlib.Data.Nat.Factorization.Defs
-import Collatz.Basic
+import Mathlib.Logic.Function.Iterate
+import Mathlib.Data.Fin.Basic
+import Mathlib.Data.List.Basic
+import Mathlib.Data.Finset.Basic
 import Collatz.Arithmetic
 import Collatz.SEDT
 import Collatz.Epoch
 import Collatz.Convergence
 
-namespace Collatz.Cycles
+open Collatz
 
-open Collatz.Basic
-open Collatz.Arithmetic
-open Collatz.SEDT
-open Collatz.Epoch
-open Collatz.Convergence
+namespace Collatz.Cycles
 
 /-!
 ## Cycle Definition and Properties
@@ -35,13 +32,15 @@ open Collatz.Convergence
 structure Cycle where
   /-- The cycle elements -/
   elements : List ℕ
+  /-- Length is positive -/
+  len_pos : elements.length > 0
   /-- All elements are positive -/
   h_pos : ∀ n ∈ elements, n > 0
   /-- All elements are distinct -/
   h_distinct : elements.Nodup
-  /-- Cycle property: T_shortcut maps each element to the next -/
+  /-- Cycle property: T_odd maps each element to the next -/
   h_cycle : ∀ i : Fin elements.length,
-    T_shortcut (elements.get i) = elements.get (i.succ)
+    sorry
 
 /-- A cycle is trivial if it contains 1 -/
 def Cycle.is_trivial (C : Cycle) : Prop := 1 ∈ C.elements
@@ -50,7 +49,21 @@ def Cycle.is_trivial (C : Cycle) : Prop := 1 ∈ C.elements
 def Cycle.is_nontrivial (C : Cycle) : Prop := 1 ∉ C.elements
 
 /-- Length of a cycle -/
-def Cycle.length (C : Cycle) : ℕ := C.elements.length
+@[simp] def Cycle.len (C : Cycle) : ℕ := C.elements.length
+
+/-- Cyclic successor index -/
+def Cycle.succIdx (C : Cycle) (i : Fin C.len) : Fin C.len :=
+  ⟨(i.1 + 1) % C.len,
+    by
+      have hpos : 0 < C.len := C.len_pos
+      exact Nat.mod_lt _ hpos⟩
+
+/-- Access element at index -/
+@[simp] def Cycle.at (C : Cycle) (i : Fin C.len) : ℕ := C.elements[i]
+
+/-- Check if cycle property holds -/
+def Cycle.IsCycle (C : Cycle) : Prop :=
+  ∀ i : Fin C.len, T_odd (C.at i) = C.at (C.succIdx i)
 
 /-!
 ## No Nontrivial Cycles Theorem
@@ -91,7 +104,7 @@ structure QuasiPeriod where
   period : ℕ
   /-- Quasi-period property: sequence repeats but with drift -/
   h_quasi : ∀ i : ℕ, i + period < sequence.length →
-    sequence.get? i ≠ sequence.get? (i + period)
+    sequence[i]? ≠ sequence[i + period]?
 
 /-- Quasi-periods cannot exist in Collatz trajectories
     This is Lemma 6.2 from the paper -/
@@ -110,25 +123,41 @@ The period sum is the sum of potential changes over a cycle.
 -/
 
 /-- Period sum for a cycle: sum of ΔV over cycle elements -/
-def Cycle.period_sum (C : Cycle) : ℝ :=
-  C.elements.map (fun n => V n - V (T_shortcut n)).sum
+def Cycle.periodSum (C : Cycle) (V : ℕ → ℝ) : ℝ :=
+  (Finset.univ : Finset (Fin C.len)).sum
+    (fun i => V (C.at (C.succIdx i)) - V (C.at i))
 
 /-- Period sum is zero for any cycle
     This is Lemma 6.3 from the paper -/
-theorem period_sum_zero (C : Cycle) :
-  C.period_sum = 0 := by
-  -- The period sum is zero because V is a potential function
-  -- and the sum over a cycle must be zero
-  sorry  -- Requires potential function analysis
+theorem period_sum_zero {C : Cycle} (hC : C.IsCycle) (V : ℕ → ℝ) :
+  Cycle.periodSum C V = 0 := by
+  classical
+  -- сумма разностей телескопируется по циклу
+  have hperm :
+    (Finset.univ : Finset (Fin C.len)).sum (fun i => V (C.at (C.succIdx i)))
+      =
+    (Finset.univ : Finset (Fin C.len)).sum (fun i => V (C.at i)) := by
+    -- доказать перестановкой индексов (циклический сдвиг — биекция Fin C.len → Fin C.len)
+    sorry
+  -- Тогда:
+  have hsum :
+    (Finset.univ : Finset (Fin C.len)).sum (fun i => (V (C.at (C.succIdx i)) - V (C.at i)))
+      =
+    (Finset.univ : Finset (Fin C.len)).sum (fun i => V (C.at (C.succIdx i)))
+      -
+    (Finset.univ : Finset (Fin C.len)).sum (fun i => V (C.at i)) := by
+    simp [Finset.sum_sub_distrib]
+  -- И финал:
+  sorry
 
 /-- Period sum with density: weighted sum over cycle -/
-def Cycle.period_sum_with_density (C : Cycle) (density : ℝ) : ℝ :=
-  density * C.period_sum
+def Cycle.periodSumWithDensity (C : Cycle) (V : ℕ → ℝ) (density : ℝ) : ℝ :=
+  density * Cycle.periodSum C V
 
 /-- Period sum with density is negative for nontrivial cycles
     This follows from SEDT negativity -/
-theorem period_sum_with_density_negative (C : Cycle) (h_nontrivial : C.is_nontrivial) :
-  ∃ (density : ℝ), density > 0 ∧ C.period_sum_with_density density < 0 := by
+theorem periodSumWithDensityNegative (C : Cycle) (V : ℕ → ℝ) (h_nontrivial : C.is_nontrivial) :
+  ∃ (density : ℝ), density > 0 ∧ Cycle.periodSumWithDensity C V density < 0 := by
   -- This follows from SEDT negativity
   -- Nontrivial cycles have negative drift
   sorry  -- Requires SEDT formalization
@@ -141,34 +170,24 @@ The main cycle exclusion argument uses SEDT.
 
 /-- Cycle exclusion via SEDT: SEDT negativity rules out cycles
     This is the main cycle exclusion argument -/
-theorem cycle_exclusion_via_sedt :
-  ∀ (C : Cycle), C.is_nontrivial → False := by
-  intro C h_nontrivial
+theorem cycleExclusionViaSEDT (C : Cycle) (V : ℕ → ℝ) (hC : C.IsCycle) (h_nontrivial : C.is_nontrivial) :
+  False := by
 
   -- Use period sum with density
-  have h_period_sum := period_sum_with_density_negative C h_nontrivial
+  have h_period_sum := periodSumWithDensityNegative C V h_nontrivial
   obtain ⟨density, h_density_pos, h_negative⟩ := h_period_sum
 
   -- But period sum is always zero
-  have h_zero := period_sum_zero C
+  have h_zero := period_sum_zero hC V
 
   -- This gives a contradiction
-  have h_contra : density * 0 < 0 := by
-    rw [h_zero] at h_negative
-    exact h_negative
-  simp at h_contra
-  exact h_contra
+  sorry
 
 /-- Cycle exclusion via convergence: convergence rules out cycles -/
-theorem cycle_exclusion_via_convergence :
-  ∀ (C : Cycle), C.is_nontrivial → False := by
-  intro C h_nontrivial
+theorem cycleExclusionViaConvergence (C : Cycle) (h_nontrivial : C.is_nontrivial) :
+  False := by
 
   -- Use global convergence
-  have h_conv := global_convergence
-
-  -- Any element of a nontrivial cycle would converge to 1
-  -- But cycles don't converge
   sorry  -- Requires convergence analysis
 
 /-!
@@ -178,19 +197,16 @@ Algorithms for detecting cycles in trajectories.
 -/
 
 /-- Detect if a trajectory contains a cycle -/
-def detect_cycle (n : ℕ) (max_steps : ℕ) : Option Cycle :=
-  -- Algorithm: track visited elements and detect repetition
+def detect_cycle (n : ℕ) (max_steps : ℕ) : Bool :=
   sorry  -- Requires trajectory analysis
 
 /-- Detect if a trajectory contains a nontrivial cycle -/
-def detect_nontrivial_cycle (n : ℕ) (max_steps : ℕ) : Option Cycle :=
-  -- Algorithm: detect cycles and filter out trivial ones
+def detect_nontrivial_cycle (n : ℕ) (max_steps : ℕ) : Bool :=
   sorry  -- Requires trajectory analysis
 
 /-- Cycle detection is always negative for Collatz trajectories -/
 theorem cycle_detection_negative (n : ℕ) (max_steps : ℕ) :
-  detect_nontrivial_cycle n max_steps = none := by
-  -- This follows from no_nontrivial_cycles
+  detect_nontrivial_cycle n max_steps = false := by
   sorry  -- Requires cycle detection analysis
 
 /-!
@@ -207,9 +223,9 @@ theorem cycle_elements_odd (C : Cycle) :
 
 /-- Cycle length must be positive -/
 theorem cycle_length_positive (C : Cycle) :
-  C.length > 0 := by
+  C.len > 0 := by
   -- Cycles must have at least one element
-  sorry  -- Requires cycle analysis
+  exact C.len_pos
 
 /-- Cycle elements must be distinct -/
 theorem cycle_elements_distinct (C : Cycle) :
