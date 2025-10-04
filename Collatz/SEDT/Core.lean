@@ -95,19 +95,16 @@ lemma alpha_lt_two (t U : ℕ) (ht : t ≥ 3) : α t U < 2 := by
   -- key step: Q_t ≥ 1 for t ≥ 3
   have h_denom_ge_one : (1 : ℝ) ≤ (Q_t t : ℝ) := by
     have h_Q_ge_one : 1 ≤ Q_t t := by
-      unfold Q_t
-      split_ifs with h1 h2
-      · -- t ≥ 3: Q_t = 2^(t-2) ≥ 2^(3-2) = 2 ≥ 1
-        have : t - 2 ≥ 1 := by
-          have : t ≥ 3 := h1
-          linarith
-        calc 2^(t-2) ≥ 2^1 := Nat.pow_le_pow_right (by decide) this
-        _ = 2 := by norm_num
-        _ ≥ 1 := by linarith
-      · -- t = 2: Q_t = 2 ≥ 1
-        linarith
-      · -- t < 2: Q_t = 1 ≥ 1
-        linarith
+      have ht3 : t ≥ 3 := ht
+      have ht_gt_two : 2 < t := Nat.lt_of_lt_of_le (by decide : 2 < 3) ht3
+      have ht_pos : 0 < t - 2 := Nat.sub_pos_of_lt ht_gt_two
+      have hpow : 2^1 ≤ 2^(t - 2) :=
+        Nat.pow_le_pow_right (by decide : 1 ≤ 2) (Nat.succ_le_of_lt ht_pos)
+      have hpow' : 1 ≤ 2^(t - 2) :=
+        le_trans (by decide : 1 ≤ 2) (by simpa using hpow)
+      have ht_ne_two : t ≠ 2 := by linarith [ht3]
+      have ht_not_lt_two : ¬ t < 2 := by linarith [ht3]
+      simpa [Q_t, ht3, ht_ne_two, ht_not_lt_two] using hpow'
     exact_mod_cast h_Q_ge_one
 
   -- fraction < 1
