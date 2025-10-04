@@ -11,8 +11,11 @@ import Mathlib.Data.Real.Basic
 import Mathlib.Data.Nat.Basic
 import Mathlib.Analysis.SpecialFunctions.Log.Basic
 import Mathlib.Analysis.SpecialFunctions.Pow.Real
+import Collatz.Utilities.TwoAdicDepth
 
 namespace Collatz.Utilities
+
+open Collatz
 
 -- Core Epoch Constants
 
@@ -68,7 +71,8 @@ def c_b : ℝ := sorry -- TODO: Define based on phase analysis
 -- Potential Function (Appendix D, line 70)
 
 -- Augmented potential V(n) = log₂ n + β · depth_-(n)
-noncomputable def V (n : ℕ) (β : ℝ) : ℝ := Real.log (n : ℝ) / Real.log 2 + β * sorry -- TODO: depth_minus n
+noncomputable def V (n : ℕ) (β : ℝ) : ℝ :=
+  Real.log (n : ℝ) / Real.log 2 + β * (depth_minus n : ℝ)
 
 -- Change in potential across epoch
 def ΔV : ℝ := sorry -- TODO: Define based on epoch analysis

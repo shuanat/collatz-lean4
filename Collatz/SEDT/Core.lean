@@ -9,6 +9,7 @@ import Init.Data.Nat.Div.Basic
 import Collatz.Foundations.Basic
 import Collatz.Epochs.Structure
 import Collatz.Utilities.Constants
+import Collatz.Utilities.TwoAdicDepth
 
 /-!
 # SEDT (Shumak Epoch Drift Theorem)
@@ -35,13 +36,6 @@ open Collatz.Utilities (α β₀ ε C L₀ K_glue V Q_t Q_t_pos)
 /-!
 ## Potential Function and Constants
 -/
-
-/-- Depth-minus function: ν₂(r+1) for odd r -/
-def depth_minus (r : ℕ) : ℕ :=
-  (r + 1).factorization 2
-
--- Note: Constants α, β₀, ε, C, L₀, K_glue, V are now imported from Collatz.Utilities.Constants
--- This eliminates duplication and ensures consistency across the project.
 
 /-!
 ## Helper Lemmas for Constants
@@ -412,21 +406,7 @@ lemma log_part_le_one (r : ℕ) (hr : r > 0) (_hr_odd : Odd r) :
 lemma single_step_potential_bounded (r : ℕ) (β : ℝ) (hr : r > 0) (hr_odd : Odd r) (hβ : β ≥ 1) :
   single_step_ΔV r β ≤ log (3/2) / log 2 + β * 2 := by
   unfold single_step_ΔV
-  -- Use local V definition since imported V has sorry for depth_minus
-  have V_local : V (T_shortcut r) β - V r β =
-    (log (T_shortcut r) / log 2 + β * (depth_minus (T_shortcut r) : ℝ)) -
-    (log r / log 2 + β * (depth_minus r : ℝ)) := by
-    unfold V
-    simp [depth_minus]
-    ring_nf
-    simp
-    -- Need to show: β * (depth_minus (T_shortcut r) : ℝ) - β * (depth_minus r : ℝ) = 0
-    -- This follows from depth_drop_one_shortcut: depth_minus (T_shortcut r) + 1 = depth_minus r
-    -- So: depth_minus (T_shortcut r) = depth_minus r - 1
-    -- Therefore: β * (depth_minus (T_shortcut r) : ℝ) - β * (depth_minus r : ℝ) = β * ((depth_minus r - 1) : ℝ) - β * (depth_minus r : ℝ) = β * (depth_minus r : ℝ) - β - β * (depth_minus r : ℝ) = -β
-    -- But we need 0, so this suggests the imported V definition is wrong
-    sorry -- TODO: Fix this
-  rw [V_local]
+  simp [V]
 
   -- Step 1: Use depth_drop_one_shortcut
   have h_depth : depth_minus (T_shortcut r) + 1 = depth_minus r :=
