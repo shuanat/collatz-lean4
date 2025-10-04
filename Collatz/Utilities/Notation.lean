@@ -28,20 +28,33 @@ notation:max f ":" A "→" B => f ∈ A → B
 
 -- Constants notation
 
--- SEDT constants
-notation:max "α" => Collatz.Utilities.α
-notation:max "β₀" => Collatz.Utilities.β₀
-notation:max "ε" => Collatz.Utilities.ε
-notation:max "C" => Collatz.Utilities.C
-notation:max "L₀" => Collatz.Utilities.L₀
-notation:max "K_glue" => Collatz.Utilities.K_glue
+-- Core epoch constants
+notation:max "Q_t(" t ")" => Collatz.Utilities.Q_t t
 
--- Epoch constants
-notation:max "ord_3_mod_2t(" t ")" => Collatz.Utilities.ord_3_mod_2t t
-notation:max "p_touch" => Collatz.Utilities.p_touch
+-- SEDT constants (parameterized)
+notation:max "α(" t "," U ")" => Collatz.Utilities.α t U
+notation:max "β₀(" t "," U ")" => Collatz.Utilities.β₀ t U
+notation:max "ε(" t "," U "," β ")" => Collatz.Utilities.ε t U β
+notation:max "C(" t "," U ")" => Collatz.Utilities.C t U
+notation:max "L₀(" t "," U ")" => Collatz.Utilities.L₀ t U
+notation:max "K_glue(" t ")" => Collatz.Utilities.K_glue t
+notation:max "C_short(" t "," U ")" => Collatz.Utilities.C_short t U
 
--- Convergence constants
-notation:max "β_coercivity" => Collatz.Utilities.β_coercivity
-notation:max "K_convergence" => Collatz.Utilities.K_convergence
+-- Touch analysis constants
+notation:max "s_t(" t ")" => Collatz.Utilities.s_t t
+notation:max "p_touch(" t "," L ")" => Collatz.Utilities.p_touch t L
+
+-- Head/plateau/tail bounds
+notation:max "c_h" => Collatz.Utilities.c_h
+notation:max "c_p" => Collatz.Utilities.c_p
+notation:max "c_b" => Collatz.Utilities.c_b
+
+-- Potential function
+notation:max "V(" n "," β ")" => Collatz.Utilities.V n β
+
+-- Additional epoch constants
+notation:max "P_t(" t ")" => Collatz.Utilities.P_t t
+notation:max "C_t(" t ")" => Collatz.Utilities.C_t t
+notation:max "G_t(" t ")" => Collatz.Utilities.G_t t
 
 end Collatz.Utilities
