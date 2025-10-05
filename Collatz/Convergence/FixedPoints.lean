@@ -2,49 +2,48 @@
 Collatz Conjecture: Epoch-Based Deterministic Framework
 Fixed Points Analysis
 
-This file contains fixed points analysis:
-- Uniqueness of fixed points
-- Fixed point properties
+This file contains fixed points analysis using the centralized
+Core.lean architecture.
 -/
-import Mathlib.Logic.Function.Iterate
-import Mathlib.Data.Nat.Basic
-import Collatz.Foundations.Basic
+import Collatz.Foundations.Core
+import Collatz.Epochs.Core
+import Collatz.SEDT.Core
 
 namespace Collatz.Convergence
 
-open Collatz
+-- Use centralized definitions from Core.lean
+open Collatz.Foundations (depth_minus step_type collatz_step)
+open Collatz.Epochs (Q_t is_t_touch M_tilde)
+open Collatz.SEDT (α β₀ C L₀ K_glue ε)
 
--- TIt will be available through the aggregator module
+/-!
+## Fixed Points Analysis
 
-/-- Определение неподвижной точки -/
-def is_fixed_point (x : ℕ) : Prop := T_odd x = x
+This module provides fixed points analysis for convergence.
+-/
 
-/-- Уникальность неподвижной точки -/
-theorem fixed_point_uniqueness :
-  ∀ {x : ℕ}, is_fixed_point x → x = 1 := by
-  -- TODO: Complete proof
+/-- A fixed point for the Collatz function -/
+def is_fixed_point (n : ℕ) : Prop := collatz_step n = n
+
+/-- Fixed point uniqueness -/
+theorem fixed_point_uniqueness : ∀ n : ℕ, is_fixed_point n → n = 1 := by
   sorry
 
-/-- Единственная неподвижная точка -/
-theorem unique_fixed_point :
-  ∃! x : ℕ, is_fixed_point x := by
-  -- TODO: Complete proof
+/-- Unique fixed point exists -/
+theorem unique_fixed_point : ∃! n : ℕ, is_fixed_point n := by
   sorry
 
-/-- Неподвижная точка равна 1 -/
-theorem fixed_point_is_one (x : ℕ) (h : is_fixed_point x) :
-  x = 1 := by
-  exact fixed_point_uniqueness h
+/-- The fixed point is 1 -/
+theorem fixed_point_is_one : is_fixed_point 1 := by
+  sorry
 
-/-- Нет других неподвижных точек -/
-theorem no_other_fixed_points (x : ℕ) (h : is_fixed_point x) :
-  x = 1 := by
-  exact fixed_point_uniqueness h
+/-- No other fixed points exist -/
+theorem no_other_fixed_points (n : ℕ) (h : n ≠ 1) : ¬is_fixed_point n := by
+  sorry
 
-/-- Сходимость к неподвижной точке -/
-theorem convergence_to_fixed_point (n : ℕ) (hn_pos : n > 0) :
-  ∃ k : ℕ, sorry := by
-  -- TODO: Complete proof using main convergence
+/-- Convergence to fixed point -/
+theorem convergence_to_fixed_point (n : ℕ) :
+  ∃ k : ℕ, (collatz_step^[k] n) = 1 := by
   sorry
 
 end Collatz.Convergence

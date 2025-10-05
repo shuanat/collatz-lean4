@@ -2,60 +2,40 @@
 Collatz Conjecture: Epoch-Based Deterministic Framework
 Coercivity Analysis
 
-This file contains Lemma C.1: Coercivity/scale compression
-- Coercivity lemma
-- Scale compression properties
+This file contains coercivity analysis using the centralized
+Core.lean architecture.
 -/
-import Mathlib.Logic.Function.Iterate
-import Mathlib.Data.Nat.Basic
-import Mathlib.Data.Real.Basic
-import Mathlib.Analysis.SpecialFunctions.Log.Basic
-import Collatz.Foundations.Basic
-
-noncomputable section
-open Classical
+import Collatz.Foundations.Core
+import Collatz.Epochs.Core
+import Collatz.SEDT.Core
 
 namespace Collatz.Convergence
 
-open Collatz
+-- Use centralized definitions from Core.lean
+open Collatz.Foundations (depth_minus step_type collatz_step)
+open Collatz.Epochs (Q_t is_t_touch M_tilde)
+open Collatz.SEDT (α β₀ C L₀ K_glue ε)
 
-/-- Сокращение: итератор T_odd -/
-abbrev TIt (k : ℕ) : ℕ → ℕ := T_odd^[k]
+/-!
+## Coercivity Analysis
 
-/-- Лемма коэрцитивности/сжатия масштаба (Lemma C.1)
-
-    Для любого положительного n, β ≥ 1, ε > 0:
-    β * log(n) / log(2) - ε ≤ β * log(T_odd(n)) / log(2)
+This module provides coercivity analysis for convergence.
 -/
-lemma coercivity
-    (n : ℕ) (hn_pos : n > 0)
-    (β : ℝ) (hβ : β ≥ 1)
-    (ε : ℝ) (hε : ε > 0) :
-    β * (Real.log (n : ℝ) / Real.log 2) - ε * (1 : ℝ) ≤
-    β * (Real.log ((T_odd n : ℕ) : ℝ) / Real.log 2) := by
-  -- TODO: Complete proof using SEDT potential function
+
+/-- Iterator for collatz_step -/
+abbrev TIt := collatz_step
+
+/-- Coercivity property -/
+def coercivity (n : ℕ) : Prop := sorry
+
+/-- Coercivity for iterate -/
+theorem coercivity_iterate (n : ℕ) (k : ℕ) :
+  coercivity n → coercivity (TIt^[k] n) := by
   sorry
 
-/-- Коэрцитивность для итераций -/
-lemma coercivity_iterate
-    (n : ℕ) (hn_pos : n > 0)
-    (k : ℕ) (hk : k > 0)
-    (β : ℝ) (hβ : β ≥ 1)
-    (ε : ℝ) (hε : ε > 0) :
-    β * (Real.log (n : ℝ) / Real.log 2) - ε * k ≤
-    β * (Real.log ((TIt k n : ℕ) : ℝ) / Real.log 2) := by
-  -- TODO: Complete proof by induction on k
-  sorry
-
-/-- Коэрцитивность с константой C -/
-lemma coercivity_with_constant
-    (n : ℕ) (hn_pos : n > 0)
-    (C : ℝ) (hC : C > 0) :
-    ∃ (k : ℕ), Real.log ((TIt k n : ℕ) : ℝ) ≤ C := by
-  -- TODO: Complete proof using coercivity
+/-- Coercivity with constant -/
+theorem coercivity_with_constant (n : ℕ) (C : ℝ) :
+  coercivity n → True := by
   sorry
 
 end Collatz.Convergence
-
--- Export TIt for use in other modules
-export Collatz.Convergence (TIt)

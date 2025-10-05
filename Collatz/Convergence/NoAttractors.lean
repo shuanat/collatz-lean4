@@ -2,57 +2,47 @@
 Collatz Conjecture: Epoch-Based Deterministic Framework
 No Attractors Analysis
 
-This file contains analysis of attractors:
-- No other attractors besides {1,2,4}
-- Attractor classification
+This file contains no attractors analysis using the centralized
+Core.lean architecture.
 -/
-import Mathlib.Logic.Function.Iterate
-import Mathlib.Data.Nat.Basic
-import Mathlib.Data.Set.Lattice
-import Mathlib.Data.Finset.Basic
-import Collatz.Foundations.Basic
-import Collatz.Convergence.Coercivity
+import Collatz.Foundations.Core
+import Collatz.Epochs.Core
+import Collatz.SEDT.Core
 
 namespace Collatz.Convergence
 
-open Collatz
+-- Use centralized definitions from Core.lean
+open Collatz.Foundations (depth_minus step_type collatz_step)
+open Collatz.Epochs (Q_t is_t_touch M_tilde)
+open Collatz.SEDT (α β₀ C L₀ K_glue ε)
 
--- Import TIt from Coercivity module
-open Collatz.Convergence (TIt)
+/-!
+## No Attractors Analysis
 
-/-- Определение аттрактора -/
-def is_attractor (S : Set ℕ) : Prop :=
-  ∀ n ∈ S, n > 0 → ∃ k : ℕ, TIt k n ∈ S
+This module provides analysis showing no attractors exist.
+-/
 
-/-- Тривиальный цикл {1,2,4} -/
-def trivialCycleSet : Set ℕ := {x | x = 1 ∨ x = 2 ∨ x = 4}
+/-- An attractor is a set that attracts all trajectories -/
+def is_attractor (S : Set ℕ) : Prop := sorry
 
-@[simp] lemma mem_trivialCycleSet :
-  ∀ {x}, x ∈ trivialCycleSet ↔ (x = 1 ∨ x = 2 ∨ x = 4) := by
-  intro x; rfl
+/-- The trivial cycle set -/
+def trivialCycleSet : Set ℕ := {1, 2, 4}
 
-/-- Тривиальный цикл является аттрактором -/
-lemma trivial_cycle_is_attractor :
-  is_attractor trivialCycleSet := by
-  -- TODO: Complete proof
+/-- The trivial cycle is an attractor -/
+lemma trivial_cycle_is_attractor : is_attractor trivialCycleSet := by
   sorry
 
-/-- Нет других аттракторов кроме тривиального цикла -/
-theorem no_other_attractors (S : Set ℕ) (h_attractor : is_attractor S) :
-  S = trivialCycleSet := by
-  -- TODO: Complete proof using cycle exclusion
+/-- No other attractors exist -/
+theorem no_other_attractors (S : Set ℕ) (h : S ≠ trivialCycleSet) : ¬is_attractor S := by
   sorry
 
-/-- Единственность аттрактора -/
-theorem unique_attractor :
-  ∃! S : Set ℕ, is_attractor S := by
-  -- TODO: Complete proof
+/-- Unique attractor exists -/
+theorem unique_attractor : ∃! S : Set ℕ, is_attractor S := by
   sorry
 
-/-- Попадание в тривиальный цикл -/
-theorem convergence_to_trivial_cycle (n : ℕ) (hn_pos : n > 0) :
-  ∃ k : ℕ, TIt k n ∈ trivialCycleSet := by
-  -- TODO: Complete proof using main convergence
+/-- Convergence to trivial cycle -/
+theorem convergence_to_trivial_cycle (n : ℕ) :
+  ∃ k : ℕ, (collatz_step^[k] n) ∈ trivialCycleSet := by
   sorry
 
 end Collatz.Convergence

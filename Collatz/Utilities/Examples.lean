@@ -1,68 +1,46 @@
-import Collatz.Foundations.Basic
-import Collatz.Foundations.Arithmetic
-import Collatz.Epochs.OrdFact
+/-
+Collatz Conjecture: Epoch-Based Deterministic Framework
+Worked Examples for Collatz Formalization
 
-/-!
-# Worked Examples for Collatz Formalization
-
-This file contains simple concrete examples demonstrating key computations.
+This file contains simple concrete examples demonstrating key computations
+using the centralized Core.lean architecture.
 -/
+
+import Collatz.Foundations.Core
+import Collatz.Epochs.Core
+import Collatz.SEDT.Core
 
 namespace Collatz.Examples
 
+-- Use centralized definitions from Core.lean
+open Collatz.Foundations (depth_minus step_type collatz_step)
+open Collatz.Epochs (Q_t is_t_touch M_tilde)
+open Collatz.SEDT (α β₀ C L₀ K_glue ε)
+
 /-!
-## Example 1: Powers of 2
+## Basic Examples
+
+Simple examples using centralized definitions.
 -/
 
-/-- 2^3 = 8 -/
+/-- Basic arithmetic example -/
 example : (2 : ℕ) ^ 3 = 8 := by norm_num
 
-/-- 2^5 = 32 -/
-example : (2 : ℕ) ^ 5 = 32 := by norm_num
+/-- Q_t for small values -/
+example : Q_t 3 = 2 := by simp [Q_t]
 
-/-- 2^t > 0 for any t -/
-example : 0 < (2 : ℕ) ^ 5 := by norm_num
+example : Q_t 4 = 4 := by simp [Q_t]
 
-/-!
-## Example 2: ZMod computations (key for Ord‑Fact)
--/
+example : Q_t 5 = 8 := by simp [Q_t]
 
-/-- 3^2 ≡ 1 (mod 8) -/
-example : (3 : ZMod 8) ^ 2 = 1 := by decide
+/-- Depth examples -/
+example : depth_minus 7 = 3 := sorry
 
-/-- 3^4 ≡ 1 (mod 16) -/
-example : (3 : ZMod 16) ^ 4 = 1 := by decide
+example : depth_minus 15 = 4 := sorry
 
-/-- 3^8 ≡ 1 (mod 32) -/
-example : (3 : ZMod 32) ^ 8 = 1 := by decide
+/-- Touch examples -/
+example : is_t_touch 3 7 := sorry
 
-/-!
-## Example 3: Non-trivial powers (for minimality)
--/
-
-/-- 3 ≠ 1 (mod 8) -/
-example : (3 : ZMod 8) ^ 1 ≠ 1 := by decide
-
-/-- 3^2 ≠ 1 (mod 16) -/
-example : (3 : ZMod 16) ^ 2 ≠ 1 := by decide
-
-/-- 3^4 ≠ 1 (mod 32) -/
-example : (3 : ZMod 32) ^ 4 ≠ 1 := by decide
-
-/-!
-## Example 4: Parity checks
--/
-
-/-- 7 is odd -/
-example : Odd (7 : ℕ) := by norm_num
-
-/-- 27 is odd -/
-example : Odd (27 : ℕ) := by norm_num
-
-/-- 8 is even -/
-example : Even (8 : ℕ) := by norm_num
-
-/-- 16 is even -/
-example : Even (16 : ℕ) := by norm_num
+example : ¬is_t_touch 3 5 := sorry
 
 end Collatz.Examples

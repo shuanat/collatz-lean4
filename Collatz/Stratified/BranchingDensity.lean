@@ -1,40 +1,44 @@
 /-
 Collatz Conjecture: Epoch-Based Deterministic Framework
-Branching Density Theorem
+Branching Density Analysis
 
-This file contains Theorem 4.3: Branching Density
-- Density of branching points in stratified layers
-- Asymptotic behavior of branching density
+This file contains branching density analysis using the centralized
+Core.lean architecture.
 -/
-import Collatz.Foundations
-import Collatz.Stratified.PreimageLayers
-import Collatz.Stratified.Parametrization
-import Collatz.Stratified.Cylinders
-import Mathlib.Topology.Basic
+import Collatz.Foundations.Core
+import Collatz.Epochs.Core
+import Collatz.SEDT.Core
 
 namespace Collatz.Stratified
 
--- Helper definitions
-def branching_density_at_layer (k n : ℕ) : ℝ := sorry -- TODO: Define density function
-def branching_density_converges_to (k : ℕ) (d : ℝ) : Prop := sorry -- TODO: Define convergence
+-- Use centralized definitions from Core.lean
+open Collatz.Foundations (depth_minus step_type collatz_step)
+open Collatz.Epochs (Q_t is_t_touch M_tilde)
+open Collatz.SEDT (α β₀ C L₀ K_glue ε)
 
-/-- Branching Density Theorem (Theorem 4.3)
+/-!
+## Branching Density Analysis
 
-    The density of branching points in layer k approaches
-    a limiting value as k → ∞.
+This module provides branching density analysis.
 -/
-theorem branching_density_limit (k : ℕ) :
-  ∃ (d : ℝ), branching_density_converges_to k d := by
-  sorry -- TODO: Complete proof
+
+/-- Density function for branching points at layer -/
+def branching_density_at_layer (ℓ : ℕ) : ℝ := sorry
+
+/-- Branching density converges to limit -/
+def branching_density_converges_to (p : ℝ) : Prop := sorry
+
+/-- Branching density limit (Theorem 4.3) -/
+theorem branching_density_limit : ∃ p : ℝ, branching_density_converges_to p := by
+  sorry
 
 /-- Branching density is bounded -/
-lemma branching_density_bounded (k : ℕ) :
-  ∃ (C : ℝ), ∀ n : ℕ, branching_density_at_layer k n ≤ C := by
-  sorry -- TODO: Complete proof
+lemma branching_density_bounded (ℓ : ℕ) : 0 ≤ branching_density_at_layer ℓ ∧ branching_density_at_layer ℓ ≤ 1 := by
+  sorry
 
-/-- Monotonicity of branching density -/
-lemma branching_density_monotone (k₁ k₂ : ℕ) (h : k₁ ≤ k₂) :
-  branching_density_at_layer k₁ n ≤ branching_density_at_layer k₂ n := by
-  sorry -- TODO: Complete proof
+/-- Branching density monotonicity -/
+lemma branching_density_monotone (ℓ₁ ℓ₂ : ℕ) (h : ℓ₁ ≤ ℓ₂) :
+  branching_density_at_layer ℓ₁ ≥ branching_density_at_layer ℓ₂ := by
+  sorry
 
 end Collatz.Stratified

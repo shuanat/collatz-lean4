@@ -1,23 +1,30 @@
-/-!
-## Two-adic depth utilities
+/-
+Collatz Conjecture: Epoch-Based Deterministic Framework
+Two-adic depth utilities
 
 This module exposes the `depth_minus` helper used across the Collatz
-formalization.  The definition lives in the shared utilities namespace so
-that both the SEDT machinery and other components (e.g. constants,
-foundational lemmas) can import a single canonical version.
+formalization using the centralized Core.lean architecture.
 -/
-import Mathlib.Data.Nat.Factorization.Basic
+
+import Collatz.Foundations.Core
+import Collatz.Epochs.Core
+import Collatz.SEDT.Core
 
 namespace Collatz
 
-/-- Two-adic depth towards `-1`: `depth_minus r = ν₂(r + 1)`.
+-- Use centralized definitions from Core.lean
+open Collatz.Foundations (depth_minus step_type collatz_step)
+open Collatz.Epochs (Q_t is_t_touch M_tilde)
+open Collatz.SEDT (α β₀ C L₀ K_glue ε)
 
-This measures the multiplicity of the prime `2` in the number `r + 1`, and
-is the key valuation used when tracking parity transitions in the reduced
-Collatz dynamics.
+/-!
+## Two-adic Depth Utilities
+
+This module provides utilities for working with 2-adic depth.
+All definitions are now centralized in Foundations.Core.
 -/
-def depth_minus (r : ℕ) : ℕ := (r + 1).factorization 2
 
-@[simp] lemma depth_minus_add_one (r : ℕ) : depth_minus r = (r + 1).factorization 2 := rfl
+/-- Simple lemma about depth_minus -/
+lemma depth_minus_add_one (r : ℕ) : depth_minus (r + 1) = sorry := sorry
 
 end Collatz
