@@ -11,6 +11,12 @@ import Collatz.Epochs.Structure
 import Collatz.Utilities.Constants
 import Collatz.Utilities.TwoAdicDepth
 
+open Collatz.Utilities (α β₀ ε C L₀ K_glue V Q_t Q_t_pos depth_minus factorization_two_succ Q_t_ge_three Q_t_two Q_t_one Q_t_zero K_glue_def)
+open Collatz (T_odd)
+
+-- T_shortcut is the simplified Collatz function for e=1 case
+def T_shortcut (r : ℕ) : ℕ := (3 * r + 1) / 2
+
 /-!
 # SEDT (Shumak Epoch Drift Theorem)
 
@@ -31,7 +37,6 @@ See paper Appendix A (SEDT proof) for detailed mathematical derivation.
 namespace Collatz.SEDT
 
 open Real
-open Collatz.Utilities (α β₀ ε C L₀ K_glue V Q_t Q_t_pos)
 
 /-!
 ## Potential Function and Constants
@@ -40,6 +45,24 @@ open Collatz.Utilities (α β₀ ε C L₀ K_glue V Q_t Q_t_pos)
 /-!
 ## Helper Lemmas for Constants
 -/
+
+-- Helper lemma for T_shortcut arithmetic
+lemma T_shortcut_add_one_eq {r k : ℕ} (_ : Odd r) (_ : r + 1 = 2 * k)
+    (h_tr1 : (3 * r + 1) / 2 + 1 = 3 * k) :
+    T_shortcut r + 1 = 3 * k := by
+  unfold T_shortcut
+  exact h_tr1
+
+-- V function helper lemmas
+@[simp] lemma V_def (n : ℕ) (β : ℝ) :
+  V n β = Real.log (n : ℝ) / Real.log 2 + β * Collatz.Utilities.depth_minus n := rfl
+
+lemma V_diff (a b : ℕ) (β : ℝ) :
+  V a β - V b β = (Real.log (a : ℝ) - Real.log (b : ℝ)) / Real.log 2
+    + β * ((Collatz.Utilities.depth_minus a : ℝ) - Collatz.Utilities.depth_minus b) := by
+  simp [V_def, sub_eq_add_neg]
+  ring_nf
+
 
 lemma alpha_gt_one (t U : ℕ) (_ht : t ≥ 3) (hU : U ≥ 1) : α t U > 1 := by
   -- Use the imported definition from Utilities.Constants
@@ -316,15 +339,26 @@ lemma depth_drop_one_shortcut (r : ℕ) (hr_odd : Odd r) :
     simp [pow_one, Finsupp.single_eq_same] at this
     exact this
 
+  -- Use the helper lemma to show T_shortcut r + 1 = 3 * k
+  have h_T_add_one : T_shortcut r + 1 = 3 * k :=
+    T_shortcut_add_one_eq hr_odd hk2 h_tr1
+
+  -- Now we can prove the factorization equality
+  have h_T_fac : (T_shortcut r + 1).factorization 2 = (3 * k).factorization 2 := by
+    simp [h_T_add_one]
+
+  have h_r_fac : (r + 1).factorization 2 = (2 * k).factorization 2 := by
+    simp [hk2]
+
   -- Assemble: depth_minus (T r) + 1 = depth_minus r
   calc
     depth_minus (T_shortcut r) + 1
-        = ((3 * k).factorization 2) + 1 := by simp [h_fac_T]
+        = ((3 * k).factorization 2) + 1 := by simp [h_T_fac]
     _   = ((3).factorization 2 + k.factorization 2) + 1 := by simp [h_mul3]
     _   = (0 + k.factorization 2) + 1 := by simp [h3fac0]
     _   = ((2).factorization 2 + k.factorization 2) := by simp [h2fac1, add_comm]
     _   = (2 * k).factorization 2 := by simp [h_mul2]
-    _   = depth_minus r := by simp [h_fac_r]
+    _   = depth_minus r := by simp [h_r_fac]
 
 /-- Logarithmic part bounded by 1 for shortcut step (PROVEN LEMMA)
 
@@ -422,24 +456,96 @@ lemma single_step_potential_bounded (r : ℕ) (β : ℝ) (hr : r > 0) (hr_odd : 
   have h_log : (log (T_shortcut r) - log r) / log 2 ≤ 1 :=
     log_part_le_one r hr hr_odd
 
-  -- Step 3: Combine
-  calc log (T_shortcut r) / log 2 + β * (depth_minus (T_shortcut r) : ℝ)
-          - (log r / log 2 + β * (depth_minus r : ℝ))
-        = (log (T_shortcut r) - log r) / log 2 + β * ((depth_minus (T_shortcut r) : ℝ) - (depth_minus r : ℝ)) := by ring
-      _ = (log (T_shortcut r) - log r) / log 2 + β * (-1) := by rw [h_depth_real]; ring
-      _ = (log (T_shortcut r) - log r) / log 2 - β := by ring
-      _ ≤ 1 - β := by linarith [h_log]
-      _ ≤ log (3/2) / log 2 + β * 2 := by
-          -- For β ≥ 1: 1 - β ≤ 0 ≤ log(3/2)/log(2) + 2β
-          have h1 : 1 - β ≤ 0 := by linarith [hβ]
-          have h2 : (0 : ℝ) ≤ log (3/2) / log 2 + β * 2 := by
-            have : log (3/2) / log 2 > 0 := by
-              have log_pos : log (3/2) > 0 := Real.log_pos (by norm_num : (1 : ℝ) < 3/2)
-              have log2_pos : log 2 > 0 := Real.log_pos (by norm_num : (1 : ℝ) < 2)
-              exact div_pos log_pos log2_pos
-            have : β * 2 ≥ 2 := by linarith [hβ]
-            linarith
-          linarith
+  -- Step 3: Use V function definition
+  have h_V_diff : V (T_shortcut r) β - V r β =
+    (log (T_shortcut r : ℝ) - log (r : ℝ)) / log 2 + β * ((depth_minus (T_shortcut r) : ℝ) - (depth_minus r : ℝ)) := by
+    simpa using V_diff (T_shortcut r) r β
+
+  -- Step 4: Combine using V_diff
+  have h_V_expanded : V (T_shortcut r) β - V r β =
+    (Real.log (T_shortcut r : ℝ) - Real.log (r : ℝ)) / Real.log 2 + β * ((Collatz.Utilities.depth_minus (T_shortcut r) : ℝ) - Collatz.Utilities.depth_minus r) := by
+    simp [V_def]
+    ring_nf
+
+  -- Step 5: Use depth drop
+  have h_depth_diff : (Collatz.Utilities.depth_minus (T_shortcut r) : ℝ) - Collatz.Utilities.depth_minus r = (-1 : ℝ) := by
+    have h1 : (Collatz.Utilities.depth_minus (T_shortcut r) : ℝ) + 1 = (Collatz.Utilities.depth_minus r : ℝ) := by
+      exact_mod_cast h_depth
+    linarith
+
+  -- Step 6: Final bound
+  have h_final : V (T_shortcut r) β - V r β = (Real.log (T_shortcut r : ℝ) - Real.log (r : ℝ)) / Real.log 2 + β * (-1 : ℝ) := by
+    rw [h_V_expanded, h_depth_diff]
+
+  -- Final bound: V(T(r)) - V(r) ≤ log(3/2)/log(2) + 2β
+  have h_step1 : V (T_shortcut r) β - V r β = (Real.log (T_shortcut r : ℝ) - Real.log (r : ℝ)) / Real.log 2 - β := by
+    rw [h_final]
+    ring
+
+  have h_step2 : (Real.log (T_shortcut r : ℝ) - Real.log (r : ℝ)) / Real.log 2 - β ≤ 1 - β := by
+    linarith [h_log]
+
+  have h_step3 : 1 - β ≤ Real.log (3/2) / Real.log 2 + β * 2 := by
+    -- For β ≥ 1: 1 - β ≤ 0 ≤ log(3/2)/log(2) + 2β
+    have h1 : 1 - β ≤ 0 := by linarith [hβ]
+    have h2 : (0 : ℝ) ≤ log (3/2) / log 2 + β * 2 := by
+      have : log (3/2) / log 2 > 0 := by
+        have log_pos : log (3/2) > 0 := Real.log_pos (by norm_num : (1 : ℝ) < 3/2)
+        have log2_pos : log 2 > 0 := Real.log_pos (by norm_num : (1 : ℝ) < 2)
+        exact div_pos log_pos log2_pos
+      have : β * 2 ≥ 2 := by linarith [hβ]
+      linarith
+    linarith
+
+  -- It suffices to prove the difference form
+  suffices
+    (log ↑(T_shortcut r) / log 2 + β * ↑(Utilities.depth_minus (T_shortcut r)))
+      - (log ↑r / log 2 + β * ↑(Utilities.depth_minus r))
+      ≤ log (3 / 2) / log 2 + β * 2 by
+    -- you have: this :
+    --   logT/log2 + (-(β*dmR) + β*dmT) ≤ β*2 + (logR/log2 + log(3/2)/log2)
+    have this' := add_le_add_right this (β * ↑(Utilities.depth_minus r))
+    -- goals now match modulo reassociation
+    simpa [sub_eq_add_neg, add_comm, add_left_comm, add_assoc] using this'
+
+  -- rewrite the β-term using h_depth_diff : ↑dmT - ↑dmr = -1
+  have hβdm' :
+    β * ↑(Utilities.depth_minus (T_shortcut r)) - β * ↑(Utilities.depth_minus r) = -β := by
+    simpa [mul_add, mul_neg, sub_eq_add_neg] using
+      congrArg (fun x : ℝ => β * x) h_depth_diff
+
+  have hβdm :
+    β * ↑(Utilities.depth_minus (T_shortcut r)) =
+      β * ↑(Utilities.depth_minus r) - β := by
+    have := (sub_eq_iff_eq_add).1 hβdm'   -- a - b = c → a = c + b
+    simpa [sub_eq_add_neg, add_comm] using this
+
+  -- turn the LHS difference into (log T - log r)/log 2 - β
+  have hdiv :
+    log ↑(T_shortcut r) / log 2 - log ↑r / log 2
+      = (log ↑(T_shortcut r) - log ↑r) / log 2 := by
+    simpa [sub_eq_add_neg] using
+      (sub_div (Real.log (T_shortcut r)) (Real.log r) (Real.log 2)).symm
+
+  have hΔ :
+    (log ↑(T_shortcut r) / log 2 + β * ↑(Utilities.depth_minus (T_shortcut r)))
+      - (log ↑r / log 2 + β * ↑(Utilities.depth_minus r))
+      = (log ↑(T_shortcut r) - log ↑r) / log 2 - β := by
+    calc
+      _ = (log ↑(T_shortcut r) / log 2 - log ↑r / log 2)
+            + (β * ↑(Utilities.depth_minus (T_shortcut r)) - β * ↑(Utilities.depth_minus r)) := by
+            simp [sub_eq_add_neg, add_comm, add_left_comm, add_assoc]
+      _ = (log ↑(T_shortcut r) - log ↑r) / log 2
+            + ((β * ↑(Utilities.depth_minus r) - β) - β * ↑(Utilities.depth_minus r)) := by
+            simp [hdiv, hβdm]
+      _ = (log ↑(T_shortcut r) - log ↑r) / log 2 - β := by
+            ring_nf
+
+  -- finish with your existing bounds
+  have hbound : (log ↑(T_shortcut r) - log ↑r) / log 2 - β
+                  ≤ log (3 / 2) / log 2 + β * 2 :=
+    h_step2.trans h_step3
+  simpa [hΔ] using hbound
 
 /-- Potential change is bounded by log ratio and depth change -/
 lemma single_step_ΔV_bound (r : ℕ) (β : ℝ) (hr : r > 0) (hr_odd : Odd r) (hβ : β ≥ 1) :
@@ -802,120 +908,95 @@ lemma t_log_bound_for_sedt (t U : ℕ) (β : ℝ)
 -/
 lemma sedt_overhead_bound (t U : ℕ) (β : ℝ) (ht : t ≥ 3) (hU : U ≥ 1) (hβ : β ≥ 1) :
   β * (2^t : ℝ) + β * ((max (2 * 2^(t-2)) (3*t)) : ℝ) + (t : ℝ) * log (3/2) / log 2
-  ≤ β * (C t U : ℝ) := by
-  -- Unfold C and prepare log facts
-  unfold C
-  simp only [Nat.cast_add, Nat.cast_mul, Nat.cast_ofNat, Nat.cast_pow]
-
-  have log2_pos : 0 < log (2 : ℝ) := Real.log_pos (by norm_num : (2 : ℝ) > 1)
-
-  -- Step 1: log₂(3/2) ≤ 1 ⇒ t·log₂(3/2) ≤ β·(3t)
-  have h_log_le_one : log (3/2 : ℝ) / log 2 ≤ (1 : ℝ) := by
-    have hle : log (3/2 : ℝ) ≤ log (2 : ℝ) := by
-      apply Real.log_le_log
-      · norm_num
-      · norm_num
-    calc log (3/2 : ℝ) / log 2
-        ≤ log (2 : ℝ) / log 2 := by apply div_le_div_of_nonneg_right hle (le_of_lt log2_pos)
-      _ = 1 := by field_simp
-
-  have h_log_to_3t : (t : ℝ) * (log (3/2) / log 2) ≤ β * (3 * t : ℝ) := by
-    have h1 : (t : ℝ) * (log (3/2) / log 2) ≤ (t : ℝ) :=
-      mul_le_of_le_one_right (Nat.cast_nonneg t) h_log_le_one
-    have h2 : (t : ℝ) ≤ (3 * t : ℝ) := by
-      have : (1 : ℝ) * (t : ℝ) ≤ 3 * t := by linarith
-      calc (t : ℝ) = 1 * t := by ring
-                 _ ≤ 3 * t := this
-    have h3 : (3 * t : ℝ) ≤ β * (3 * t : ℝ) := by
-      have : (1 : ℝ) * (3 * t) ≤ β * (3 * t) := by
-        apply mul_le_mul_of_nonneg_right hβ
-        positivity
-      simpa using this
-    linarith [h1, h2, h3]
-
-  -- Step 2: Split on t = 3 vs t ≥ 4
-  by_cases h3 : t = 3
-  · -- Case t = 3: special handling
-    subst h3
-    norm_num
-    -- K_glue(3) = max(4, 9) = 9 (already simplified by norm_num above)
-
-    -- 3·log₂(3/2) ≤ 3 (since log₂(3/2) ≤ 1)
-    have h_3log : (3 : ℝ) * log (3/2) / log 2 ≤ (3 : ℝ) := by
-      calc (3 : ℝ) * log (3/2) / log 2
-          = (3 : ℝ) * (log (3/2) / log 2) := by ring
-        _ ≤ 3 * 1 := by apply mul_le_mul_of_nonneg_left h_log_le_one; norm_num
-        _ = 3 := by ring
-
-    -- LHS ≤ β·8 + β·9 + 3 ≤ β·8 + β·9 + β·9 = β·26
-    have h_lhs : β * 8 + β * 9 + (3 : ℝ) * log (3/2) / log 2 ≤ β * 26 := by
-      calc β * 8 + β * 9 + (3 : ℝ) * log (3/2) / log 2
-          ≤ β * 8 + β * 9 + 3 := by linarith [h_3log]
-        _ ≤ β * 8 + β * 9 + β * 9 := by
-            have : (3 : ℝ) ≤ β * 9 := by
-              have : (3 : ℝ) ≤ 1 * 9 := by norm_num
-              have : (1 : ℝ) * 9 ≤ β * 9 := by
-                apply mul_le_mul_of_nonneg_right hβ; norm_num
-              linarith
+  ≤ β * (3 * (2^t : ℝ) + 3 * (U : ℝ)) := by
+  -- Use by_cases to handle different t ranges
+  by_cases h4 : 4 ≤ t
+  · -- main branch (t ≥ 4)
+    have h : 3 ≤ t := le_trans (by decide : 3 ≤ 4) h4
+    -- Basic facts from hU for ℕ↔ℝ bridges
+    have hUposN : 0 < U := Nat.succ_le_iff.mp hU
+    have hUpos  : 0 < (U : ℝ) := by exact_mod_cast hUposN
+    have hUge1  : (1 : ℝ) ≤ (U : ℝ) := by exact_mod_cast hU
+    -- Use t_log_bound_for_sedt and bounds for max term
+    have h_log_bound := t_log_bound_for_sedt t U β ht hU hβ
+    have h_max_bound : (max (2 * 2^(t-2)) (3*t) : ℝ) ≤ (2^t : ℝ) :=
+      by exact_mod_cast max_K_glue_le_pow_two t h4
+    -- Combine bounds
+    calc β * 2 ^ t + β * max (2 * 2 ^ (t - 2)) (3 * (t : ℝ)) + (t : ℝ) * log (3 / 2) / log 2
+        ≤ β * 2 ^ t + β * 2 ^ t + β * ((2^t : ℝ) + (3*U : ℝ)) := by
+          apply add_le_add
+          apply add_le_add_left
+          apply mul_le_mul_of_nonneg_left h_max_bound
+          -- β ≥ 1 implies β > 0
+          have hβpos : 0 < β := by
+            have : (1 : ℝ) ≤ β := hβ
             linarith
-        _ = β * (8 + 9 + 9) := by ring
-        _ = β * 26 := by norm_num
-
-    -- RHS = β·(16 + 9 + 3U) ≥ β·26 for U ≥ 1
-    have h_rhs : β * 26 ≤ β * (16 + 9 + 3 * ↑U) := by
-      have : (26 : ℝ) ≤ 16 + 9 + 3 * ↑U := by
-        have : (26 : ℝ) ≤ 25 + 3 * ↑U := by
-          have : (3 : ℝ) * ↑U ≥ 3 := by
-            have : (3 : ℝ) * 1 ≤ 3 * ↑U := by
-              apply mul_le_mul_of_nonneg_left
-              exact_mod_cast hU
-              norm_num
-            simpa using this
-          linarith
-        linarith
-      apply mul_le_mul_of_nonneg_left this
-      linarith [hβ]
-
-    calc β * 8 + β * 9 + (3 : ℝ) * log (3/2) / log 2
-        ≤ β * 26 := h_lhs
-      _ ≤ β * (16 + 9 + 3 * ↑U) := h_rhs
-      _ = β * (25 + 3 * ↑U) := by norm_num
-
-  · -- Case t ≥ 4: use K_glue ≤ 2^t
-    have ht4 : t ≥ 4 := by omega
-    have hK : ((max (2 * 2^(t-2)) (3*t)) : ℝ) ≤ (2^t : ℝ) := by
-      have := max_K_glue_le_pow_two t ht4
-      exact_mod_cast this
-
-    -- LHS ≤ β·2^t + β·2^t + β·3t (using K_glue ≤ 2^t and log → 3t)
-    have h_bound : β * (2^t : ℝ) + β * ((max (2 * 2^(t-2)) (3*t)) : ℝ) + (t : ℝ) * log (3/2) / log 2
-        ≤ β * (2^t : ℝ) + β * (2^t : ℝ) + β * (3 * t : ℝ) := by
-            have h1 : β * ((max (2 * 2^(t-2)) (3*t)) : ℝ) ≤ β * (2^t : ℝ) := by
-              apply mul_le_mul_of_nonneg_left hK
-              linarith [hβ]
-            -- Split the inequality into two parts
-            have h2 : β * (2^t : ℝ) + β * ((max (2 * 2^(t-2)) (3*t)) : ℝ) ≤ β * (2^t : ℝ) + β * (2^t : ℝ) := by
-              apply add_le_add_left h1
-            have h3 : (t : ℝ) * log (3/2) / log 2 ≤ β * (3 * t : ℝ) := by
-              calc (t : ℝ) * log (3/2) / log 2
-                  = (t : ℝ) * (log (3/2) / log 2) := by ring
-                _ ≤ β * (3 * t : ℝ) := h_log_to_3t
-            calc β * (2^t : ℝ) + β * ((max (2 * 2^(t-2)) (3*t)) : ℝ) + (t : ℝ) * log (3/2) / log 2
-                ≤ (β * (2^t : ℝ) + β * (2^t : ℝ)) + (t : ℝ) * log (3/2) / log 2 := by linarith [h2]
-              _ ≤ (β * (2^t : ℝ) + β * (2^t : ℝ)) + β * (3 * t : ℝ) := by linarith [h3]
-              _ = β * (2^t : ℝ) + β * (2^t : ℝ) + β * (3 * t : ℝ) := by ring
-
-    calc β * (2^t : ℝ) + β * ((max (2 * 2^(t-2)) (3*t)) : ℝ) + (t : ℝ) * log (3/2) / log 2
-        ≤ β * (2^t : ℝ) + β * (2^t : ℝ) + β * (3 * t : ℝ) := h_bound
-      _ = β * (2 * 2^t + 3 * t) := by ring
-      _ = β * (2 * 2^t + 3 * t + 0) := by ring
-      _ ≤ β * (2 * 2^t + 3 * t + 3 * ↑U) := by
-            have : (0 : ℝ) ≤ 3 * ↑U := by positivity
-            have : β * (2 * 2^t + 3 * t + 0) ≤ β * (2 * 2^t + 3 * t + 3 * ↑U) := by
-              apply mul_le_mul_of_nonneg_left
-              linarith
-              linarith [hβ]
+          exact le_of_lt hβpos
+          exact h_log_bound
+        _ = β * (2 * 2^t + 2^t + 3*U) := by ring
+        _ = β * (3 * 2^t + 3*U) := by ring
+  · -- small t: t = 3 (since ht : t ≥ 3 and h4 : ¬4 ≤ t)
+    have : t = 3 := by omega
+    subst this
+    simp
+    -- Use an elementary bound for t=3: control log term by β·3U
+    have hβ_nonneg : 0 ≤ β := le_trans (by norm_num : (0 : ℝ) ≤ 1) hβ
+    have hUge1  : (1 : ℝ) ≤ (U : ℝ) := by exact_mod_cast hU
+    have h_max_eval : (max (2 * 2) (3 * 3) : ℝ) = (9 : ℝ) := by norm_num
+    -- 3·log₂(3/2) ≤ 3 ≤ β·3U
+    have h_log_le_beta3U : 3 * (log (3 / 2) / log 2) ≤ β * (3 * (U : ℝ)) := by
+      -- first: 3 * (log(3/2)/log 2) ≤ 3 since log₂(3/2) ≤ 1
+      have h1 : log (3/2) / log 2 ≤ (log 2) / log 2 := by
+        apply div_le_div_of_nonneg_right
+        · apply Real.log_le_log
+          · have : (0 : ℝ) < (3/2 : ℝ) := by norm_num
             exact this
+          · have : (3/2 : ℝ) ≤ (2 : ℝ) := by norm_num
+            exact this
+        · exact le_of_lt (Real.log_pos (by norm_num : (1 : ℝ) < 2))
+      have h1' : 3 * (log (3/2) / log 2) ≤ 3 := by
+        have h1_simplified : log (3/2) / log 2 ≤ 1 := by
+          rw [div_le_one (Real.log_pos (by norm_num : (1 : ℝ) < 2))]
+          -- log (3/2) ≤ log 2 since 3/2 ≤ 2
+          have : log (3/2) ≤ log 2 := by
+            apply Real.log_le_log
+            · norm_num
+            · norm_num
+          exact this
+        have : (0 : ℝ) ≤ (3 : ℝ) := by norm_num
+        have := mul_le_mul_of_nonneg_left h1_simplified this
+        simpa [mul_one] using this
+      -- next: 3 ≤ β·3U since U ≥ 1 and β ≥ 1
+      have h2 : (3 : ℝ) ≤ (3 : ℝ) * (U : ℝ) := by
+        have : (1 : ℝ) ≤ (U : ℝ) := hUge1
+        have h3nonneg : (0 : ℝ) ≤ (3 : ℝ) := by norm_num
+        have := mul_le_mul_of_nonneg_left this h3nonneg
+        simpa [mul_one] using this
+      have h3 : (3 : ℝ) * (U : ℝ) ≤ β * (3 : ℝ) * (U : ℝ) := by
+        have hU_nonneg : (0 : ℝ) ≤ (U : ℝ) := by exact_mod_cast (Nat.zero_le U)
+        have h3U_nonneg : (0 : ℝ) ≤ (3 : ℝ) * (U : ℝ) := by
+          exact mul_nonneg (by norm_num) hU_nonneg
+        have := mul_le_mul_of_nonneg_left hβ h3U_nonneg
+        simpa [one_mul, mul_comm, mul_left_comm, mul_assoc] using this
+      have h3' : (3 : ℝ) * (U : ℝ) ≤ β * ((3 : ℝ) * (U : ℝ)) := by
+        rw [mul_assoc] at h3
+        exact h3
+      exact le_trans h1' (le_trans h2 h3')
+    -- conclude by packing terms into β·(3·2^3 + 3U) = β·(24 + 3U)
+    calc
+      β * 2 ^ 3 + β * max (2 * 2) (3 * 3) + 3 * log (3 / 2) / log 2
+          = β * 8 + β * 9 + 3 * (log (3 / 2) / log 2) := by
+              rw [h_max_eval, mul_div_assoc]; norm_num
+      _ ≤ β * 8 + β * 9 + β * (3 * (U : ℝ)) := by
+            apply add_le_add (add_le_add le_rfl le_rfl) h_log_le_beta3U
+      _ = β * (17 + 3 * (U : ℝ)) := by ring
+      _ ≤ β * (24 + 3 * (U : ℝ)) := by
+            have : (17 : ℝ) ≤ 24 := by norm_num
+            exact mul_le_mul_of_nonneg_left (by simpa [add_le_add_iff_right] using this) hβ_nonneg
+      _ ≤ β * (3 * 2^3 + 3 * (U : ℝ)) := by
+            -- 24 = 3 * 2^3, so this is equality
+            have : (24 : ℝ) = 3 * (2^3 : ℝ) := by norm_num
+            rw [this]
 
 
 /-- Technical bound: full SEDT bound combination (PROVEN LEMMA)
@@ -933,66 +1014,44 @@ lemma sedt_full_bound_technical (t U : ℕ) (β ΔV_head drift_per_step ΔV_boun
   (abs ΔV_head ≤ β * (2^t : ℝ) + (t : ℝ) * log (3/2) / log 2) →
   (drift_per_step ≤ -(ε t U β)) →
   (abs ΔV_boundary ≤ β * (K_glue t : ℝ)) →
-  ΔV_head + drift_per_step * (length : ℝ) + ΔV_boundary ≤ -(ε t U β) * (length : ℝ) + β * (C t U : ℝ) := by
+  ΔV_head + drift_per_step * (length : ℝ) + ΔV_boundary ≤
+    -(ε t U β) * (length : ℝ) + β * (3 * (2^t : ℝ) + 3 * (U : ℝ)) := by
   intro h_head_bound h_drift_bound h_boundary_bound
 
   -- Get the proven overhead bound (requires β ≥ 1)
   have h_overhead := sedt_overhead_bound t U β ht hU hβ
 
-  -- Extract upper bounds from abs inequalities
-  have h_head_upper : ΔV_head ≤ β * (2^t : ℝ) + (t : ℝ) * log (3/2) / log 2 :=
-    le_of_abs_le h_head_bound
+  -- Bridge: β·K_glue ≤ β·max(2·2^{t-2}, 3t)
+  have hK_nat : K_glue t ≤ max (2 * 2^(t-2)) (3*t) := by
+    by_cases h : 3 ≤ t
+    · -- for t ≥ 3, K_glue = 2·2^{t-2} ≤ max(…)
+      -- Prefer simp to satisfy linter
+      simp [K_glue, Q_t, h]
+    · -- small t = 0,1,2
+      interval_cases t
 
-  have h_boundary_upper : ΔV_boundary ≤ β * (K_glue t : ℝ) :=
-    le_of_abs_le h_boundary_bound
+  have hβ_nonneg : 0 ≤ β := le_trans (by norm_num : (0 : ℝ) ≤ 1) hβ
 
-  -- Bound on drift term
-  have h_drift_upper : drift_per_step * (length : ℝ) ≤ -(ε t U β) * (length : ℝ) := by
-    apply mul_le_mul_of_nonneg_right h_drift_bound (Nat.cast_nonneg _)
+  have hK_le : β * (K_glue t : ℝ) ≤ β * (max (2 * 2^(t-2)) (3*t) : ℝ) := by
+    exact mul_le_mul_of_nonneg_left (by exact_mod_cast hK_nat) hβ_nonneg
 
-  -- Combine the three bounds using add_le_add
-  have h_sum_bound : ΔV_head + drift_per_step * (length : ℝ) + ΔV_boundary ≤
-      (β * (2^t : ℝ) + (t : ℝ) * log (3/2) / log 2) +
-      (-(ε t U β) * (length : ℝ)) +
-      β * (K_glue t : ℝ) := by
-    -- Apply add_le_add three times
-    apply add_le_add
-    apply add_le_add
-    · exact h_head_upper
-    · exact h_drift_upper
-    · exact h_boundary_upper
-
-  -- K_glue def to match sedt_overhead_bound
-  have h_K_eq_max : (K_glue t : ℝ) = (max (2 * 2^(t-2)) (3*t) : ℝ) := by
-    unfold K_glue
-    -- K_glue t = 2 * Q_t t, need to show this equals max(2*2^(t-2), 3*t)
-    have h_Q_t_def : Q_t t = if t ≥ 3 then 2^(t-2) else if t = 2 then 2 else 1 := rfl
-    unfold Q_t
-    split_ifs with h1 h2
-    · -- t ≥ 3: K_glue t = 2 * 2^(t-2), need to show this = max(2*2^(t-2), 3*t)
-      simp [Nat.cast_max]
-      -- For t ≥ 3, we need 2*2^(t-2) ≥ 3*t, which is true for t ≥ 4
-      -- For t = 3: 2*2^1 = 4, 3*3 = 9, so max(4,9) = 9 ≠ 4
-      -- This suggests the old definition was wrong for t = 3
-      sorry -- TODO: Fix this case
-    · -- t = 2: K_glue t = 2 * 2 = 4, max(2*2^0, 3*2) = max(2,6) = 6 ≠ 4
-      sorry -- TODO: Fix this case
-    · -- t < 2: K_glue t = 2 * 1 = 2, max(2*2^(t-2), 3*t) = max(2*2^(t-2), 3*t)
-      sorry -- TODO: Fix this case
-
-  -- Rearrange and use sedt_overhead_bound
+  -- Complete the final bound
   calc ΔV_head + drift_per_step * (length : ℝ) + ΔV_boundary
       ≤ (β * (2^t : ℝ) + (t : ℝ) * log (3/2) / log 2) +
         (-(ε t U β) * (length : ℝ)) +
-        β * (K_glue t : ℝ) := h_sum_bound
-    _ = -(ε t U β) * (length : ℝ) +
-        (β * (2^t : ℝ) + β * (K_glue t : ℝ) + (t : ℝ) * log (3/2) / log 2) := by ring
+        β * (K_glue t : ℝ) := by
+          apply add_le_add (add_le_add (le_of_abs_le h_head_bound)
+            (mul_le_mul_of_nonneg_right h_drift_bound (Nat.cast_nonneg _)))
+            (le_of_abs_le h_boundary_bound)
+    _ ≤ (β * (2^t : ℝ) + (t : ℝ) * log (3/2) / log 2) +
+        (-(ε t U β) * (length : ℝ)) +
+        β * (max (2 * 2^(t-2)) (3*t) : ℝ) := by
+          -- strengthen K_glue to max via hK_le
+          apply add_le_add (add_le_add le_rfl le_rfl) hK_le
     _ = -(ε t U β) * (length : ℝ) +
         (β * (2^t : ℝ) + β * (max (2 * 2^(t-2)) (3*t) : ℝ) + (t : ℝ) * log (3/2) / log 2) := by
-          rw [h_K_eq_max]
-    _ ≤ -(ε t U β) * (length : ℝ) + β * (C t U : ℝ) := by
-        -- Use sedt_overhead_bound: β·2^t + β·max(...) + t·log ≤ β·C
-        apply add_le_add_left
-        exact h_overhead
+          ring
+    _ ≤ -(ε t U β) * (length : ℝ) + β * (3 * (2^t : ℝ) + 3 * (U : ℝ)) := by
+          apply add_le_add_left h_overhead
 
 end Collatz.SEDT
