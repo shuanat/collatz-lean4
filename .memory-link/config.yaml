@@ -1,0 +1,41 @@
+# Memory System Configuration for collatz-lean4
+# This file links the project to the centralized memory system
+
+memory_system:
+  root_path: "../../agi-cursor-agent/memory"
+  project_id: "collatz-lean4"
+  project_type: "formal-verification"
+  status: "active"
+  
+# Project-specific memory settings
+project_memory:
+  auto_extract_concepts: true
+  concept_types:
+    - "theorem"
+    - "lemma"
+    - "definition"
+    - "proof"
+    - "tactic"
+    - "structure"
+    - "inductive"
+  
+  file_types_to_scan:
+    - "*.lean"
+    - "*.md"
+    
+  exclude_patterns:
+    - "lake-packages/"
+    - "build/"
+    - "archive/"
+
+# Integration settings
+integration:
+  sync_with_main_memory: true
+  create_project_concepts: true
+  link_to_thematic_layer: true
+  
+# Search settings
+search:
+  enable_project_search: true
+  index_project_files: true
+  search_depth: 3
