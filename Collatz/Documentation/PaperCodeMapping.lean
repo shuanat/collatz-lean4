@@ -32,6 +32,9 @@ namespace Collatz.Documentation
   - `Collatz/Epochs/LongEpochs.lean`
 - H.main support:
   - `Collatz/CycleExclusion/Main.lean`
+  - W5 hardened interface: semantic cycle predicates (`is_valid_cycle`,
+    `is_trivial`, `is_nontrivial`, `is_pure_e1`, `is_mixed`) and
+    period/repeat-premise exclusion theorem (no `False`-based proxies)
 - I.1 support:
   - `Collatz/Convergence/MainTheorem.lean`
 
@@ -42,6 +45,10 @@ W2 hardening additionally enforces non-vacuous D-level statements in epoch seman
 (`Epochs/Core`, `Epochs/APStructure`, `Epochs/Homogenization`, `Epochs/NumeratorCarry`, `Epochs/LongEpochs`).
 W4 hardening extends this with non-vacuous F-level contracts in
 `Mixing/Semigroup`, `Mixing/PhaseMixing`, and `Mixing/TouchFrequency`.
+W5 hardening extends this with non-vacuous H-level cycle semantics in
+`CycleExclusion/CycleDefinition`, `CycleExclusion/PureE1Cycles`,
+`CycleExclusion/MixedCycles`, `CycleExclusion/PeriodSum`,
+`CycleExclusion/RepeatTrick`, and `CycleExclusion/Main`.
 -/
 
 end Collatz.Documentation
