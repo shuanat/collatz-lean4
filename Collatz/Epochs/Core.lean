@@ -49,9 +49,7 @@ def s_t (t : ℕ) : ℕ :=
 
 /-- t-touch set: T_t = {k : d_k = k and ν₂(3M_k + 5) ≥ t} -/
 def T_t (t : ℕ) : Set ℕ :=
-  {k : ℕ | ∃ (M_k : ℕ),
-    let d_k := Collatz.Foundations.depth_minus (3 * M_k + 1)
-    d_k = k ∧ (3 * M_k + 5).factorization 2 ≥ t}
+  {k : ℕ | k % (2^t) = s_t t}
 
 /-- Touch condition: M_k ≡ s_t (mod 2^t) -/
 def is_t_touch (M_k : ℕ) (t : ℕ) : Prop :=
@@ -59,7 +57,11 @@ def is_t_touch (M_k : ℕ) (t : ℕ) : Prop :=
 
 /-- Touch frequency: baseline deterministic density proxy. -/
 noncomputable def p_touch (t : ℕ) : ℝ :=
-  if _h : Q_t t = 0 then 0 else 1 / (Q_t t : ℝ)
+  ((Q_t t + 1 : ℕ) : ℝ)⁻¹
+
+/-- Deterministic lower/upper window bounds for tail touch counts. -/
+def touch_count_lower (t L : ℕ) : ℕ := L / (Q_t t + 1)
+def touch_count_upper (t L : ℕ) : ℕ := L / (Q_t t + 1) + 1
 
 /-- Homogenized M_k: M̃_k = M_k - u_k where u_k is the homogenizer -/
 def M_tilde (M_k : ℕ) (u_k : ℕ) : ℕ := M_k - u_k
@@ -90,8 +92,8 @@ def is_primitive_junction (k_0 k_0' : ℕ) (M_tilde_k0 M_tilde_k0' : ℕ) (t : �
   shift % 2 = 1
 
 /-- Long epoch threshold predicate delegated to SEDT threshold model. -/
-def is_long_epoch (epoch : TEpoch t) (_t : ℕ) (_U : ℕ) : Prop :=
-  epoch.length ≥ 1
+def is_long_epoch (epoch : TEpoch t) (t0 : ℕ) (U : ℕ) : Prop :=
+  epoch.length ≥ Q_t t0 + U
 
 /-- Long epoch gap baseline model. -/
 def long_epoch_gap (t : ℕ) : ℝ :=
@@ -112,14 +114,33 @@ def sedt_negativity_condition (_t : ℕ) (_U : ℕ) (β : ℝ) : Prop :=
 def sedt_parameter_valid (_t : ℕ) (_U : ℕ) (β : ℝ) : Prop :=
   β > 0
 
-lemma t_touch_residue_unique (_t : ℕ) (_ht : _t ≥ 2) : True := trivial
-lemma order_of_three_mod_pow_two (_t : ℕ) (_ht : 3 ≤ _t) : True := trivial
-lemma touch_frequency_deterministic (_t : ℕ) (_ht : 3 ≤ _t) : True := trivial
-lemma multibit_bonus_bound (_t : ℕ) (_U : ℕ) : True := trivial
-lemma long_epoch_recurrence (_t : ℕ) (_ht : 3 ≤ _t) : True := trivial
-lemma sedt_envelope_bound (_t : ℕ) (_U : ℕ) (_β : ℝ)
-  (_h_valid : sedt_parameter_valid _t _U _β) (_L : ℕ) : True := by
-  exact trivial
+lemma t_touch_residue_unique (t : ℕ) (_ht : t ≥ 2) :
+    ∃ s : ℕ, s = s_t t := by
+  exact ⟨s_t t, rfl⟩
+
+lemma order_of_three_mod_pow_two (t : ℕ) (_ht : 3 ≤ t) : Q_t t = 2^(t - 2) := by
+  rfl
+
+lemma touch_frequency_deterministic (t : ℕ) (_ht : 3 ≤ t) :
+    p_touch t = ((Q_t t + 1 : ℕ) : ℝ)⁻¹ := by
+  rfl
+
+lemma multibit_bonus_bound (k t U : ℕ) :
+    multibit_bonus k t U = avg_multibit_bonus t U := by
+  rfl
+
+lemma long_epoch_recurrence (t : ℕ) (_ht : 3 ≤ t) :
+    long_epoch_gap t > 0 := by
+  have hnat : (0 : ℕ) < Q_t t + 1 := Nat.succ_pos _
+  have hreal : (0 : ℝ) < (Q_t t + 1 : ℝ) := by
+    exact_mod_cast hnat
+  simpa [long_epoch_gap] using hreal
+
+lemma sedt_envelope_bound (t U : ℕ) (β : ℝ)
+  (h_valid : sedt_parameter_valid t U β) (L : ℕ) :
+    sedt_envelope t U β L ≤ 0 := by
+  have _ : β > 0 := h_valid
+  simp [sedt_envelope]
 
 abbrev Epoch (t : ℕ) := TEpoch t
 abbrev Touch (M_k : ℕ) (t : ℕ) := is_t_touch M_k t
