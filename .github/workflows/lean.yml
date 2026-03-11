@@ -7,65 +7,92 @@ on:
     branches: [ main ]
 
 jobs:
-  build:
+  build-and-check:
     runs-on: ubuntu-latest
-    
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-    
-    - name: Install elan (Lean version manager)
-      run: |
-        curl https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh -sSf | sh -s -- -y --default-toolchain none
-        echo "$HOME/.elan/bin" >> $GITHUB_PATH
-    
-    - name: Install Lean toolchain
-      run: |
-        elan toolchain install $(cat lean-toolchain)
-        elan default $(cat lean-toolchain)
-    
-    - name: Cache Lake dependencies
-      uses: actions/cache@v4
-      with:
-        path: |
-          .lake
-        key: ${{ runner.os }}-lake-${{ hashFiles('lakefile.lean', 'lean-toolchain') }}
-        restore-keys: |
-          ${{ runner.os }}-lake-
-    
-    - name: Build Lean project
-      run: |
-        lake exe cache get || true
-        lake build
-    
-    - name: Check for `sorry` in core files
-      run: |
-        echo "Checking for `sorry` in core theorem files..."
-        # Allow sorry in specific files that document proof strategies
-        SORRY_COUNT=$(grep -r "sorry" Collatz/Arithmetic.lean Collatz/OrdFact.lean Collatz/Semigroup.lean Collatz/SEDT.lean | grep -v "-- Proof:" | grep -v "Full proof" | grep -v "QUESTION" | wc -l || true)
-        echo "Found $SORRY_COUNT active sorry placeholders (excluding documented strategies)"
-        # Note: We expect some sorry placeholders in documented proof strategies
-        # This is acceptable for formalization in progress
-    
-    - name: Run examples
-      run: |
-        lake env lean --run Collatz/Examples.lean || echo "Examples executed (some may have computational overhead)"
-    
-    - name: Generate build summary
-      if: always()
-      run: |
-        echo "### Lean 4 Build Summary" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "**Toolchain:** $(cat lean-toolchain)" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "**Files:**" >> $GITHUB_STEP_SUMMARY
-        echo "- Collatz/Basic.lean (100% proven)" >> $GITHUB_STEP_SUMMARY
-        echo "- Collatz/Arithmetic.lean (87% proven, 20/23 lemmas)" >> $GITHUB_STEP_SUMMARY
-        echo "- Collatz/OrdFact.lean (examples t=3,4,5 ✅ proven, main theorem structured)" >> $GITHUB_STEP_SUMMARY
-        echo "- Collatz/Epoch.lean (types defined)" >> $GITHUB_STEP_SUMMARY
-        echo "- Collatz/Semigroup.lean (structure formalized)" >> $GITHUB_STEP_SUMMARY
-        echo "- Collatz/SEDT.lean (envelope theorem formalized)" >> $GITHUB_STEP_SUMMARY
-        echo "- Collatz/Examples.lean (15 examples ✅)" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "**Status:** Build completed successfully ✅" >> $GITHUB_STEP_SUMMARY
 
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install elan
+        run: |
+          curl https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh -sSf | sh -s -- -y --default-toolchain none
+          echo "$HOME/.elan/bin" >> $GITHUB_PATH
+
+      - name: Install Lean toolchain
+        run: |
+          elan toolchain install $(cat lean-toolchain)
+          elan default $(cat lean-toolchain)
+
+      - name: Cache Lake dependencies
+        uses: actions/cache@v4
+        with:
+          path: .lake
+          key: ${{ runner.os }}-lake-${{ hashFiles('lakefile.lean', 'lean-toolchain') }}
+          restore-keys: |
+            ${{ runner.os }}-lake-
+
+      - name: Build production entry
+        run: |
+          lake exe cache get || true
+          lake build Collatz
+
+      - name: Proof-chain no-sorry/no-axiom gate
+        run: |
+          set -e
+          CHAIN_FILES=(
+            "Collatz.lean"
+            "Collatz/Production.lean"
+            "Collatz/Foundations/Core.lean"
+            "Collatz/Epochs/Core.lean"
+            "Collatz/Epochs/APStructure.lean"
+            "Collatz/Epochs/Homogenization.lean"
+            "Collatz/Epochs/NumeratorCarry.lean"
+            "Collatz/Epochs/LongEpochs.lean"
+            "Collatz/SEDT/Core.lean"
+            "Collatz/SEDT/Axioms.lean"
+            "Collatz/SEDT/Theorems.lean"
+            "Collatz/Mixing/Semigroup.lean"
+            "Collatz/Mixing/PhaseMixing.lean"
+            "Collatz/Mixing/TouchFrequency.lean"
+            "Collatz/CycleExclusion/CycleDefinition.lean"
+            "Collatz/CycleExclusion/PeriodSum.lean"
+            "Collatz/CycleExclusion/PureE1Cycles.lean"
+            "Collatz/CycleExclusion/MixedCycles.lean"
+            "Collatz/CycleExclusion/RepeatTrick.lean"
+            "Collatz/CycleExclusion/Main.lean"
+            "Collatz/Convergence/Coercivity.lean"
+            "Collatz/Convergence/FixedPoints.lean"
+            "Collatz/Convergence/NoAttractors.lean"
+            "Collatz/Convergence/MainTheorem.lean"
+          )
+
+          SORRY_COUNT=$(rg -n "\\bsorry\\b" "${CHAIN_FILES[@]}" | wc -l || true)
+          AXIOM_COUNT=$(rg -n "\\baxiom\\b" "${CHAIN_FILES[@]}" | wc -l || true)
+
+          echo "chain_sorry_count=$SORRY_COUNT" >> $GITHUB_ENV
+          echo "chain_axiom_count=$AXIOM_COUNT" >> $GITHUB_ENV
+
+          if [ "$SORRY_COUNT" -ne 0 ]; then
+            echo "Proof-chain gate failed: found 'sorry'."
+            rg -n "\\bsorry\\b" "${CHAIN_FILES[@]}" || true
+            exit 1
+          fi
+
+          if [ "$AXIOM_COUNT" -ne 0 ]; then
+            echo "Proof-chain gate failed: found 'axiom'."
+            rg -n "\\baxiom\\b" "${CHAIN_FILES[@]}" || true
+            exit 1
+          fi
+
+      - name: Paper-label mapping gate
+        run: |
+          rg -n "D.1|E.2|F.6|F.7|G.5|H.main|I.1" "Collatz/Documentation/PaperCodeMapping.lean" > /dev/null
+          rg -n "#lem:D1|#thm:E2|#thm:F6|#cor:F7|#thm:G5|#thm:Hmain|#thm:I1" "../collatz-paper/paper/src/md/appendices/internal/INDEX.md" > /dev/null
+
+      - name: Generate CI summary
+        if: always()
+        run: |
+          echo "### Lean 4 Proof Closure Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- chain sorry count: ${chain_sorry_count:-n/a}" >> $GITHUB_STEP_SUMMARY
+          echo "- chain axiom count: ${chain_axiom_count:-n/a}" >> $GITHUB_STEP_SUMMARY
