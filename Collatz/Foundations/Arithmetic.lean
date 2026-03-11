@@ -350,8 +350,6 @@ lemma natCast_pow_eq_intCast_pow {a k n : ℕ} :
   norm_cast
 
 /-- Exponent at step m: e(m) = ν_2(3m+1) -/
-def e (m : ℕ) : ℕ :=
-  if m = 0 then 0
-  else (3 * m + 1).factorization 2
+def e (m : ℕ) : ℕ := (3 * m + 1).factorization 2
 
 end Collatz.Arithmetic

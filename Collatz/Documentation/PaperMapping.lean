@@ -19,8 +19,8 @@ namespace Collatz.Documentation
 
 -- Section 2: Setup
 -- Def 2.1 (T_odd) → Foundations.Basic.T_odd
--- Def 2.2 (depth_minus) → Foundations.TwoAdicDepth.depth_minus
--- Def 2.3 (e function) → Foundations.Arithmetic.e
+-- Def 2.2 (depth_minus) → Foundations.Core.depth_minus
+-- Def 2.3 (e function) → Foundations.Core.step_type (backed by Foundations.Arithmetic.e)
 
 -- Section 3: Stratified
 -- Thm 4.1 → Stratified.CompleteStratification.complete_stratification

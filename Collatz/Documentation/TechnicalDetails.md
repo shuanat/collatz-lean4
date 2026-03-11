@@ -12,20 +12,23 @@
 
 ```lean
 -- Базовые определения
-def depth_minus (n : ℕ) : ℕ := sorry
-def step_type (n : ℕ) : ℕ := sorry
-def collatz_step (n : ℕ) : ℕ := sorry
-def collatz_step_odd (n : ℕ) : ℕ := sorry
-def collatz_orbit (n : ℕ) : List ℕ := sorry
+def depth_minus (n : ℕ) : ℕ := (n + 1).factorization 2
+def step_type (n : ℕ) : ℕ := Collatz.Arithmetic.e n
+def collatz_step (n : ℕ) : ℕ := (3 * n + 1) / (2 ^ step_type n)
+def collatz_step_odd (n : ℕ) : ℕ := if Odd n then collatz_step n else n
+def collatz_orbit (n : ℕ) : ℕ → ℕ := fun k => (collatz_step_odd^[k]) n
 
 -- Базовые леммы
-lemma depth_minus_properties : sorry
-lemma step_type_properties : sorry
-lemma collatz_step_properties : sorry
-lemma collatz_orbit_properties : sorry
+lemma depth_minus_nonneg (n : ℕ) : depth_minus n ≥ 0 := Nat.zero_le _
+lemma step_type_nonneg (n : ℕ) : step_type n ≥ 0 := Nat.zero_le _
+lemma collatz_step_odd_on_odd {n : ℕ} (h : Odd n) : collatz_step_odd n = collatz_step n := by
+  simp [collatz_step_odd, h]
+lemma collatz_orbit_zero (n : ℕ) : collatz_orbit n 0 = n := by
+  simp [collatz_orbit]
 ```
 
 **Ключевые особенности:**
+
 - Только базовые математические определения
 - Минимальные зависимости от Mathlib
 - Стабильный интерфейс для всех остальных модулей
@@ -63,6 +66,7 @@ def sedt_parameter_valid (t : ℕ) : Prop := sorry
 ```
 
 **Ключевые особенности:**
+
 - Централизованные определения всех структур эпох
 - Интеграция с SEDT константами
 - Поддержка всех операций с эпохами
@@ -90,6 +94,7 @@ theorem augmented_potential_properties : sorry
 ```
 
 **Ключевые особенности:**
+
 - Все константы помечены как `noncomputable`
 - Полная интеграция с вещественными числами
 - Основные теоремы SEDT
@@ -141,16 +146,19 @@ abbrev PotentialChange := Collatz.SEDT.potential_change
 ### Соглашения именования
 
 #### Определения и функции
+
 - **snake_case:** `depth_minus`, `collatz_step`, `is_t_touch`
 - **Префиксы по модулю:** `M_tilde`, `s_t`, `T_t`, `p_touch`, `Q_t`
 - **Структуры:** `TEpoch` (T для типа)
 
 #### Теоремы и леммы
+
 - **Описательные имена:** `collatz_step_properties`, `epoch_decomposition`
 - **Префиксы по области:** `sedt_`, `epoch_`, `touch_`
 - **Суффиксы по типу:** `_theorem`, `_lemma`, `_corollary`
 
 #### Алиасы
+
 - **Короткие имена:** `Depth`, `StepType`, `TEpoch`
 - **Описательные имена:** `SlopeParam`, `NegativityThreshold`
 - **Согласованность:** Все алиасы в одном стиле
@@ -158,16 +166,19 @@ abbrev PotentialChange := Collatz.SEDT.potential_change
 ### Соглашения по типам
 
 #### Натуральные числа (ℕ)
+
 - Индексы: `k`, `t`, `n`
 - Размеры: `len`, `size`
 - Порядки: `order`, `rank`
 
 #### Вещественные числа (ℝ)
+
 - Параметры: `α`, `β`, `ε`
 - Плотности: `density`, `frequency`
 - Пороги: `threshold`, `bound`
 
 #### Булевы значения (Prop)
+
 - Условия: `is_*`, `has_*`
 - Свойства: `*_valid`, `*_bounded`
 
@@ -202,6 +213,7 @@ Epochs.Aliases
 ### Детальные зависимости по модулям
 
 #### Epochs модули
+
 ```lean
 -- Все импортируют:
 import Collatz.Foundations.Core
@@ -214,6 +226,7 @@ open Collatz.Epochs.Aliases (TEpoch IsTTouch MTilde ST TT PTouch QT)
 ```
 
 #### CycleExclusion модули
+
 ```lean
 -- Все импортируют:
 import Collatz.Foundations.Core
@@ -224,6 +237,7 @@ open Collatz.Epochs.Aliases (Depth StepType CollatzStep Orbit)
 ```
 
 #### Convergence модули
+
 ```lean
 -- Все импортируют:
 import Collatz.Foundations.Core
@@ -234,6 +248,7 @@ open Collatz.Epochs.Aliases (Depth StepType CollatzStep Orbit)
 ```
 
 #### Mixing модули
+
 ```lean
 -- Все импортируют:
 import Collatz.Foundations.Core
@@ -246,6 +261,7 @@ open Collatz.Epochs.Aliases (TEpoch PhaseClass SEDTEnvelope)
 ```
 
 #### Stratified модули
+
 ```lean
 -- Все импортируют:
 import Collatz.Foundations.Core
@@ -257,6 +273,7 @@ open Collatz.Epochs.Aliases (TEpoch Depth StepType)
 ```
 
 #### Utilities модули
+
 ```lean
 -- Все импортируют:
 import Collatz.Foundations.Core
@@ -273,6 +290,7 @@ open Collatz.Epochs.Aliases (Depth StepType)
 ### Добавление нового определения
 
 #### Шаг 1: Определите место
+
 ```lean
 -- Базовое математическое определение
 → Foundations.Core.lean
@@ -285,24 +303,28 @@ open Collatz.Epochs.Aliases (Depth StepType)
 ```
 
 #### Шаг 2: Добавьте определение
+
 ```lean
 -- В соответствующий Core модуль
 def new_definition (param : Type) : ReturnType := sorry
 ```
 
 #### Шаг 3: Добавьте алиас (если нужно)
+
 ```lean
 -- В Epochs.Aliases.lean
 abbrev NewDefinition := Collatz.Module.new_definition
 ```
 
 #### Шаг 4: Обновите документацию
+
 - Добавьте в Architecture.md
 - Обновите технические детали
 
 ### Рефакторинг существующего модуля
 
 #### Шаг 1: Анализ текущего состояния
+
 ```bash
 # Проверьте текущие импорты
 grep -n "import" Collatz/Module/File.lean
@@ -312,12 +334,14 @@ grep -n "def\|theorem\|lemma" Collatz/Module/File.lean
 ```
 
 #### Шаг 2: Удалите дублированные определения
+
 ```lean
 -- Удалите определения, которые есть в Core модулях
 -- Замените на импорты
 ```
 
 #### Шаг 3: Обновите импорты
+
 ```lean
 -- Добавьте необходимые Core импорты
 import Collatz.Foundations.Core
@@ -327,12 +351,14 @@ import Collatz.Epochs.Aliases
 ```
 
 #### Шаг 4: Используйте алиасы
+
 ```lean
 -- Замените длинные имена на алиасы
 open Collatz.Epochs.Aliases (TEpoch IsTTouch MTilde)
 ```
 
 #### Шаг 5: Проверьте компиляцию
+
 ```bash
 lake build Collatz.Module.File
 ```
@@ -351,25 +377,25 @@ lake build Collatz.Module.File
 
 def check_architecture():
     """Проверяет соблюдение архитектурных правил"""
-    
+
     # Проверка 1: Core модули не импортируют специализированные модули
     core_modules = [
         "Collatz/Foundations/Core.lean",
-        "Collatz/Epochs/Core.lean", 
+        "Collatz/Epochs/Core.lean",
         "Collatz/SEDT/Core.lean"
     ]
-    
+
     # Проверка 2: Специализированные модули импортируют Core модули
     specialized_modules = [
         "Collatz/Epochs/Structure.lean",
         "Collatz/CycleExclusion/Main.lean",
         # ... остальные модули
     ]
-    
+
     # Проверка 3: Отсутствие циклических зависимостей
     # Проверка 4: Использование алиасов
     # Проверка 5: Соответствие соглашениям именования
-    
+
     return True
 
 if __name__ == "__main__":
@@ -386,11 +412,11 @@ if __name__ == "__main__":
 
 def check_duplications():
     """Проверяет отсутствие дублированных определений"""
-    
+
     # Сканируем все .lean файлы
     # Ищем определения (def, theorem, lemma)
     # Проверяем уникальность имен
-    
+
     return True
 
 if __name__ == "__main__":
@@ -403,26 +429,26 @@ if __name__ == "__main__":
 
 ### Текущие метрики (2025-01-15)
 
-| Метрика | Значение | Цель |
-|---------|----------|------|
-| **Компиляция** | 100% (1927/1927) | 100% |
-| **Циклические зависимости** | 0 | 0 |
-| **Дублированные определения** | 0 | 0 |
-| **Архитектурные нарушения** | 0 | 0 |
-| **Соответствие статье** | 100% | 100% |
+| Метрика                       | Значение         | Цель |
+| ----------------------------- | ---------------- | ---- |
+| **Компиляция**                | 100% (1927/1927) | 100% |
+| **Циклические зависимости**   | 0                | 0    |
+| **Дублированные определения** | 0                | 0    |
+| **Архитектурные нарушения**   | 0                | 0    |
+| **Соответствие статье**       | 100%             | 100% |
 
 ### Метрики по модулям
 
-| Категория | Модулей | Компилируется | Ошибок |
-|-----------|---------|---------------|--------|
-| **Core** | 3 | 3 | 0 |
-| **Epochs** | 10 | 10 | 0 |
-| **CycleExclusion** | 6 | 6 | 0 |
-| **Convergence** | 4 | 4 | 0 |
-| **Mixing** | 3 | 3 | 0 |
-| **Stratified** | 5 | 5 | 0 |
-| **Utilities** | 4 | 4 | 0 |
-| **Всего** | 35 | 35 | 0 |
+| Категория          | Модулей | Компилируется | Ошибок |
+| ------------------ | ------- | ------------- | ------ |
+| **Core**           | 3       | 3             | 0      |
+| **Epochs**         | 10      | 10            | 0      |
+| **CycleExclusion** | 6       | 6             | 0      |
+| **Convergence**    | 4       | 4             | 0      |
+| **Mixing**         | 3       | 3             | 0      |
+| **Stratified**     | 5       | 5             | 0      |
+| **Utilities**      | 4       | 4             | 0      |
+| **Всего**          | 35      | 35            | 0      |
 
 ---
 
@@ -435,7 +461,7 @@ if __name__ == "__main__":
 ✅ **Удобство использования:** Система алиасов  
 ✅ **Качество кода:** Автоматические проверки  
 ✅ **Соответствие стандартам:** Соглашения именования  
-✅ **Масштабируемость:** Легкое добавление модулей  
+✅ **Масштабируемость:** Легкое добавление модулей
 
 **Статус:** ✅ Технически завершена и готова к использованию
 
