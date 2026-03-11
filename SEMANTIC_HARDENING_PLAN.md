@@ -3,8 +3,8 @@
 ## Progress
 
 - Date: 2026-03-11
-- Overall status: `W1 completed`, `W2 completed`, `W3 completed`, `W4-W7 pending`
-- Verification snapshot: `lake build Collatz` passes locally after W3 implementation
+- Overall status: `W1 completed`, `W2 completed`, `W3 completed`, `W4 completed`, `W5-W7 pending`
+- Verification snapshot: `lake build Collatz` passes locally after W4 implementation
 
 ### W1 Progress (current)
 
@@ -92,6 +92,30 @@ Acceptance checks:
 - `lake build Collatz.SEDT.Core Collatz.SEDT.Theorems` passes.
 - no `: True` theorem signatures remain in `SEDT/Core` and `SEDT/Theorems`.
 - placeholder witness form `⟨-1, by norm_num⟩` removed from SEDT period-sum layer.
+
+### W4 Progress (completed)
+
+Completed across mixing modules:
+
+- `Collatz/Mixing/Semigroup.lean`:
+  - replaced vacuous semigroup placeholders with explicit residue semigroup interfaces
+    (`deltaCompose`, closure lemma, and generator-based coverage statement).
+- `Collatz/Mixing/TouchFrequency.lean`:
+  - promoted touch-frequency theorem to explicit canonical equality on `p_touch`.
+  - added deterministic finite-window discrepancy statements
+    (`touch_count_upper = touch_count_lower + 1`, monotone lower/upper relation, `≤ 1` discrepancy cap).
+- `Collatz/Mixing/PhaseMixing.lean`:
+  - replaced vacuous phase-mixing lemmas with executable modular-periodicity and
+    primitive-junction recurrence statements.
+  - added `mixing_touch_to_sedt_envelope_nonpositive` bridge theorem connecting
+    F-level mixing/touch contracts to an SEDT envelope non-positivity input.
+
+Acceptance checks:
+
+- `lake build Collatz.Mixing.Semigroup Collatz.Mixing.TouchFrequency Collatz.Mixing.PhaseMixing` passes.
+- `lake build Collatz` passes after W4 changes.
+- no `: True` theorem signatures remain in W4 target files:
+  - `Mixing/Semigroup`, `Mixing/PhaseMixing`, `Mixing/TouchFrequency`.
 
 ## Goal
 

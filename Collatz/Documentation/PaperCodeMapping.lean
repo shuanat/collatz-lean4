@@ -25,6 +25,9 @@ namespace Collatz.Documentation
   - `Collatz/Mixing/PhaseMixing.lean`
   - `Collatz/Mixing/TouchFrequency.lean`
   - `Collatz/Mixing/Semigroup.lean`
+  - W4 hardened interface: explicit semigroup closure/generation,
+    phase-periodicity recurrence, finite-window touch discrepancy bounds,
+    and mixing-to-SEDT envelope bridge (no vacuous `: True` statements)
 - G.5 support:
   - `Collatz/Epochs/LongEpochs.lean`
 - H.main support:
@@ -37,6 +40,8 @@ namespace Collatz.Documentation
 The workflow checks that chain modules contain neither `sorry` nor `axiom`.
 W2 hardening additionally enforces non-vacuous D-level statements in epoch semantics modules
 (`Epochs/Core`, `Epochs/APStructure`, `Epochs/Homogenization`, `Epochs/NumeratorCarry`, `Epochs/LongEpochs`).
+W4 hardening extends this with non-vacuous F-level contracts in
+`Mixing/Semigroup`, `Mixing/PhaseMixing`, and `Mixing/TouchFrequency`.
 -/
 
 end Collatz.Documentation
