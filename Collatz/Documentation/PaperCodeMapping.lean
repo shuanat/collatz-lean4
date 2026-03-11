@@ -15,9 +15,12 @@ namespace Collatz.Documentation
   - `Collatz/Epochs/APStructure.lean`
   - `Collatz/Epochs/Homogenization.lean`
   - `Collatz/Epochs/NumeratorCarry.lean`
+  - `Collatz/Epochs/Core.lean` (touch residue, AP-step period `Q_t`, finite-window touch bounds)
 - E.2 support:
   - `Collatz/SEDT/Core.lean`
   - `Collatz/SEDT/Theorems.lean`
+  - W3 hardened interface: explicit envelope/negativity inequalities and
+    threshold-driven period-sum contracts (no vacuous `: True` statements)
 - F.6/F.7 support:
   - `Collatz/Mixing/PhaseMixing.lean`
   - `Collatz/Mixing/TouchFrequency.lean`
@@ -32,6 +35,8 @@ namespace Collatz.Documentation
 ## CI Guardrails
 
 The workflow checks that chain modules contain neither `sorry` nor `axiom`.
+W2 hardening additionally enforces non-vacuous D-level statements in epoch semantics modules
+(`Epochs/Core`, `Epochs/APStructure`, `Epochs/Homogenization`, `Epochs/NumeratorCarry`, `Epochs/LongEpochs`).
 -/
 
 end Collatz.Documentation

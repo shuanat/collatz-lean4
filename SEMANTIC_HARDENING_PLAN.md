@@ -1,5 +1,98 @@
 # Semantic Hardening Plan (D.1 -> I.1)
 
+## Progress
+
+- Date: 2026-03-11
+- Overall status: `W1 completed`, `W2 completed`, `W3 completed`, `W4-W7 pending`
+- Verification snapshot: `lake build Collatz` passes locally after W3 implementation
+
+### W1 Progress (current)
+
+Completed in `Collatz/Foundations/Core.lean`:
+
+- Replaced proxy oddness with canonical predicate (`OddPred := Odd`).
+- Replaced step exponent with paper contract `e(m)=ν₂(3m+1)` via `Collatz/Foundations/Arithmetic.e`.
+- Replaced odd-step map with paper form `T_odd(m)=(3m+1)/2^{e(m)}`.
+- Replaced proxy depth with 2-adic depth model (`depth_minus r := (r + 1).factorization 2`).
+- Removed vacuous theorem signatures `: True` from this file and replaced with concrete statements.
+- Confirmed this file currently has no `: True` theorem/lemma signatures.
+
+Progress update for previous remaining items:
+
+- `TwoAdicDepth` alignment completed:
+  - `Collatz/Foundations/TwoAdicDepth.lean` converted to compatibility shim over `Collatz/Foundations/Core.lean`.
+  - duplicate local proofs replaced with forwarded canonical lemmas from `Foundations.Core`.
+- local stub removed in utility module:
+  - `Collatz/Utilities/TwoAdicDepth.lean` no longer uses `sorry` in `depth_minus_add_one`.
+  - module reduced to core-aligned imports and a proved nonnegative helper statement.
+- verification for these modules:
+  - `lake build Collatz.Foundations.TwoAdicDepth Collatz.Utilities.TwoAdicDepth` passes.
+- arithmetic/API alignment completed:
+  - `Collatz/Foundations/Arithmetic.lean`: `e` normalized to canonical definition `(3*m+1).factorization 2`.
+  - `Collatz/Foundations/Basic.lean`: `T_odd` and `e_pos_of_odd` now use `Foundations.Core` contracts.
+  - `Collatz/Foundations/StepClassification.lean`: switched to `Foundations.Core.step_type` as single source.
+- final consolidation sweep completed (non-production foundations/docs):
+  - removed `sorry` from `Collatz/Foundations/StepClassification.lean`.
+  - updated non-production technical documentation snippet in `Collatz/Documentation/TechnicalDetails.md` to match current core contracts.
+- full verification snapshot:
+  - `lake build Collatz` passes locally after these changes.
+
+Remaining for W1:
+
+- W1 foundations hardening objectives are complete for current scope; move focus to W2.
+
+### Paper alignment check (this iteration)
+
+Validated against `collatz-paper`:
+
+- Definitional alignment:
+  - paper uses `T_odd(m)=(3m+1)/2^{ν₂(3m+1)}` and `e(m)=ν₂(3m+1)`; Lean W1 now uses the same contracts in `Foundations.Core`/`Foundations.Arithmetic`.
+- dependency-chain alignment:
+  - paper index chain `D.1 -> {E.2, F.6/F.7, G.5} -> H.main -> I.1` remains unchanged and consistent with Lean production chain.
+- deterministic framing:
+  - no probabilistic assumptions introduced in new W1 definitions/lemmas.
+
+### W2 Progress (completed)
+
+Completed across epoch semantics modules:
+
+- `Collatz/Epochs/Core.lean`:
+  - `p_touch`, touch-count helpers, and long-epoch predicates rewritten to executable definitions.
+  - vacuous lemmas replaced by concrete theorem statements (no `: True` signatures remain).
+- `Collatz/Epochs/APStructure.lean`:
+  - AP-tail structure and touch-frequency lemmas expressed as concrete equalities/existentials.
+- `Collatz/Epochs/Homogenization.lean`:
+  - replaced vacuous claims with hypothesis-driven affine/homogeneous evolution interfaces.
+- `Collatz/Epochs/NumeratorCarry.lean`:
+  - decomposition, recurrence, valuation and touch-related lemmas replaced with executable statements.
+- `Collatz/Epochs/LongEpochs.lean`:
+  - long-epoch gap/recurrence interfaces rewritten to interpretable quantitative statements.
+
+Acceptance checks:
+
+- `lake build Collatz` passes.
+- no `: True` theorem signatures remain in W2 target files:
+  - `Epochs/Core`, `Epochs/APStructure`, `Epochs/Homogenization`, `Epochs/NumeratorCarry`, `Epochs/LongEpochs`.
+- mapping note updated in `Collatz/Documentation/PaperCodeMapping.lean` to reflect D-level epoch semantics coverage.
+
+### W3 Progress (completed)
+
+Completed across SEDT modules:
+
+- `Collatz/SEDT/Core.lean`:
+  - vacuous helper lemmas replaced by executable inequalities and explicit-assumption forms
+    (`alpha_gt_one`, `alpha_lt_two`, `beta_zero_pos`, `epsilon_pos`, `sedt_overhead_bound`, etc.).
+- `Collatz/SEDT/Theorems.lean`:
+  - envelope and negativity layer rewritten to explicit inequality contracts.
+  - short/long epoch interfaces rewritten to non-vacuous threshold/boundedness statements.
+  - period-sum negativity interface rewritten from placeholder witness to hypothesis-driven inequality.
+
+Acceptance checks:
+
+- `lake build Collatz.SEDT.Core Collatz.SEDT.Theorems` passes.
+- no `: True` theorem signatures remain in `SEDT/Core` and `SEDT/Theorems`.
+- placeholder witness form `⟨-1, by norm_num⟩` removed from SEDT period-sum layer.
+
 ## Goal
 
 Replace compile-safe placeholders with mathematically meaningful Lean proofs across the production chain:
