@@ -53,6 +53,20 @@ lemma alpha_lt_two (t U : ℕ) (hden : (2 : ℝ) ≤ (Q_t t + U + 1 : ℝ)) : α
     exact one_div_le_one_div_of_le h2pos hden
   linarith
 
+lemma alpha_lt_two_of_ht_hU (t U : ℕ) (ht : 3 ≤ t) (_hU : 1 ≤ U) : α t U < 2 := by
+  have hpow : (2 : ℕ) ≤ Q_t t := by
+    unfold Q_t
+    have h1 : 1 ≤ t - 2 := by omega
+    have hp : (2 : ℕ) ^ 1 ≤ 2 ^ (t - 2) := Nat.pow_le_pow_right (by decide) h1
+    simpa using hp
+  have hnat : (2 : ℕ) ≤ Q_t t + U + 1 := by
+    calc
+      2 ≤ Q_t t := hpow
+      _ ≤ Q_t t + U := Nat.le_add_right _ _
+      _ ≤ Q_t t + U + 1 := Nat.le_add_right _ _
+  have hden : (2 : ℝ) ≤ (Q_t t + U + 1 : ℝ) := by exact_mod_cast hnat
+  exact alpha_lt_two t U hden
+
 lemma beta_zero_pos (t U : ℕ) (hα : α t U < 2) : β₀ t U > 0 := by
   unfold β₀
   have hnum : 0 < Real.log (3 / 2) / Real.log 2 := by
