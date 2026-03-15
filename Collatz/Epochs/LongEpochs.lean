@@ -81,6 +81,18 @@ def RawCofinalGapLongPhaseReturns (_m t U : ℕ) : Prop :=
     i + Collatz.SEDT.L₀ t U ≤ j ∧
     i % selected_phase_period t = j % selected_phase_period t
 
+/-- Strict raw cofinal same-residue return contract: compared to
+`RawCofinalGapLongPhaseReturns`, the selected left endpoint must lie strictly
+after the requested threshold. Quantifying over all `N` makes this only a
+one-step strengthening, but it is exactly what the boundary-event source needs
+to guarantee that some iterate lies strictly between successive chosen
+phase-return blocks. -/
+def RawStrictCofinalGapLongPhaseReturns (_m t U : ℕ) : Prop :=
+  ∀ N : ℕ, ∃ i j : ℕ,
+    N < i ∧
+    i + Collatz.SEDT.L₀ t U ≤ j ∧
+    i % selected_phase_period t = j % selected_phase_period t
+
 /-- Strengthened epoch-side phase-return witness carrying explicit cofinal
 alignment data as sequences. This forces the remaining bridge to consume
 phase/residue structure rather than a one-shot existential pair. -/
@@ -344,6 +356,103 @@ noncomputable def orbit_has_cofinal_gap_long_phase_returns_of_raw
       (by simpa [leftIdx, rightIdx] using hrawMod (threshold j))
   · intro N
     exact ⟨N, hleft_ge_self N⟩
+
+/-- Build the strengthened phase-return witness from the strict raw cofinal
+same-residue return contract. The extra strictness is exactly what yields one
+genuine interior iterate between `rightIdx j` and `leftIdx (j+1)`. -/
+noncomputable def orbit_has_cofinal_gap_long_phase_returns_of_raw_strict
+    {m t U : ℕ} (hraw : RawStrictCofinalGapLongPhaseReturns m t U) :
+    OrbitHasCofinalGapLongPhaseReturns m t U := by
+  classical
+  choose rawLeft rawRight hrawGe hrawSep hrawMod using hraw
+  let threshold : ℕ → ℕ :=
+    Nat.rec (motive := fun _ => ℕ) 0 (fun _ prev => rawRight prev + 1)
+  let leftIdx : ℕ → ℕ := fun j => rawLeft (threshold j)
+  let rightIdx : ℕ → ℕ := fun j => rawRight (threshold j)
+  have hleft_ge_self : ∀ j : ℕ, j ≤ leftIdx j := by
+    intro j
+    induction j with
+    | zero =>
+        exact Nat.zero_le _
+    | succ j ih =>
+        have hright_ge_left : leftIdx j ≤ rightIdx j := by
+          exact le_trans (Nat.le_add_right _ _)
+            (by simpa [leftIdx, rightIdx] using hrawSep (threshold j))
+        have hstep : leftIdx (j + 1) ≥ leftIdx j + 1 := by
+          have hnext : rightIdx j + 1 < leftIdx (j + 1) := by
+            simpa [leftIdx, rightIdx, threshold] using hrawGe (threshold (j + 1))
+          have hnext' : rightIdx j + 1 ≤ leftIdx (j + 1) := Nat.le_of_lt hnext
+          exact le_trans (Nat.add_le_add_right hright_ge_left 1) hnext'
+        exact le_trans (Nat.succ_le_succ ih) hstep
+  refine
+    { leftIdx := leftIdx
+      rightIdx := rightIdx
+      leftStep := ?_
+      rightStep := ?_
+      longSep := ?_
+      selectedPhaseAligned := ?_
+      phaseAligned := ?_
+      qtPhaseAligned := ?_
+      cofinalLeft := ?_ }
+  · intro j
+    have hright_ge_left : leftIdx j ≤ rightIdx j := by
+      exact le_trans (Nat.le_add_right _ _)
+        (by simpa [leftIdx, rightIdx] using hrawSep (threshold j))
+    have hnext : rightIdx j + 1 < leftIdx (j + 1) := by
+      simpa [leftIdx, rightIdx, threshold] using hrawGe (threshold (j + 1))
+    exact le_trans (Nat.add_le_add_right hright_ge_left 1) (Nat.le_of_lt hnext)
+  · intro j
+    have hnext : rightIdx j + 1 < leftIdx (j + 1) := by
+      simpa [leftIdx, rightIdx, threshold] using hrawGe (threshold (j + 1))
+    exact lt_of_lt_of_le (Nat.lt_succ_self _) (Nat.le_of_lt hnext)
+  · intro j
+    simpa [leftIdx, rightIdx] using hrawSep (threshold j)
+  · intro j
+    simpa [leftIdx, rightIdx] using hrawMod (threshold j)
+  · intro j
+    have hle : leftIdx j ≤ rightIdx j := by
+      exact le_trans (Nat.le_add_right _ _)
+        (by simpa [leftIdx, rightIdx] using hrawSep (threshold j))
+    exact gap_long_aligned_of_selected_phase_period t (leftIdx j) (rightIdx j) hle
+      (by simpa [leftIdx, rightIdx] using hrawMod (threshold j))
+  · intro j
+    have hle : leftIdx j ≤ rightIdx j := by
+      exact le_trans (Nat.le_add_right _ _)
+        (by simpa [leftIdx, rightIdx] using hrawSep (threshold j))
+    exact qt_phase_aligned_of_selected_phase_period t (leftIdx j) (rightIdx j) hle
+      (by simpa [leftIdx, rightIdx] using hrawMod (threshold j))
+  · intro N
+    exact ⟨N, hleft_ge_self N⟩
+
+/-- The strict raw cofinal return contract forces one-step room after every
+right boundary in the induced structured phase-return witness. -/
+theorem successor_room_orbit_has_cofinal_gap_long_phase_returns_of_raw_strict
+    {m t U : ℕ} (hraw : RawStrictCofinalGapLongPhaseReturns m t U) :
+    ∀ j : ℕ,
+      (orbit_has_cofinal_gap_long_phase_returns_of_raw_strict hraw).rightIdx j + 1 <
+        (orbit_has_cofinal_gap_long_phase_returns_of_raw_strict hraw).leftIdx (j + 1) := by
+  classical
+  let rawLeft : ℕ → ℕ := fun N => Classical.choose (hraw N)
+  have hrawLeftSpec :
+      ∀ N : ℕ,
+        ∃ j : ℕ,
+          N < rawLeft N ∧
+            rawLeft N + Collatz.SEDT.L₀ t U ≤ j ∧
+            rawLeft N % selected_phase_period t = j % selected_phase_period t := by
+    intro N
+    exact Classical.choose_spec (hraw N)
+  let rawRight : ℕ → ℕ := fun N => Classical.choose (hrawLeftSpec N)
+  have hrawGe :
+      ∀ N : ℕ, N < rawLeft N := by
+    intro N
+    exact (Classical.choose_spec (hrawLeftSpec N)).1
+  let threshold : ℕ → ℕ :=
+    Nat.rec (motive := fun _ => ℕ) 0 (fun _ prev => rawRight prev + 1)
+  let leftIdx : ℕ → ℕ := fun j => rawLeft (threshold j)
+  let rightIdx : ℕ → ℕ := fun j => rawRight (threshold j)
+  intro j
+  change rightIdx j + 1 < leftIdx (j + 1)
+  simpa [leftIdx, rightIdx, threshold] using hrawGe (threshold (j + 1))
 
 /-- Explicit theorem-level placeholder for the remaining epoch-semantic bridge:
 turn cofinal `gap_long`-phase returns into actual cofinal SEDT-long gaps. -/
@@ -670,6 +779,274 @@ def GapLongPhaseReturnsFillerCanonicalNextLeftWitnessPromotionEventSource
   ∀ hphase : OrbitHasCofinalGapLongPhaseReturns m t U,
     GapLongPhaseReturnsFillerCanonicalNextLeftWitnessPromotionEventSourceOn hphase (hnext hphase)
 
+/-- A more explicit event-level witness parameterized directly by an
+event-language predicate, rather than by a single shared next-left witness. This
+is the promotion-side object needed once one separates "real interior event
+exists" from "this event competes with the canonical next-left choice". -/
+structure PromotedFillerSelectedEventWitnessForOn
+    {m t U : ℕ}
+    (hphase : OrbitHasCofinalGapLongPhaseReturns m t U)
+    (admissible : ℕ → ℕ → Prop)
+    (cand : FillerSimpleStepCandidate hphase) where
+  idx : ℕ
+  afterRight : hphase.rightIdx cand.j < idx
+  beforeNextLeft : idx < hphase.leftIdx (cand.j + 1)
+  value : ℕ
+  realized : value = (Collatz.Foundations.collatz_step^[idx]) m
+  admissibleIdx : admissible cand.j idx
+
+/-- Split local witness for the repaired next-left layer: one predicate records
+which interior events are promotion-relevant, while another records which
+indices genuinely compete with the already chosen next-left endpoint. Only the
+comparison language must admit `leftIdx (j + 1)` itself. -/
+structure CanonicalNextLeftSplitWitnessOn
+    {m t U : ℕ}
+    (hphase : OrbitHasCofinalGapLongPhaseReturns m t U) where
+  eventAdmissible : ℕ → ℕ → Prop
+  choiceAdmissible : ℕ → ℕ → Prop
+  selfChoice :
+    ∀ j : ℕ, choiceAdmissible j (hphase.leftIdx (j + 1))
+
+/-- Global theorem-source form of the previous split witness. -/
+def CanonicalNextLeftSplitWitness
+    (m t U : ℕ) : Sort _ :=
+  ∀ hphase : OrbitHasCofinalGapLongPhaseReturns m t U,
+    CanonicalNextLeftSplitWitnessOn hphase
+
+/-- Promotion-side explicit event source for the split redesign: each filler
+simple-step candidate yields a genuine interior event in the event-language,
+without yet claiming that the event competes in the next-left comparison
+language. -/
+def GapLongPhaseReturnsFillerCanonicalNextLeftSplitPromotionEventSourceOn
+    {m t U : ℕ}
+    (hphase : OrbitHasCofinalGapLongPhaseReturns m t U)
+    (hsplit : CanonicalNextLeftSplitWitnessOn hphase) : Sort _ :=
+  ∀ cand : FillerSimpleStepCandidate hphase,
+    PromotedFillerSelectedEventWitnessForOn hphase hsplit.eventAdmissible cand
+
+/-- Global theorem-source form of the previous split event source. -/
+def GapLongPhaseReturnsFillerCanonicalNextLeftSplitPromotionEventSource
+    (m t U : ℕ)
+    (hsplit : CanonicalNextLeftSplitWitness m t U) : Sort _ :=
+  ∀ hphase : OrbitHasCofinalGapLongPhaseReturns m t U,
+    GapLongPhaseReturnsFillerCanonicalNextLeftSplitPromotionEventSourceOn hphase (hsplit hphase)
+
+/-- Strongest consumer-driven lower target for the repaired split layer: every
+promotion-side event witness already yields a direct contradiction, without
+passing through any comparison predicate or comparison object. This is the
+theorem-producing form closest to the actual downstream consumer
+`candidate exclusion`. -/
+def GapLongPhaseReturnsFillerCanonicalNextLeftSplitEventConflictOn
+    {m t U : ℕ}
+    (hphase : OrbitHasCofinalGapLongPhaseReturns m t U)
+    (hsplit : CanonicalNextLeftSplitWitnessOn hphase) : Sort _ :=
+  ∀ cand : FillerSimpleStepCandidate hphase,
+    PromotedFillerSelectedEventWitnessForOn hphase hsplit.eventAdmissible cand → False
+
+/-- Global theorem-source form of the previous direct conflict target. -/
+def GapLongPhaseReturnsFillerCanonicalNextLeftSplitEventConflict
+    (m t U : ℕ)
+    (hsplit : CanonicalNextLeftSplitWitness m t U) : Sort _ :=
+  ∀ hphase : OrbitHasCofinalGapLongPhaseReturns m t U,
+    GapLongPhaseReturnsFillerCanonicalNextLeftSplitEventConflictOn hphase (hsplit hphase)
+
+/-- Therefore the promotion-side event source and the direct event-conflict
+theorem already imply candidate exclusion. This is stronger and more honest than
+introducing an additional comparison layer if the eventual proof only needs
+contradiction of the original simple-step candidate. -/
+theorem gap_long_phase_returns_filler_candidate_exclusion_on_of_split_event_source_and_event_conflict
+    {m t U : ℕ}
+    {hphase : OrbitHasCofinalGapLongPhaseReturns m t U}
+    {hsplit : CanonicalNextLeftSplitWitnessOn hphase}
+    (hsrc :
+      GapLongPhaseReturnsFillerCanonicalNextLeftSplitPromotionEventSourceOn hphase hsplit)
+    (hconf :
+      GapLongPhaseReturnsFillerCanonicalNextLeftSplitEventConflictOn hphase hsplit) :
+    GapLongPhaseReturnsFillerCandidateExclusionBridgeOn hphase := by
+  intro cand
+  exact hconf cand (hsrc cand)
+
+/-- Global theorem-source form of the previous direct route to candidate
+exclusion. -/
+theorem gap_long_phase_returns_filler_candidate_exclusion_of_split_event_source_and_event_conflict
+    {m t U : ℕ}
+    {hsplit : CanonicalNextLeftSplitWitness m t U}
+    (hsrc :
+      GapLongPhaseReturnsFillerCanonicalNextLeftSplitPromotionEventSource m t U hsplit)
+    (hconf :
+      GapLongPhaseReturnsFillerCanonicalNextLeftSplitEventConflict m t U hsplit) :
+    GapLongPhaseReturnsFillerCandidateExclusionBridge m t U := by
+  intro hphase
+  exact
+    gap_long_phase_returns_filler_candidate_exclusion_on_of_split_event_source_and_event_conflict
+      (hsrc hphase) (hconf hphase)
+
+/-- Normalization slot for the split redesign: from a real promoted interior
+event in the event-language, produce the weaker comparison-language candidate
+that actually participates in next-left exclusion/minimality. This is the
+precise semantic seam that was previously hidden inside one shared predicate. -/
+def GapLongPhaseReturnsFillerCanonicalNextLeftSplitNormalizationOn
+    {m t U : ℕ}
+    (hphase : OrbitHasCofinalGapLongPhaseReturns m t U)
+    (hsplit : CanonicalNextLeftSplitWitnessOn hphase) : Sort _ :=
+  ∀ cand : FillerSimpleStepCandidate hphase,
+    PromotedFillerSelectedEventWitnessForOn hphase hsplit.eventAdmissible cand →
+      PromotedFillerSelectedCandidate hphase hsplit.choiceAdmissible cand.j
+
+/-- Global theorem-source form of the previous split normalization slot. -/
+def GapLongPhaseReturnsFillerCanonicalNextLeftSplitNormalization
+    (m t U : ℕ)
+    (hsplit : CanonicalNextLeftSplitWitness m t U) : Sort _ :=
+  ∀ hphase : OrbitHasCofinalGapLongPhaseReturns m t U,
+    GapLongPhaseReturnsFillerCanonicalNextLeftSplitNormalizationOn hphase (hsplit hphase)
+
+/-- The minimality side of the split redesign is just the existing next-left
+exclusion theorem, but phrased only over the comparison language. -/
+abbrev GapLongPhaseReturnsFillerCanonicalNextLeftSplitMinimalityOn
+    {m t U : ℕ}
+    (hphase : OrbitHasCofinalGapLongPhaseReturns m t U)
+    (hsplit : CanonicalNextLeftSplitWitnessOn hphase) : Sort _ :=
+  FillerNextLeftMinimalityOn hphase hsplit.choiceAdmissible
+
+/-- Global theorem-source form of the previous split minimality slot. -/
+def GapLongPhaseReturnsFillerCanonicalNextLeftSplitMinimality
+    (m t U : ℕ)
+    (hsplit : CanonicalNextLeftSplitWitness m t U) : Sort _ :=
+  ∀ hphase : OrbitHasCofinalGapLongPhaseReturns m t U,
+    GapLongPhaseReturnsFillerCanonicalNextLeftSplitMinimalityOn hphase (hsplit hphase)
+
+/-- Stronger comparison-side object for the repaired next-left layer: instead of
+encoding comparison membership only as a predicate on indices, one records the
+actual structured comparison witness that competes with the chosen next-left
+endpoint. This is the natural output type for normalization once a real
+promotion-side event has been produced. -/
+structure PromotedFillerSelectedComparisonWitnessOn
+    {m t U : ℕ}
+    (hphase : OrbitHasCofinalGapLongPhaseReturns m t U)
+    (j : ℕ) where
+  idx : ℕ
+  afterRight : hphase.rightIdx j < idx
+  beforeNextLeft : idx < hphase.leftIdx (j + 1)
+
+/-- Any promotion-side event witness already yields the weaker structured
+comparison object by forgetting its value-level data and provenance-side
+admissibility proof. This shows that every index/order-only comparison layer is
+automatically a forgetful image of event-level data. -/
+def promoted_filler_selected_comparison_witness_of_event_witness
+    {m t U : ℕ}
+    {hphase : OrbitHasCofinalGapLongPhaseReturns m t U}
+    {admissible : ℕ → ℕ → Prop}
+    {cand : FillerSimpleStepCandidate hphase}
+    (hevent : PromotedFillerSelectedEventWitnessForOn hphase admissible cand) :
+    PromotedFillerSelectedComparisonWitnessOn hphase cand.j :=
+  { idx := hevent.idx
+    afterRight := hevent.afterRight
+    beforeNextLeft := hevent.beforeNextLeft }
+
+/-- Stronger normalization seam for the repaired next-left layer: from a real
+promotion-side event, construct an explicit comparison witness, rather than only
+prove membership in some comparison predicate. -/
+def GapLongPhaseReturnsFillerCanonicalNextLeftStructuredNormalizationOn
+    {m t U : ℕ}
+    (hphase : OrbitHasCofinalGapLongPhaseReturns m t U)
+    (hsplit : CanonicalNextLeftSplitWitnessOn hphase) : Sort _ :=
+  ∀ cand : FillerSimpleStepCandidate hphase,
+    PromotedFillerSelectedEventWitnessForOn hphase hsplit.eventAdmissible cand →
+      PromotedFillerSelectedComparisonWitnessOn hphase cand.j
+
+/-- Global theorem-source form of the previous structured normalization seam. -/
+def GapLongPhaseReturnsFillerCanonicalNextLeftStructuredNormalization
+    (m t U : ℕ)
+    (hsplit : CanonicalNextLeftSplitWitness m t U) : Sort _ :=
+  ∀ hphase : OrbitHasCofinalGapLongPhaseReturns m t U,
+    GapLongPhaseReturnsFillerCanonicalNextLeftStructuredNormalizationOn hphase (hsplit hphase)
+
+/-- Stronger next-left minimality slot for the repaired layer: no structured
+comparison witness may occur strictly before the already chosen next-left
+endpoint. This avoids pretending that a comparison witness is determined by a
+bare predicate on indices. -/
+structure FillerNextLeftStructuredMinimalityOn
+    {m t U : ℕ}
+    (hphase : OrbitHasCofinalGapLongPhaseReturns m t U) where
+  noEarlier :
+    ∀ {j : ℕ},
+      PromotedFillerSelectedComparisonWitnessOn hphase j → False
+
+/-- Global theorem-source form of the previous structured minimality slot. -/
+def FillerNextLeftStructuredMinimality
+    (m t U : ℕ) : Sort _ :=
+  ∀ hphase : OrbitHasCofinalGapLongPhaseReturns m t U,
+    FillerNextLeftStructuredMinimalityOn hphase
+
+/-- Stronger candidate-exclusion constructor: once a real event source,
+structured normalization, and structured next-left minimality are available,
+every filler simple-step candidate is excluded. This removes the remaining
+dependence on a comparison predicate from the normalization/minimality seam. -/
+theorem gap_long_phase_returns_filler_candidate_exclusion_on_of_structured_event_source_normalization_and_minimality
+    {m t U : ℕ}
+    {hphase : OrbitHasCofinalGapLongPhaseReturns m t U}
+    {hsplit : CanonicalNextLeftSplitWitnessOn hphase}
+    (hsrc :
+      GapLongPhaseReturnsFillerCanonicalNextLeftSplitPromotionEventSourceOn hphase hsplit)
+    (hnorm :
+      GapLongPhaseReturnsFillerCanonicalNextLeftStructuredNormalizationOn hphase hsplit)
+    (hmin :
+      FillerNextLeftStructuredMinimalityOn hphase) :
+    GapLongPhaseReturnsFillerCandidateExclusionBridgeOn hphase := by
+  intro cand
+  exact hmin.noEarlier (hnorm cand (hsrc cand))
+
+/-- Global theorem-source form of the previous stronger constructor. -/
+theorem gap_long_phase_returns_filler_candidate_exclusion_of_structured_event_source_normalization_and_minimality
+    {m t U : ℕ}
+    {hsplit : CanonicalNextLeftSplitWitness m t U}
+    (hsrc :
+      GapLongPhaseReturnsFillerCanonicalNextLeftSplitPromotionEventSource m t U hsplit)
+    (hnorm :
+      GapLongPhaseReturnsFillerCanonicalNextLeftStructuredNormalization m t U hsplit)
+    (hmin :
+      FillerNextLeftStructuredMinimality m t U) :
+    GapLongPhaseReturnsFillerCandidateExclusionBridge m t U := by
+  intro hphase
+  exact
+    gap_long_phase_returns_filler_candidate_exclusion_on_of_structured_event_source_normalization_and_minimality
+      (hsrc hphase) (hnorm hphase) (hmin hphase)
+
+/-- Once the event-language source, the normalization seam, and next-left
+minimality are separated explicitly, candidate exclusion follows without forcing
+promotion-side admissibility and next-left comparison to be the same predicate.
+-/
+theorem gap_long_phase_returns_filler_candidate_exclusion_on_of_split_event_source_normalization_and_minimality
+    {m t U : ℕ}
+    {hphase : OrbitHasCofinalGapLongPhaseReturns m t U}
+    {hsplit : CanonicalNextLeftSplitWitnessOn hphase}
+    (hsrc :
+      GapLongPhaseReturnsFillerCanonicalNextLeftSplitPromotionEventSourceOn hphase hsplit)
+    (hnorm :
+      GapLongPhaseReturnsFillerCanonicalNextLeftSplitNormalizationOn hphase hsplit)
+    (hmin :
+      GapLongPhaseReturnsFillerCanonicalNextLeftSplitMinimalityOn hphase hsplit) :
+    GapLongPhaseReturnsFillerCandidateExclusionBridgeOn hphase := by
+  intro cand
+  exact hmin.noEarlier (hnorm cand (hsrc cand))
+
+/-- Global theorem-source form of the previous split-path constructor for
+candidate exclusion. -/
+theorem gap_long_phase_returns_filler_candidate_exclusion_of_split_event_source_normalization_and_minimality
+    {m t U : ℕ}
+    {hsplit : CanonicalNextLeftSplitWitness m t U}
+    (hsrc :
+      GapLongPhaseReturnsFillerCanonicalNextLeftSplitPromotionEventSource m t U hsplit)
+    (hnorm :
+      GapLongPhaseReturnsFillerCanonicalNextLeftSplitNormalization m t U hsplit)
+    (hmin :
+      GapLongPhaseReturnsFillerCanonicalNextLeftSplitMinimality m t U hsplit) :
+    GapLongPhaseReturnsFillerCandidateExclusionBridge m t U := by
+  intro hphase
+  exact
+    gap_long_phase_returns_filler_candidate_exclusion_on_of_split_event_source_normalization_and_minimality
+      (hsrc hphase) (hnorm hphase) (hmin hphase)
+
 /-- If a filler simple-step candidate is already strictly interior and its own
 index is admissible for the supplied next-left witness, then it itself provides
 the promoted event witness. This isolates the remaining promotion burden to the
@@ -753,6 +1130,32 @@ structure BoundaryPromotedSelectedEventOn
   value : ℕ
   realized : value = (Collatz.Foundations.collatz_step^[idx]) m
 
+/-- Any concrete promoted boundary event already certifies that there is room
+for at least one iterate strictly between `rightIdx j` and `leftIdx (j+1)`. -/
+theorem boundary_promoted_selected_event_on_has_successor_room
+    {m t U : ℕ}
+    {hphase : OrbitHasCofinalGapLongPhaseReturns m t U}
+    {j : ℕ}
+    (hevent : BoundaryPromotedSelectedEventOn hphase j) :
+    hphase.rightIdx j + 1 < hphase.leftIdx (j + 1) := by
+  exact lt_of_le_of_lt (Nat.succ_le_of_lt hevent.afterRight) hevent.beforeNextLeft
+
+/-- Conversely, if the filler interval already contains the immediate successor
+of `rightIdx j`, that successor itself provides a concrete promoted boundary
+event. This shows that the new boundary-event target is geometrically equivalent
+to having at least one genuine interior iterate. -/
+def boundary_promoted_selected_event_on_of_successor_room
+    {m t U : ℕ}
+    {hphase : OrbitHasCofinalGapLongPhaseReturns m t U}
+    (j : ℕ)
+    (hroom : hphase.rightIdx j + 1 < hphase.leftIdx (j + 1)) :
+    BoundaryPromotedSelectedEventOn hphase j :=
+  { idx := hphase.rightIdx j + 1
+    afterRight := Nat.lt_succ_self _
+    beforeNextLeft := hroom
+    value := (Collatz.Foundations.collatz_step^[hphase.rightIdx j + 1]) m
+    realized := rfl }
+
 /-- Concrete theorem-source for the boundary branch, independent of any chosen
 admissibility witness: if `rightIdx j` is a simple step, there exists a genuine
 interior orbit event between `rightIdx j` and `leftIdx (j+1)`. -/
@@ -770,6 +1173,70 @@ def GapLongPhaseReturnsBoundaryPromotedSelectedEventSource
     (m t U : ℕ) : Sort _ :=
   ∀ hphase : OrbitHasCofinalGapLongPhaseReturns m t U,
     GapLongPhaseReturnsBoundaryPromotedSelectedEventSourceOn hphase
+
+/-- Generic bridge from the concrete boundary-event language into an arbitrary
+event-language predicate. Unlike the witness-relative bridge below, this does
+not require the event-language to serve simultaneously as the comparison
+language for next-left minimality. -/
+def GapLongPhaseReturnsBoundaryPromotedSelectedEventAdmissibilityBridgeOn
+    {m t U : ℕ}
+    (hphase : OrbitHasCofinalGapLongPhaseReturns m t U)
+    (admissible : ℕ → ℕ → Prop) : Sort _ :=
+  ∀ {j : ℕ},
+    (hevent : BoundaryPromotedSelectedEventOn hphase j) →
+      admissible j hevent.idx
+
+/-- Global theorem-source form of the previous generic event-language bridge. -/
+def GapLongPhaseReturnsBoundaryPromotedSelectedEventAdmissibilityBridge
+    (m t U : ℕ)
+    (admissible :
+      ∀ _ : OrbitHasCofinalGapLongPhaseReturns m t U, ℕ → ℕ → Prop) :
+    Sort _ :=
+  ∀ hphase : OrbitHasCofinalGapLongPhaseReturns m t U,
+    GapLongPhaseReturnsBoundaryPromotedSelectedEventAdmissibilityBridgeOn
+      hphase (admissible hphase)
+
+/-- Therefore a purely geometric one-step room theorem already populates the new
+concrete boundary-event source. The boundary simple-step hypothesis is currently
+unused here: once `rightIdx j + 1` lies strictly before `leftIdx (j+1)`, the
+successor iterate itself is the required interior orbit event. -/
+def gap_long_phase_returns_boundary_promoted_selected_event_source_on_of_successor_room
+    {m t U : ℕ}
+    {hphase : OrbitHasCofinalGapLongPhaseReturns m t U}
+    (hroom : ∀ j : ℕ, hphase.rightIdx j + 1 < hphase.leftIdx (j + 1)) :
+    GapLongPhaseReturnsBoundaryPromotedSelectedEventSourceOn hphase := by
+  intro j _hsimple
+  exact boundary_promoted_selected_event_on_of_successor_room j (hroom j)
+
+/-- Global theorem-source form of the previous geometric constructor. -/
+def gap_long_phase_returns_boundary_promoted_selected_event_source_of_successor_room
+    {m t U : ℕ}
+    (hroom :
+      ∀ hphase : OrbitHasCofinalGapLongPhaseReturns m t U,
+        ∀ j : ℕ, hphase.rightIdx j + 1 < hphase.leftIdx (j + 1)) :
+    GapLongPhaseReturnsBoundaryPromotedSelectedEventSource m t U := by
+  intro hphase
+  exact
+    gap_long_phase_returns_boundary_promoted_selected_event_source_on_of_successor_room
+      (hroom hphase)
+
+/-- If the filler interval collapses immediately after the right boundary, then
+the concrete boundary-event source cannot exist for that `j`. This isolates the
+remaining obstruction to the exact geometric statement `rightIdx j + 1 <
+leftIdx (j+1)`. -/
+theorem not_gap_long_phase_returns_boundary_promoted_selected_event_source_on_of_no_successor_room
+    {m t U : ℕ}
+    {hphase : OrbitHasCofinalGapLongPhaseReturns m t U}
+    {j : ℕ}
+    (hsimple :
+      Collatz.is_simple_step
+        ((Collatz.Foundations.collatz_step^[hphase.rightIdx j]) m))
+    (hcollapse : hphase.leftIdx (j + 1) ≤ hphase.rightIdx j + 1) :
+    GapLongPhaseReturnsBoundaryPromotedSelectedEventSourceOn hphase → False := by
+  intro hsrc
+  have hroom :=
+    boundary_promoted_selected_event_on_has_successor_room (hsrc j hsimple)
+  exact Nat.not_le_of_lt hroom hcollapse
 
 /-- Separate admissibility bridge from the concrete boundary event language into
 one chosen witness-relative admissibility notion. This is where the comparison
@@ -812,6 +1279,94 @@ def right_boundary_simple_step_promoted_filler_selected_event_witness_on_of_boun
     value := hevent.value
     realized := hevent.realized
     admissibleIdx := hadm }
+
+/-- Boundary-specific event-witness packaging for an arbitrary event-language
+predicate. This is the split-version companion of the witness-relative helper
+above: once a concrete boundary event is known and its index is admitted by the
+promotion-side event-language, it becomes an explicit promoted event witness for
+the canonical boundary candidate. -/
+def right_boundary_simple_step_promoted_filler_selected_event_witness_for_on_of_boundary_event
+    {m t U : ℕ}
+    {hphase : OrbitHasCofinalGapLongPhaseReturns m t U}
+    {admissible : ℕ → ℕ → Prop}
+    {j : ℕ}
+    {hsimple :
+      Collatz.is_simple_step
+        ((Collatz.Foundations.collatz_step^[hphase.rightIdx j]) m)}
+    (hevent : BoundaryPromotedSelectedEventOn hphase j)
+    (hadm : admissible j hevent.idx) :
+    PromotedFillerSelectedEventWitnessForOn hphase admissible
+      (right_boundary_simple_step_candidate hphase j hsimple) :=
+  { idx := hevent.idx
+    afterRight := hevent.afterRight
+    beforeNextLeft := hevent.beforeNextLeft
+    value := hevent.value
+    realized := hevent.realized
+    admissibleIdx := hadm }
+
+/-- No-go theorem for all comparison outputs that remember only index/order
+content: once a concrete boundary event is admitted on the event side, the
+forgetful passage to `PromotedFillerSelectedComparisonWitnessOn` is automatic,
+so any structured minimality theorem already contradicts that boundary event.
+Thus the whole class of index/order-only normalization outputs is too weak for
+the boundary branch. -/
+theorem not_gap_long_phase_returns_boundary_event_admissibility_bridge_on_of_successor_room_simple_step_and_structured_minimality
+    {m t U : ℕ}
+    {hphase : OrbitHasCofinalGapLongPhaseReturns m t U}
+    {hsplit : CanonicalNextLeftSplitWitnessOn hphase}
+    {j : ℕ}
+    (hsimple :
+      Collatz.is_simple_step
+        ((Collatz.Foundations.collatz_step^[hphase.rightIdx j]) m))
+    (hroom : hphase.rightIdx j + 1 < hphase.leftIdx (j + 1))
+    (hbridge :
+      GapLongPhaseReturnsBoundaryPromotedSelectedEventAdmissibilityBridgeOn
+        hphase hsplit.eventAdmissible)
+    (hmin :
+      FillerNextLeftStructuredMinimalityOn hphase) :
+    False := by
+  let hevent : BoundaryPromotedSelectedEventOn hphase j :=
+    boundary_promoted_selected_event_on_of_successor_room j hroom
+  have hadm : hsplit.eventAdmissible j hevent.idx := hbridge hevent
+  let hpromoted :
+      PromotedFillerSelectedEventWitnessForOn hphase hsplit.eventAdmissible
+        (right_boundary_simple_step_candidate hphase j hsimple) :=
+    right_boundary_simple_step_promoted_filler_selected_event_witness_for_on_of_boundary_event
+      (hevent := hevent) (hadm := hadm)
+  exact
+    hmin.noEarlier
+      (promoted_filler_selected_comparison_witness_of_event_witness hpromoted)
+
+/-- Strongest no-go theorem for the split redesign: if the real boundary event is
+already admitted on the promotion side, then any direct event-conflict theorem
+source immediately contradicts that same event witness. Thus even the most
+consumer-driven route to candidate exclusion cannot be populated from the
+current lower semantics unless the promotion-side event admission itself is
+refined further. -/
+theorem not_gap_long_phase_returns_boundary_event_admissibility_bridge_on_of_successor_room_simple_step_and_event_conflict
+    {m t U : ℕ}
+    {hphase : OrbitHasCofinalGapLongPhaseReturns m t U}
+    {hsplit : CanonicalNextLeftSplitWitnessOn hphase}
+    {j : ℕ}
+    (hsimple :
+      Collatz.is_simple_step
+        ((Collatz.Foundations.collatz_step^[hphase.rightIdx j]) m))
+    (hroom : hphase.rightIdx j + 1 < hphase.leftIdx (j + 1))
+    (hbridge :
+      GapLongPhaseReturnsBoundaryPromotedSelectedEventAdmissibilityBridgeOn
+        hphase hsplit.eventAdmissible)
+    (hconf :
+      GapLongPhaseReturnsFillerCanonicalNextLeftSplitEventConflictOn hphase hsplit) :
+    False := by
+  let hevent : BoundaryPromotedSelectedEventOn hphase j :=
+    boundary_promoted_selected_event_on_of_successor_room j hroom
+  have hadm : hsplit.eventAdmissible j hevent.idx := hbridge hevent
+  let hpromoted :
+      PromotedFillerSelectedEventWitnessForOn hphase hsplit.eventAdmissible
+        (right_boundary_simple_step_candidate hphase j hsimple) :=
+    right_boundary_simple_step_promoted_filler_selected_event_witness_for_on_of_boundary_event
+      (hevent := hevent) (hadm := hadm)
+  exact hconf _ hpromoted
 
 /-- Sharpened local residual for the boundary case: if the orbit value at
 `rightIdx j` is a simple step, produce a promoted interior event witness for
@@ -1010,6 +1565,33 @@ def GapLongPhaseReturnsFillerCanonicalNextLeftWitnessMinimality
   ∀ hphase : OrbitHasCofinalGapLongPhaseReturns m t U,
     GapLongPhaseReturnsFillerCanonicalNextLeftWitnessMinimalityOn hphase (hnext hphase)
 
+/-- Therefore the current witness-based interface cannot simultaneously accept a
+concrete boundary interior event and maintain next-left minimality for the same
+admissibility language: any admitted boundary event already is a promoted
+admissible index strictly before `leftIdx (j + 1)`. This exposes a genuine seam
+conflict between boundary-event admissibility and the present minimality slot,
+rather than a merely witness-specific arithmetic failure. -/
+theorem not_gap_long_phase_returns_boundary_promoted_selected_admissibility_bridge_on_of_successor_room_and_minimality
+    {m t U : ℕ}
+    {hphase : OrbitHasCofinalGapLongPhaseReturns m t U}
+    {hnext : CanonicalNextLeftSelectionWitnessOn hphase}
+    {j : ℕ}
+    (hroom : hphase.rightIdx j + 1 < hphase.leftIdx (j + 1))
+    (hbridge :
+      GapLongPhaseReturnsBoundaryPromotedSelectedAdmissibilityBridgeOn hphase hnext)
+    (hmin :
+      GapLongPhaseReturnsFillerCanonicalNextLeftWitnessMinimalityOn hphase hnext) :
+    False := by
+  let hevent : BoundaryPromotedSelectedEventOn hphase j :=
+    boundary_promoted_selected_event_on_of_successor_room j hroom
+  have hadm : hnext.admissible j hevent.idx := hbridge hevent
+  exact
+    hmin.noEarlier
+      { idx := hevent.idx
+        afterRight := hevent.afterRight
+        beforeNextLeft := hevent.beforeNextLeft
+        admissibleIdx := hadm }
+
 /-- The concrete next-left phase-compatibility promotion target is one honest
 instance of the more generic promotion slot. -/
 def filler_simple_step_promotion_on_of_canonical_next_left_phase_compatibility
@@ -1029,6 +1611,19 @@ def canonical_next_left_selection_witness_on_of_phase_compatibility
     CanonicalNextLeftSelectionWitnessOn hphase :=
   { admissible := CanonicalNextLeftPhaseCompatibleOn hphase
     self := canonical_next_left_self_phase_compatible_on hphase }
+
+/-- First concrete split witness for testing the new seam: every genuine
+promotion-side event is admitted on the event-language side, while the
+comparison/minimality side still uses the old phase-compatible criterion. This
+isolates the normalization problem from the earlier boundary-event existence
+problem. -/
+def canonical_next_left_split_witness_on_of_trivial_event_and_phase_compatibility
+    {m t U : ℕ}
+    (hphase : OrbitHasCofinalGapLongPhaseReturns m t U) :
+    CanonicalNextLeftSplitWitnessOn hphase :=
+  { eventAdmissible := fun _ _ => True
+    choiceAdmissible := CanonicalNextLeftPhaseCompatibleOn hphase
+    selfChoice := canonical_next_left_self_phase_compatible_on hphase }
 
 /-- Minimal witness exposing the exact structural strength of the repaired
 next-left interface: the only admissible index is the already chosen next left
@@ -1490,6 +2085,105 @@ theorem not_all_gap_long_phase_returns_have_filler_canonical_next_left_phase_com
   intro hall
   exact
     sample_gap_long_phase_returns_15_0_0_not_filler_canonical_next_left_phase_compatible_promotion
+      (hall sample_gap_long_phase_returns_15_0_0)
+
+/-- The new concrete boundary-event language isolates the remaining obstruction
+for the current phase-compatible witness exactly where it belongs: on the sample
+structured witness there is a genuine boundary interior event at `idx = 3`, but
+that event is not admitted by `CanonicalNextLeftPhaseCompatibleOn`. Thus the
+failure is no longer geometric; it is purely a mismatch between the concrete
+event and this chosen admissibility language. -/
+theorem sample_gap_long_phase_returns_15_0_0_not_phase_compatible_boundary_promoted_selected_admissibility_bridge :
+    GapLongPhaseReturnsBoundaryPromotedSelectedAdmissibilityBridgeOn
+      sample_gap_long_phase_returns_15_0_0
+      (canonical_next_left_selection_witness_on_of_phase_compatibility
+        sample_gap_long_phase_returns_15_0_0) → False := by
+  intro hbridge
+  let hevent : BoundaryPromotedSelectedEventOn sample_gap_long_phase_returns_15_0_0 0 :=
+    boundary_promoted_selected_event_on_of_successor_room 0
+      (by simp [sample_gap_long_phase_returns_15_0_0])
+  have hbad :
+      3 % selected_phase_period 0 =
+        sample_gap_long_phase_returns_15_0_0.leftIdx (0 + 1) % selected_phase_period 0 := by
+    simpa
+      [hevent, boundary_promoted_selected_event_on_of_successor_room,
+        CanonicalNextLeftSelectionWitnessOn,
+        canonical_next_left_selection_witness_on_of_phase_compatibility,
+        CanonicalNextLeftPhaseCompatibleOn, sample_gap_long_phase_returns_15_0_0]
+      using hbridge hevent
+  norm_num [sample_gap_long_phase_returns_15_0_0, selected_phase_period, gap_long, Q_t] at hbad
+
+/-- Global impossibility corollary for the previous bridge obstruction under the
+current phase-compatible witness. -/
+theorem not_all_gap_long_phase_returns_have_phase_compatible_boundary_promoted_selected_admissibility_bridge :
+    GapLongPhaseReturnsBoundaryPromotedSelectedAdmissibilityBridge
+      15 0 0
+      (fun hphase => canonical_next_left_selection_witness_on_of_phase_compatibility hphase) → False := by
+  intro hall
+  exact
+    sample_gap_long_phase_returns_15_0_0_not_phase_compatible_boundary_promoted_selected_admissibility_bridge
+      (hall sample_gap_long_phase_returns_15_0_0)
+
+/-- Even after splitting promotion-side event admissibility from comparison-side
+minimality, the most obvious normalization target still fails on the sample: if
+every genuine event is admitted on the event side, one still cannot normalize
+the concrete boundary event into the old phase-compatible comparison language.
+Thus the remaining obstruction has genuinely moved to the new normalization seam.
+-/
+theorem sample_gap_long_phase_returns_15_0_0_not_trivial_event_phase_compatible_split_normalization :
+    GapLongPhaseReturnsFillerCanonicalNextLeftSplitNormalizationOn
+      sample_gap_long_phase_returns_15_0_0
+      (canonical_next_left_split_witness_on_of_trivial_event_and_phase_compatibility
+        sample_gap_long_phase_returns_15_0_0) → False := by
+  intro hnorm
+  let cand : FillerSimpleStepCandidate sample_gap_long_phase_returns_15_0_0 :=
+    right_boundary_simple_step_candidate
+      sample_gap_long_phase_returns_15_0_0 0 sample_iterate_two_15_simple
+  let hevent : BoundaryPromotedSelectedEventOn sample_gap_long_phase_returns_15_0_0 0 :=
+    boundary_promoted_selected_event_on_of_successor_room 0
+      (by simp [sample_gap_long_phase_returns_15_0_0])
+  let hsrc :
+      PromotedFillerSelectedEventWitnessForOn
+        sample_gap_long_phase_returns_15_0_0
+        (canonical_next_left_split_witness_on_of_trivial_event_and_phase_compatibility
+          sample_gap_long_phase_returns_15_0_0).eventAdmissible
+        cand :=
+    right_boundary_simple_step_promoted_filler_selected_event_witness_for_on_of_boundary_event
+      (hevent := hevent) (hadm := trivial)
+  let hpromoted := hnorm cand hsrc
+  have hidx : hpromoted.idx = 3 := by
+    have hafter : 2 < hpromoted.idx := by
+      simpa
+        [cand, hpromoted, right_boundary_simple_step_candidate,
+          sample_gap_long_phase_returns_15_0_0]
+        using hpromoted.afterRight
+    have hbefore : hpromoted.idx < 4 := by
+      simpa
+        [cand, hpromoted, right_boundary_simple_step_candidate,
+          sample_gap_long_phase_returns_15_0_0]
+        using hpromoted.beforeNextLeft
+    omega
+  have hbad :
+      3 % selected_phase_period 0 =
+        sample_gap_long_phase_returns_15_0_0.leftIdx (0 + 1) % selected_phase_period 0 := by
+    simpa
+      [CanonicalNextLeftSplitWitnessOn,
+        canonical_next_left_split_witness_on_of_trivial_event_and_phase_compatibility,
+        CanonicalNextLeftPhaseCompatibleOn, cand, hpromoted, hidx]
+      using hpromoted.admissibleIdx
+  norm_num [sample_gap_long_phase_returns_15_0_0, selected_phase_period, gap_long, Q_t] at hbad
+
+/-- Global impossibility corollary for the previous split-normalization
+obstruction. -/
+theorem not_all_gap_long_phase_returns_have_trivial_event_phase_compatible_split_normalization :
+    GapLongPhaseReturnsFillerCanonicalNextLeftSplitNormalization
+      15 0 0
+      (fun hphase =>
+        canonical_next_left_split_witness_on_of_trivial_event_and_phase_compatibility hphase) →
+      False := by
+  intro hall
+  exact
+    sample_gap_long_phase_returns_15_0_0_not_trivial_event_phase_compatible_split_normalization
       (hall sample_gap_long_phase_returns_15_0_0)
 
 /-- The same sample witness already refutes the sharpened right-boundary event
