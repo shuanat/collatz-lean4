@@ -208,11 +208,80 @@ If the phase-compatible proxy still proves too weak, too strong, or too disconne
     `Epochs.gap_long_phase_returns_filler_canonical_next_left_witness_right_boundary_simple_step_event_source_on_of_boundary_event_source_and_admissibility`
     and the corresponding actual-skeleton wrappers in
     `Collatz/Convergence/MainTheorem.lean`
-- ACTIVE NEXT STEP: populate the new concrete boundary event theorem source
-  itself on the canonical aperiodic skeleton, i.e. attack
-  `Convergence.canonical_aperiodic_phase_return_fill_boundary_promoted_selected_event_source_semantics`.
-  Only after that should we try to prove a concrete admissibility bridge into a
-  chosen witness-relative language.
+- DONE: the new concrete boundary-event source is now formally reduced to the
+  exact one-step geometry statement
+  `rightIdx j + 1 < leftIdx (j + 1)` via:
+  - `Epochs.boundary_promoted_selected_event_on_has_successor_room`
+  - `Epochs.boundary_promoted_selected_event_on_of_successor_room`
+  - `Epochs.gap_long_phase_returns_boundary_promoted_selected_event_source_on_of_successor_room`
+  - `Epochs.not_gap_long_phase_returns_boundary_promoted_selected_event_source_on_of_no_successor_room`
+    and the actual-skeleton wrapper
+    `Convergence.canonical_aperiodic_phase_return_fill_boundary_promoted_selected_event_source_semantics_of_successor_room`
+- DONE: the now-minimal geometric theorem on the canonical aperiodic skeleton is
+  proved theorem-driven by strengthening cofinal phase returns to a strict
+  threshold form and routing the actual constructor through it:
+  - `Convergence.orbit_has_strictly_cofinal_phase_returns`
+  - `Convergence.cofinally_unbounded_orbit_has_strictly_cofinal_phase_returns`
+  - `Convergence.aperiodic_orbit_has_strictly_cofinal_phase_returns`
+  - `Epochs.RawStrictCofinalGapLongPhaseReturns`
+  - `Epochs.orbit_has_cofinal_gap_long_phase_returns_of_raw_strict`
+  - `Epochs.successor_room_orbit_has_cofinal_gap_long_phase_returns_of_raw_strict`
+  - `Convergence.aperiodic_orbit_has_cofinal_gap_long_phase_returns_successor_room`
+  - `Convergence.canonical_aperiodic_phase_return_fill_boundary_promoted_selected_event_source_semantics_of_aperiodic_successor_room`
+- DONE: the remaining obstruction has now been localized one step further, from
+  the boundary event source to the witness-relative admissibility bridge itself:
+  the sample witness carries a genuine concrete boundary interior event, but that
+  event is not admitted by the current phase-compatible language, via
+  - `Epochs.sample_gap_long_phase_returns_15_0_0_not_phase_compatible_boundary_promoted_selected_admissibility_bridge`
+  - `Epochs.not_all_gap_long_phase_returns_have_phase_compatible_boundary_promoted_selected_admissibility_bridge`
+- DONE: the attempted next step exposed a stronger seam-level obstruction:
+  on the current interface, any witness language that admits the concrete
+  boundary successor event is immediately incompatible with the present
+  next-left minimality slot, via
+  - `Epochs.not_gap_long_phase_returns_boundary_promoted_selected_admissibility_bridge_on_of_successor_room_and_minimality`
+  - `Convergence.canonical_aperiodic_phase_return_fill_not_boundary_admissibility_bridge_and_witness_minimality`
+- DONE: the split replacement seam is now implemented locally:
+  - `Epochs.CanonicalNextLeftSplitWitnessOn`
+  - `Epochs.GapLongPhaseReturnsFillerCanonicalNextLeftSplitPromotionEventSourceOn`
+  - `Epochs.GapLongPhaseReturnsFillerCanonicalNextLeftSplitNormalizationOn`
+  - `Epochs.GapLongPhaseReturnsFillerCanonicalNextLeftSplitMinimalityOn`
+  - `Epochs.gap_long_phase_returns_filler_candidate_exclusion_on_of_split_event_source_normalization_and_minimality`
+    together with the corresponding actual-skeleton wrappers in
+    `Collatz/Convergence/MainTheorem.lean`
+- DONE: the stronger structured replacement seam is now also implemented:
+  - `Epochs.PromotedFillerSelectedComparisonWitnessOn`
+  - `Epochs.GapLongPhaseReturnsFillerCanonicalNextLeftStructuredNormalizationOn`
+  - `Epochs.FillerNextLeftStructuredMinimalityOn`
+  - `Epochs.gap_long_phase_returns_filler_candidate_exclusion_on_of_structured_event_source_normalization_and_minimality`
+    together with the corresponding actual-skeleton wrappers in
+    `Collatz/Convergence/MainTheorem.lean`
+- DONE: the stronger no-go theorem is now proved for the whole class of
+  index/order-only structured comparison outputs:
+  once a concrete boundary event is admitted on the event side, the forgetful
+  passage to such a comparison witness is automatic, so any structured
+  minimality theorem already yields contradiction, via
+  - `Epochs.not_gap_long_phase_returns_boundary_event_admissibility_bridge_on_of_successor_room_simple_step_and_structured_minimality`
+  - `Convergence.canonical_aperiodic_phase_return_fill_not_boundary_event_admissibility_bridge_and_structured_minimality`
+- DONE: the strongest consumer-driven route is now formalized too:
+  direct `event witness -> contradiction` theorem sources already conflict with
+  boundary-event admission, via
+  - `Epochs.GapLongPhaseReturnsFillerCanonicalNextLeftSplitEventConflictOn`
+  - `Epochs.not_gap_long_phase_returns_boundary_event_admissibility_bridge_on_of_successor_room_simple_step_and_event_conflict`
+  - `Convergence.canonical_aperiodic_phase_return_fill_not_boundary_event_admissibility_bridge_and_event_conflict`
+- DONE: the most obvious split normalization target is now formally refuted on
+  the sample witness as well:
+  even if every genuine event is admitted on the promotion side, one still
+  cannot normalize the concrete boundary event into the old phase-compatible
+  comparison language, via
+  - `Epochs.sample_gap_long_phase_returns_15_0_0_not_trivial_event_phase_compatible_split_normalization`
+  - `Epochs.not_all_gap_long_phase_returns_have_trivial_event_phase_compatible_split_normalization`
+- ACTIVE NEXT STEP: populate the new split seam between boundary admissibility
+  and next-left minimality.
+  This redesign is now in place; the active question is which honest lower
+  theorem sources populate:
+  - a refinement strictly below current event-side admission,
+  - or a sharper theorem-producing notion of which promotion-side events are
+    actually conflict-relevant for the canonical next-left mechanism.
 
 ### Files
 
@@ -222,25 +291,28 @@ If the phase-compatible proxy still proves too weak, too strong, or too disconne
 
 ### Tasks
 
-1. Identify what is missing from the proxy:
-   - actual selected-event content,
-   - orbit/value semantics,
-   - or a more honest canonical-choice witness.
-2. Prove a local theorem:
-   - redesign only the lower concrete layer,
-   - keep the generic `promotion/minimality/selection` chain stable,
-   - avoid adding new upper convergence wrappers.
-3. Rewire the concrete next-left constructors and actual-skeleton wrappers to the new target.
+1. Populate the split promotion-side event source on the canonical aperiodic
+   skeleton.
+2. Identify the weakest honest normalization theorem from event-language into
+   comparison-language.
+3. Reuse the stabilized comparison-side minimality theorem only where it really
+   belongs.
+4. Route the split lower trio into candidate exclusion and then into the
+   unchanged upper no-simple-step / complex-step / stepwise cascade.
 
 ### Success Criteria
 
 - the lower target becomes more proof-oriented and less misleading
 - the redesign is strictly local to the concrete next-left layer
-- `lake build` passes for edited Lean modules
+- `lake build` passes for edited Lean modules and the full project still builds
+- the new interface no longer forces immediate contradiction between admitted
+  boundary events and next-left minimality
 
 ### Failure Mode
 
-If the event-level redesign still lacks any realistic lower theorem source, stop and document the missing semantic object rather than wrapping it in stronger assumptions.
+If boundary admissibility and next-left minimality still conflict for structural
+reasons, stop and split the seam rather than searching for yet another witness
+inside the same contradictory interface.
 
 ## Milestone 4: Only After Minimality Stabilizes, Attack Promotion
 
@@ -326,6 +398,28 @@ Reconnect the new lower theorem sources without changing the already stable uppe
 
 Verify not just compilation but semantic honesty.
 
+### Progress
+
+- DONE: `Collatz.Epochs.LongEpochs` builds after introducing the new negative
+  bridge result for the phase-compatible witness
+- DONE: full `lake build` now passes again after synchronizing
+  `Collatz.Mixing.PhaseMixing` with the current `Q_t`/`p_touch` semantics
+- DONE: the current negative result is now scientifically cleaner:
+  it isolates witness-language mismatch rather than geometric nonexistence
+- DONE: the stronger seam-level obstruction also now builds:
+  the current interface cannot simultaneously support boundary admissibility and
+  witness-relative next-left minimality on the canonical aperiodic skeleton
+- DONE: the split replacement interface also builds, and full `lake build`
+  remains green after wiring it into `candidate exclusion`
+- DONE: the new split-normalization obstruction also builds, and full
+  `lake build` remains green after adding it
+- DONE: the stronger structured-seam redesign also builds, and full
+  `lake build` remains green after wiring it to candidate exclusion
+- DONE: the stronger no-go result for index/order-only structured outputs also
+  builds, and full `lake build` remains green after adding it
+- DONE: the strongest consumer-driven no-go result also builds, and full
+  `lake build` remains green after adding it
+
 ### Tasks
 
 1. Run `lake build` for the edited modules.
@@ -371,7 +465,10 @@ By the end of tomorrow, aim to have one of these outcomes:
 2. a replacement event-level admissibility object plus repaired lower interfaces
 3. a local theorem or impossibility result showing why the current proxy still cannot support promotion from `simpleStep`
 
-Current achieved outcome: item 3.
+Current achieved outcome: item 3, now in the strengthened form that even beyond
+the rejected phase-compatible witness, the current shared admissibility seam is
+itself incompatible with simultaneously admitting the concrete boundary event
+and maintaining witness-relative next-left minimality.
 
 ## Non-Goals for Tomorrow
 
@@ -389,8 +486,12 @@ Open:
 
 Then perform a 15-20 minute audit focused only on:
 
-- `Epochs.CanonicalNextLeftPhaseCompatibleOn`
-- `Epochs.GapLongPhaseReturnsFillerCanonicalNextLeftPhaseCompatiblePromotionOn`
-- `Convergence.canonical_aperiodic_phase_return_fill_canonical_next_left_phase_compatible_promotion_semantics`
+- `Epochs.GapLongPhaseReturnsBoundaryPromotedSelectedAdmissibilityBridgeOn`
+- `Epochs.GapLongPhaseReturnsFillerCanonicalNextLeftWitnessMinimalityOn`
+- whether these two slots should continue to share a single admissibility
+  predicate
 
-This audit is now complete: the current phase-compatibility proxy is not sufficient for honest promotion from `simpleStep`, so further filler-side work should proceed under Milestone 3.
+The witness-selection audit is no longer the main frontier. The next active
+audit should decide whether the repaired lower layer needs two different local
+semantic predicates, or some weaker theorem-producing replacement for the
+current shared admissibility seam.
