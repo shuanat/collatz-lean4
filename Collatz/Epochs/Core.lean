@@ -57,11 +57,11 @@ def is_t_touch (M_k : ℕ) (t : ℕ) : Prop :=
 
 /-- Touch frequency: baseline deterministic density proxy. -/
 noncomputable def p_touch (t : ℕ) : ℝ :=
-  ((Q_t t + 1 : ℕ) : ℝ)⁻¹
+  ((Q_t t : ℕ) : ℝ)⁻¹
 
 /-- Deterministic lower/upper window bounds for tail touch counts. -/
-def touch_count_lower (t L : ℕ) : ℕ := L / (Q_t t + 1)
-def touch_count_upper (t L : ℕ) : ℕ := L / (Q_t t + 1) + 1
+def touch_count_lower (t L : ℕ) : ℕ := L / (Q_t t)
+def touch_count_upper (t L : ℕ) : ℕ := L / (Q_t t) + 1
 
 /-- Homogenized M_k: M̃_k = M_k - u_k where u_k is the homogenizer -/
 def M_tilde (M_k : ℕ) (u_k : ℕ) : ℕ := M_k - u_k
@@ -80,11 +80,11 @@ noncomputable def avg_multibit_bonus (_t : ℕ) (U : ℕ) : ℝ :=
 
 /-- Phase class proxy used for API stabilization in Wave A. -/
 def phase_class (k_0 : ℕ) (M_tilde_k0 : ℕ) (t : ℕ) : ℕ :=
-  (k_0 + M_tilde_k0) % (Q_t t + 1)
+  (k_0 + M_tilde_k0) % (Q_t t)
 
 /-- Phase shift proxy used for API stabilization in Wave A. -/
 def phase_shift (_k_0 k_0' : ℕ) (M_tilde_k0 M_tilde_k0' : ℕ) (t : ℕ) : ℕ :=
-  (k_0' + M_tilde_k0 + M_tilde_k0') % (Q_t t + 1)
+  (k_0' + M_tilde_k0 + M_tilde_k0') % (Q_t t)
 
 /-- Primitive junction: junction with odd phase shift -/
 def is_primitive_junction (k_0 k_0' : ℕ) (M_tilde_k0 M_tilde_k0' : ℕ) (t : ℕ) : Prop :=
@@ -97,11 +97,11 @@ def is_long_epoch (epoch : TEpoch t) (t0 : ℕ) (U : ℕ) : Prop :=
 
 /-- Long epoch gap baseline model. -/
 def long_epoch_gap (t : ℕ) : ℝ :=
-  (Q_t t + 1 : ℝ)
+  (Q_t t : ℝ)
 
 /-- Long epoch density baseline model. -/
 noncomputable def long_epoch_density (t : ℕ) : ℝ :=
-  1 / (Q_t t + 1 : ℝ)
+  1 / (Q_t t : ℝ)
 
 /-- SEDT envelope baseline expression. -/
 def sedt_envelope (_t : ℕ) (_U : ℕ) (_β : ℝ) (_L : ℕ) : ℝ := 0
@@ -122,7 +122,7 @@ lemma order_of_three_mod_pow_two (t : ℕ) (_ht : 3 ≤ t) : Q_t t = 2^(t - 2) :
   rfl
 
 lemma touch_frequency_deterministic (t : ℕ) (_ht : 3 ≤ t) :
-    p_touch t = ((Q_t t + 1 : ℕ) : ℝ)⁻¹ := by
+    p_touch t = ((Q_t t : ℕ) : ℝ)⁻¹ := by
   rfl
 
 lemma multibit_bonus_bound (k t U : ℕ) :
@@ -131,8 +131,10 @@ lemma multibit_bonus_bound (k t U : ℕ) :
 
 lemma long_epoch_recurrence (t : ℕ) (_ht : 3 ≤ t) :
     long_epoch_gap t > 0 := by
-  have hnat : (0 : ℕ) < Q_t t + 1 := Nat.succ_pos _
-  have hreal : (0 : ℝ) < (Q_t t + 1 : ℝ) := by
+  have hnat : (0 : ℕ) < Q_t t := by
+    unfold Q_t
+    exact pow_pos (by decide) _
+  have hreal : (0 : ℝ) < (Q_t t : ℝ) := by
     exact_mod_cast hnat
   simpa [long_epoch_gap] using hreal
 

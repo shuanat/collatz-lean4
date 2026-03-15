@@ -10,6 +10,15 @@ def affine_step_mod (M_next M c t : ℕ) : Prop :=
 def homogeneous_step_mod (Mtilde_next Mtilde t : ℕ) : Prop :=
   Mtilde_next % (2^t) = (3 * Mtilde) % (2^t)
 
+/-- Homogenized tail data attached to one selected orbit segment. -/
+structure SelectedTailHomogenizationWitness (t i j : ℕ) where
+  startCarrier : ℕ
+  endCarrier : ℕ
+  realizedStart : startCarrier = M_tilde i (homogenizer i t)
+  realizedEnd : endCarrier = M_tilde j (homogenizer j t)
+  periodicStart : homogenizer (i + 2^t) t = homogenizer i t
+  periodicEnd : homogenizer (j + 2^t) t = homogenizer j t
+
 lemma affine_evolution (k t : ℕ) (_ht : 1 ≤ t) :
     affine_step_mod (k + 1) k 1 t := by
   simp [affine_step_mod]
@@ -60,6 +69,16 @@ lemma homogenization_uniqueness (k t : ℕ)
 lemma affine_evolution_periodicity (k t : ℕ) :
     homogenizer (k + 2^t) t = homogenizer k t := by
   simp [homogenizer, Nat.add_mod_right]
+
+def selected_tail_homogenization_witness (t i j : ℕ) :
+    SelectedTailHomogenizationWitness t i j := by
+  refine
+    { startCarrier := M_tilde i (homogenizer i t)
+      endCarrier := M_tilde j (homogenizer j t)
+      realizedStart := rfl
+      realizedEnd := rfl
+      periodicStart := affine_evolution_periodicity i t
+      periodicEnd := affine_evolution_periodicity j t }
 
 lemma homogenization_completeness (t : ℕ) :
     ∀ k : ℕ, ∃ m : ℕ, m = M_tilde k (homogenizer k t) := by
