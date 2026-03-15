@@ -201,6 +201,17 @@ def orbit_has_cofinal_phase_returns (n q : ℕ) : Prop :=
     (Collatz.Foundations.collatz_step^[i]) n > B ∧
     (Collatz.Foundations.collatz_step^[j]) n > B
 
+/-- Strict variant of `orbit_has_cofinal_phase_returns`: the left return time
+must lie strictly after the requested threshold. Since the original theorem is
+uniform in `N`, this is obtained by the one-step shift `N ↦ N+1`, but keeping
+it explicit matches the exact boundary geometry later needed for filler-event
+construction. -/
+def orbit_has_strictly_cofinal_phase_returns (n q : ℕ) : Prop :=
+  ∀ B N L : ℕ, ∃ i j : ℕ,
+    N < i ∧ i + L ≤ j ∧ i % q = j % q ∧
+    (Collatz.Foundations.collatz_step^[i]) n > B ∧
+    (Collatz.Foundations.collatz_step^[j]) n > B
+
 lemma cofinally_unbounded_orbit_has_cofinal_phase_returns
     (n q : ℕ)
     (hq : 0 < q)
@@ -229,12 +240,34 @@ lemma cofinally_unbounded_orbit_has_cofinal_phase_returns
       · exact le_trans (hgap (b : ℕ)) (hmono (Nat.succ_le_of_lt hba))
       · exact hmod.symm
 
+/-- The previous cofinal return theorem immediately strengthens to a strict
+threshold form by requesting the non-strict statement one step later. -/
+lemma cofinally_unbounded_orbit_has_strictly_cofinal_phase_returns
+    (n q : ℕ)
+    (hq : 0 < q)
+    (hunbounded : orbit_cofinally_unbounded n) :
+    orbit_has_strictly_cofinal_phase_returns n q := by
+  intro B N L
+  rcases cofinally_unbounded_orbit_has_cofinal_phase_returns n q hq hunbounded
+      B (N + 1) L with ⟨i, j, hi, hij, hmod, hiBig, hjBig⟩
+  refine ⟨i, j, ?_, hij, hmod, hiBig, hjBig⟩
+  exact lt_of_lt_of_le (Nat.lt_succ_self N) hi
+
 lemma aperiodic_orbit_has_cofinal_phase_returns
     (n q : ℕ)
     (hq : 0 < q)
     (haper : ¬ Collatz.CycleExclusion.orbit_eventually_periodic n) :
     orbit_has_cofinal_phase_returns n q := by
   exact cofinally_unbounded_orbit_has_cofinal_phase_returns n q hq
+    (aperiodic_orbit_cofinally_unbounded n haper)
+
+/-- Strict threshold version of the previous aperiodic phase-return theorem. -/
+lemma aperiodic_orbit_has_strictly_cofinal_phase_returns
+    (n q : ℕ)
+    (hq : 0 < q)
+    (haper : ¬ Collatz.CycleExclusion.orbit_eventually_periodic n) :
+    orbit_has_strictly_cofinal_phase_returns n q := by
+  exact cofinally_unbounded_orbit_has_strictly_cofinal_phase_returns n q hq
     (aperiodic_orbit_cofinally_unbounded n haper)
 
 /-- Epoch-side specialization of the phase-return skeleton: an aperiodic orbit
@@ -245,13 +278,31 @@ noncomputable def aperiodic_orbit_has_cofinal_gap_long_phase_returns
     (n t U : ℕ)
     (haper : ¬ Collatz.CycleExclusion.orbit_eventually_periodic n) :
     Epochs.OrbitHasCofinalGapLongPhaseReturns n t U := by
-  have hraw : Epochs.RawCofinalGapLongPhaseReturns n t U := by
+  have hraw : Epochs.RawStrictCofinalGapLongPhaseReturns n t U := by
     intro N
     have hq : 0 < Epochs.selected_phase_period t := Epochs.selected_phase_period_pos t
-    rcases aperiodic_orbit_has_cofinal_phase_returns n (Epochs.selected_phase_period t) hq haper 0 N
+    rcases aperiodic_orbit_has_strictly_cofinal_phase_returns n (Epochs.selected_phase_period t) hq haper 0 N
         (Collatz.SEDT.L₀ t U) with ⟨i, j, hiN, hij, hmod, _hiBig, _hjBig⟩
     exact ⟨i, j, hiN, hij, hmod⟩
-  exact Epochs.orbit_has_cofinal_gap_long_phase_returns_of_raw hraw
+  exact Epochs.orbit_has_cofinal_gap_long_phase_returns_of_raw_strict hraw
+
+/-- The canonical aperiodic phase-return skeleton now comes with one-step room
+after every right boundary, thanks to the strict threshold form of cofinal
+phase returns used in its construction. -/
+theorem aperiodic_orbit_has_cofinal_gap_long_phase_returns_successor_room
+    (n t U : ℕ)
+    (haper : ¬ Collatz.CycleExclusion.orbit_eventually_periodic n) :
+    ∀ j : ℕ,
+      (aperiodic_orbit_has_cofinal_gap_long_phase_returns n t U haper).rightIdx j + 1 <
+        (aperiodic_orbit_has_cofinal_gap_long_phase_returns n t U haper).leftIdx (j + 1) := by
+  have hraw : Epochs.RawStrictCofinalGapLongPhaseReturns n t U := by
+    intro N
+    have hq : 0 < Epochs.selected_phase_period t := Epochs.selected_phase_period_pos t
+    rcases aperiodic_orbit_has_strictly_cofinal_phase_returns n (Epochs.selected_phase_period t) hq haper 0 N
+        (Collatz.SEDT.L₀ t U) with ⟨i, j, hiN, hij, hmod, _hiBig, _hjBig⟩
+    exact ⟨i, j, hiN, hij, hmod⟩
+  simpa [aperiodic_orbit_has_cofinal_gap_long_phase_returns]
+    using Epochs.successor_room_orbit_has_cofinal_gap_long_phase_returns_of_raw_strict hraw
 
 /-- Honest canonical aperiodic phase-return witness: unlike the raw
 `aperiodic_orbit_has_cofinal_gap_long_phase_returns` skeleton, this object is
@@ -800,6 +851,35 @@ def canonical_aperiodic_phase_return_fill_boundary_promoted_selected_event_sourc
     Epochs.GapLongPhaseReturnsBoundaryPromotedSelectedEventSourceOn
       (aperiodic_orbit_has_cofinal_gap_long_phase_returns n t U _ha)
 
+/-- A purely geometric actual-skeleton theorem source suffices for the new
+boundary-event target: whenever every filler interval contains the immediate
+successor of its right boundary, that successor itself is the required concrete
+interior event. -/
+noncomputable def canonical_aperiodic_phase_return_fill_boundary_promoted_selected_event_source_semantics_of_successor_room
+    (n t U : ℕ)
+    (hroom :
+      ∀ _ha : ¬ Collatz.CycleExclusion.orbit_eventually_periodic n,
+        ∀ j : ℕ,
+          (aperiodic_orbit_has_cofinal_gap_long_phase_returns n t U _ha).rightIdx j + 1 <
+            (aperiodic_orbit_has_cofinal_gap_long_phase_returns n t U _ha).leftIdx (j + 1)) :
+    canonical_aperiodic_phase_return_fill_boundary_promoted_selected_event_source_semantics
+      n t U := by
+  intro haper
+  exact
+    Epochs.gap_long_phase_returns_boundary_promoted_selected_event_source_on_of_successor_room
+      (hroom haper)
+
+/-- The canonical aperiodic phase-return skeleton itself now provides the
+required successor-room theorem, so the concrete boundary-event source is
+available theorem-driven on the actual aperiodic skeleton. -/
+noncomputable def canonical_aperiodic_phase_return_fill_boundary_promoted_selected_event_source_semantics_of_aperiodic_successor_room
+    (n t U : ℕ) :
+    canonical_aperiodic_phase_return_fill_boundary_promoted_selected_event_source_semantics
+      n t U := by
+  exact
+    canonical_aperiodic_phase_return_fill_boundary_promoted_selected_event_source_semantics_of_successor_room
+      n t U (aperiodic_orbit_has_cofinal_gap_long_phase_returns_successor_room n t U)
+
 /-- Separate actual-skeleton bridge from the concrete boundary-event language
 into one chosen witness-relative admissibility notion. -/
 def canonical_aperiodic_phase_return_fill_boundary_promoted_selected_admissibility_bridge_semantics
@@ -856,6 +936,193 @@ def canonical_aperiodic_phase_return_fill_canonical_next_left_witness_minimality
     Epochs.GapLongPhaseReturnsFillerCanonicalNextLeftWitnessMinimalityOn
       (aperiodic_orbit_has_cofinal_gap_long_phase_returns n t U _ha)
       (hnext _ha)
+
+/-- On the canonical aperiodic phase-return skeleton, the present witness-based
+interface cannot simultaneously admit the concrete boundary successor event and
+maintain the current next-left minimality seam for the same admissibility
+language. The obstruction is now interface-level: successor-room geometry
+produces a strict interior boundary event, while minimality forbids any such
+admissible promoted index. -/
+theorem canonical_aperiodic_phase_return_fill_not_boundary_admissibility_bridge_and_witness_minimality
+    {n t U : ℕ}
+    {hnext :
+      canonical_aperiodic_phase_return_fill_canonical_next_left_witness_semantics n t U}
+    {_ha : ¬ Collatz.CycleExclusion.orbit_eventually_periodic n}
+    (hbridge :
+      canonical_aperiodic_phase_return_fill_boundary_promoted_selected_admissibility_bridge_semantics
+        n t U hnext)
+    (hmin :
+      canonical_aperiodic_phase_return_fill_canonical_next_left_witness_minimality_semantics
+        n t U hnext) :
+    False := by
+  exact
+    Epochs.not_gap_long_phase_returns_boundary_promoted_selected_admissibility_bridge_on_of_successor_room_and_minimality
+      (j := 0)
+      (hroom :=
+        aperiodic_orbit_has_cofinal_gap_long_phase_returns_successor_room n t U _ha 0)
+      (hbridge := hbridge _ha)
+      (hmin := hmin _ha)
+
+/-- Honest split witness on the actual canonical aperiodic skeleton: one
+predicate records promotion-side event admissibility, while another records the
+comparison language used for next-left minimality. -/
+def canonical_aperiodic_phase_return_fill_canonical_next_left_split_witness_semantics
+    (n t U : ℕ) : Sort _ :=
+  ∀ _ha : ¬ Collatz.CycleExclusion.orbit_eventually_periodic n,
+    Epochs.CanonicalNextLeftSplitWitnessOn
+      (aperiodic_orbit_has_cofinal_gap_long_phase_returns n t U _ha)
+
+/-- Actual-skeleton explicit promoted-event source for the split redesign. -/
+def canonical_aperiodic_phase_return_fill_canonical_next_left_split_promotion_event_source_semantics
+    (n t U : ℕ)
+    (hsplit :
+      canonical_aperiodic_phase_return_fill_canonical_next_left_split_witness_semantics
+        n t U) :
+    Sort _ :=
+  ∀ _ha : ¬ Collatz.CycleExclusion.orbit_eventually_periodic n,
+    Epochs.GapLongPhaseReturnsFillerCanonicalNextLeftSplitPromotionEventSourceOn
+      (aperiodic_orbit_has_cofinal_gap_long_phase_returns n t U _ha)
+      (hsplit _ha)
+
+/-- Actual-skeleton strongest consumer-driven lower target: every promotion-side
+event witness directly yields contradiction for the original filler candidate,
+without introducing any intermediate comparison object. -/
+def canonical_aperiodic_phase_return_fill_canonical_next_left_split_event_conflict_semantics
+    (n t U : ℕ)
+    (hsplit :
+      canonical_aperiodic_phase_return_fill_canonical_next_left_split_witness_semantics
+        n t U) :
+    Sort _ :=
+  ∀ _ha : ¬ Collatz.CycleExclusion.orbit_eventually_periodic n,
+    Epochs.GapLongPhaseReturnsFillerCanonicalNextLeftSplitEventConflictOn
+      (aperiodic_orbit_has_cofinal_gap_long_phase_returns n t U _ha)
+      (hsplit _ha)
+
+/-- Actual-skeleton bridge from the concrete boundary-event language into the
+promotion-side event-language of a split witness. This is weaker than any
+comparison-language bridge: it only says that the real boundary event is
+admitted on the event side. -/
+def canonical_aperiodic_phase_return_fill_boundary_promoted_selected_event_admissibility_bridge_semantics
+    (n t U : ℕ)
+    (hsplit :
+      canonical_aperiodic_phase_return_fill_canonical_next_left_split_witness_semantics
+        n t U) :
+    Sort _ :=
+  ∀ _ha : ¬ Collatz.CycleExclusion.orbit_eventually_periodic n,
+    Epochs.GapLongPhaseReturnsBoundaryPromotedSelectedEventAdmissibilityBridgeOn
+      (aperiodic_orbit_has_cofinal_gap_long_phase_returns n t U _ha)
+      (hsplit _ha).eventAdmissible
+
+/-- Actual-skeleton normalization seam for the split redesign: convert
+promotion-side event witnesses into next-left comparison witnesses. -/
+def canonical_aperiodic_phase_return_fill_canonical_next_left_split_normalization_semantics
+    (n t U : ℕ)
+    (hsplit :
+      canonical_aperiodic_phase_return_fill_canonical_next_left_split_witness_semantics
+        n t U) :
+    Sort _ :=
+  ∀ _ha : ¬ Collatz.CycleExclusion.orbit_eventually_periodic n,
+    Epochs.GapLongPhaseReturnsFillerCanonicalNextLeftSplitNormalizationOn
+      (aperiodic_orbit_has_cofinal_gap_long_phase_returns n t U _ha)
+      (hsplit _ha)
+
+/-- Actual-skeleton next-left minimality source for the split redesign, phrased
+only over the comparison language. -/
+def canonical_aperiodic_phase_return_fill_canonical_next_left_split_minimality_semantics
+    (n t U : ℕ)
+    (hsplit :
+      canonical_aperiodic_phase_return_fill_canonical_next_left_split_witness_semantics
+        n t U) :
+    Sort _ :=
+  ∀ _ha : ¬ Collatz.CycleExclusion.orbit_eventually_periodic n,
+    Epochs.GapLongPhaseReturnsFillerCanonicalNextLeftSplitMinimalityOn
+      (aperiodic_orbit_has_cofinal_gap_long_phase_returns n t U _ha)
+      (hsplit _ha)
+
+/-- Actual-skeleton stronger normalization seam: real promotion-side events are
+converted directly into structured comparison witnesses, rather than into
+membership of a comparison predicate. -/
+def canonical_aperiodic_phase_return_fill_canonical_next_left_structured_normalization_semantics
+    (n t U : ℕ)
+    (hsplit :
+      canonical_aperiodic_phase_return_fill_canonical_next_left_split_witness_semantics
+        n t U) :
+    Sort _ :=
+  ∀ _ha : ¬ Collatz.CycleExclusion.orbit_eventually_periodic n,
+    Epochs.GapLongPhaseReturnsFillerCanonicalNextLeftStructuredNormalizationOn
+      (aperiodic_orbit_has_cofinal_gap_long_phase_returns n t U _ha)
+      (hsplit _ha)
+
+/-- Actual-skeleton stronger next-left minimality slot: no structured comparison
+witness may occur strictly before the chosen next-left endpoint. -/
+def canonical_aperiodic_phase_return_fill_canonical_next_left_structured_minimality_semantics
+    (n t U : ℕ) : Sort _ :=
+  ∀ _ha : ¬ Collatz.CycleExclusion.orbit_eventually_periodic n,
+    Epochs.FillerNextLeftStructuredMinimalityOn
+      (aperiodic_orbit_has_cofinal_gap_long_phase_returns n t U _ha)
+
+/-- Stronger actual-skeleton no-go theorem: once a concrete boundary event is
+admitted on the event side, any normalization output that forgets down to the
+index/order-only structured comparison witness is already too weak. The
+contradiction with structured minimality is immediate, so the next redesign must
+use richer comparison data than this whole output class. -/
+theorem canonical_aperiodic_phase_return_fill_not_boundary_event_admissibility_bridge_and_structured_minimality
+    {n t U : ℕ}
+    {hsplit :
+      canonical_aperiodic_phase_return_fill_canonical_next_left_split_witness_semantics
+        n t U}
+    {_ha : ¬ Collatz.CycleExclusion.orbit_eventually_periodic n}
+    {j : ℕ}
+    (hsimple :
+      Collatz.is_simple_step
+        ((Collatz.Foundations.collatz_step^[
+          (aperiodic_orbit_has_cofinal_gap_long_phase_returns n t U _ha).rightIdx j]) n))
+    (hbridge :
+      canonical_aperiodic_phase_return_fill_boundary_promoted_selected_event_admissibility_bridge_semantics
+        n t U hsplit)
+    (hmin :
+      canonical_aperiodic_phase_return_fill_canonical_next_left_structured_minimality_semantics
+        n t U) :
+    False := by
+  exact
+    Epochs.not_gap_long_phase_returns_boundary_event_admissibility_bridge_on_of_successor_room_simple_step_and_structured_minimality
+      (j := j)
+      (hsimple := hsimple)
+      (hroom :=
+        aperiodic_orbit_has_cofinal_gap_long_phase_returns_successor_room n t U _ha j)
+      (hbridge := hbridge _ha)
+      (hmin := hmin _ha)
+
+/-- Strongest actual-skeleton no-go theorem currently available: once the real
+boundary event is admitted on the event side, even a direct event-conflict
+theorem source is impossible. Thus the next missing semantic slot lies strictly
+below all currently exposed comparison or conflict layers. -/
+theorem canonical_aperiodic_phase_return_fill_not_boundary_event_admissibility_bridge_and_event_conflict
+    {n t U : ℕ}
+    {hsplit :
+      canonical_aperiodic_phase_return_fill_canonical_next_left_split_witness_semantics
+        n t U}
+    {_ha : ¬ Collatz.CycleExclusion.orbit_eventually_periodic n}
+    {j : ℕ}
+    (hsimple :
+      Collatz.is_simple_step
+        ((Collatz.Foundations.collatz_step^[
+          (aperiodic_orbit_has_cofinal_gap_long_phase_returns n t U _ha).rightIdx j]) n))
+    (hbridge :
+      canonical_aperiodic_phase_return_fill_boundary_promoted_selected_event_admissibility_bridge_semantics
+        n t U hsplit)
+    (hconf :
+      canonical_aperiodic_phase_return_fill_canonical_next_left_split_event_conflict_semantics
+        n t U hsplit) :
+    False := by
+  exact
+    Epochs.not_gap_long_phase_returns_boundary_event_admissibility_bridge_on_of_successor_room_simple_step_and_event_conflict
+      (j := j)
+      (hsimple := hsimple)
+      (hroom :=
+        aperiodic_orbit_has_cofinal_gap_long_phase_returns_successor_room n t U _ha j)
+      (hbridge := hbridge _ha)
+      (hconf := hconf _ha)
 
 /-- The previous actual-skeleton event-level source immediately populates the
 repaired witness-relative promotion slot. -/
@@ -1012,6 +1279,74 @@ def canonical_aperiodic_phase_return_fill_candidate_exclusion_bridge
   ∀ _ha : ¬ Collatz.CycleExclusion.orbit_eventually_periodic n,
     Epochs.GapLongPhaseReturnsFillerCandidateExclusionBridgeOn
       (aperiodic_orbit_has_cofinal_gap_long_phase_returns n t U _ha)
+
+/-- The split lower interface on the canonical aperiodic skeleton already
+reaches the old candidate-exclusion bridge without forcing one shared
+admissibility predicate for both promotion and minimality. -/
+theorem canonical_aperiodic_phase_return_fill_candidate_exclusion_bridge_of_split_event_source_normalization_and_minimality
+    {n t U : ℕ}
+    {hsplit :
+      canonical_aperiodic_phase_return_fill_canonical_next_left_split_witness_semantics
+        n t U}
+    (hsrc :
+      canonical_aperiodic_phase_return_fill_canonical_next_left_split_promotion_event_source_semantics
+        n t U hsplit)
+    (hnorm :
+      canonical_aperiodic_phase_return_fill_canonical_next_left_split_normalization_semantics
+        n t U hsplit)
+    (hmin :
+      canonical_aperiodic_phase_return_fill_canonical_next_left_split_minimality_semantics
+        n t U hsplit) :
+    canonical_aperiodic_phase_return_fill_candidate_exclusion_bridge n t U := by
+  intro haper
+  exact
+    Epochs.gap_long_phase_returns_filler_candidate_exclusion_on_of_split_event_source_normalization_and_minimality
+      (hsrc haper) (hnorm haper) (hmin haper)
+
+/-- Strongest direct route from the split lower layer to candidate exclusion on
+the actual canonical aperiodic skeleton: if promotion-side event witnesses are
+already conflicting at the candidate level, no normalization layer is needed. -/
+theorem canonical_aperiodic_phase_return_fill_candidate_exclusion_bridge_of_split_event_source_and_event_conflict
+    {n t U : ℕ}
+    {hsplit :
+      canonical_aperiodic_phase_return_fill_canonical_next_left_split_witness_semantics
+        n t U}
+    (hsrc :
+      canonical_aperiodic_phase_return_fill_canonical_next_left_split_promotion_event_source_semantics
+        n t U hsplit)
+    (hconf :
+      canonical_aperiodic_phase_return_fill_canonical_next_left_split_event_conflict_semantics
+        n t U hsplit) :
+    canonical_aperiodic_phase_return_fill_candidate_exclusion_bridge n t U := by
+  intro haper
+  exact
+    Epochs.gap_long_phase_returns_filler_candidate_exclusion_on_of_split_event_source_and_event_conflict
+      (hsrc haper) (hconf haper)
+
+/-- Stronger actual-skeleton route to candidate exclusion: once the split
+promotion-side event source is known and normalization/minimality are phrased in
+terms of structured comparison witnesses, the old filler candidate-exclusion
+bridge follows without reintroducing a comparison predicate as the primary seam.
+-/
+theorem canonical_aperiodic_phase_return_fill_candidate_exclusion_bridge_of_structured_event_source_normalization_and_minimality
+    {n t U : ℕ}
+    {hsplit :
+      canonical_aperiodic_phase_return_fill_canonical_next_left_split_witness_semantics
+        n t U}
+    (hsrc :
+      canonical_aperiodic_phase_return_fill_canonical_next_left_split_promotion_event_source_semantics
+        n t U hsplit)
+    (hnorm :
+      canonical_aperiodic_phase_return_fill_canonical_next_left_structured_normalization_semantics
+        n t U hsplit)
+    (hmin :
+      canonical_aperiodic_phase_return_fill_canonical_next_left_structured_minimality_semantics
+        n t U) :
+    canonical_aperiodic_phase_return_fill_candidate_exclusion_bridge n t U := by
+  intro haper
+  exact
+    Epochs.gap_long_phase_returns_filler_candidate_exclusion_on_of_structured_event_source_normalization_and_minimality
+      (hsrc haper) (hnorm haper) (hmin haper)
 
 /-- Honest canonical-selection semantics on the filler interval immediately
 produces the current lowest candidate-exclusion bridge on the actual canonical
