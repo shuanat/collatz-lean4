@@ -50,10 +50,12 @@ namespace Collatz.Documentation
 -- Thm B.4 (Main Cycle Exclusion) → CycleExclusion.Main.main_cycle_exclusion
 
 -- Appendix C: Convergence
--- Lem C.1 (Coercivity) → Convergence.Coercivity.coercivity
+-- Lem C.1 (Coercivity / I.2 bridge) → Convergence.Coercivity.coercivity,
+--   Convergence.Coercivity.coercivity_concatenation,
+--   Convergence.Coercivity.coercivity_absorption
 -- Thm C.2 (No Attractors) → Convergence.NoAttractors.no_other_attractors
--- Thm C.3 (Main Convergence) → Convergence.MainTheorem.main_convergence
--- Thm C.4 (Global Convergence) → Convergence.MainTheorem.global_convergence
+-- Thm C.3 (Main Convergence bridge) → Convergence.MainTheorem.main_convergence
+-- Thm C.4 (Global Convergence bridge) → Convergence.MainTheorem.global_convergence
 -- Thm C.5 (Fixed Points) → Convergence.FixedPoints.fixed_point_uniqueness
 
 -- Constants Mapping

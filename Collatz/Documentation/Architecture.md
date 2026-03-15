@@ -101,6 +101,7 @@
 **Назначение:** Базовые математические определения и леммы
 
 **Содержание:**
+
 - `depth_minus` - 2-adic глубина числа
 - `step_type` - тип шага Коллатца
 - `collatz_step` - функция шага Коллатца
@@ -116,6 +117,7 @@
 **Назначение:** Централизованные определения эпох и связанных структур
 
 **Содержание:**
+
 - `TEpoch` - структура эпохи
 - `is_t_touch` - условие t-касания
 - `M_tilde` - гомогенизированная последовательность
@@ -138,6 +140,7 @@
 **Назначение:** Константы и теоремы SEDT (Shumak Epoch Drift Theorem)
 
 **Содержание:**
+
 - `α` (alpha_SEDT) - параметр наклона
 - `β₀` (beta0_SEDT) - порог отрицательности
 - `C` (C_SEDT) - константа дрейфа
@@ -161,6 +164,7 @@
 **Назначение:** Удобные сокращения для часто используемых определений
 
 **Содержание:**
+
 - **Foundations алиасы:** `Depth`, `StepType`, `CollatzStep`, `Orbit`
 - **Epochs алиасы:** `TEpoch`, `IsTTouch`, `PhaseClass`, `Homogenizer`
 - **SEDT алиасы:** `SlopeParam`, `NegativityThreshold`, `DriftConstant`
@@ -174,64 +178,64 @@
 
 ### Epochs модули
 
-| Модуль | Назначение | Основные определения |
-|--------|------------|---------------------|
-| `Structure.lean` | Структура эпох | `Epoch.head`, `Epoch.plateau`, `Epoch.tail` |
-| `TouchAnalysis.lean` | Анализ касаний | Леммы о частоте касаний |
-| `Homogenization.lean` | Гомогенизация хвоста | Свойства гомогенизации |
-| `MultibitBonus.lean` | Многобитный бонус | Анализ бонусов |
-| `LongEpochs.lean` | Длинные эпохи | Свойства длинных эпох |
-| `APStructure.lean` | AP-структура касаний | Арифметические прогрессии |
-| `PhaseClasses.lean` | Классы фаз | Классификация фаз |
-| `CosetAdmissibility.lean` | Косет-допустимость | Критерий допустимости |
-| `NumeratorCarry.lean` | Перенос числителя | Рекуррентность N_k/M_k/d_k |
-| `OrdFact.lean` | Порядковые факты | Порядок 3 по модулю 2^t |
+| Модуль                    | Назначение           | Основные определения                        |
+| ------------------------- | -------------------- | ------------------------------------------- |
+| `Structure.lean`          | Структура эпох       | `Epoch.head`, `Epoch.plateau`, `Epoch.tail` |
+| `TouchAnalysis.lean`      | Анализ касаний       | Леммы о частоте касаний                     |
+| `Homogenization.lean`     | Гомогенизация хвоста | Свойства гомогенизации                      |
+| `MultibitBonus.lean`      | Многобитный бонус    | Анализ бонусов                              |
+| `LongEpochs.lean`         | Длинные эпохи        | Свойства длинных эпох                       |
+| `APStructure.lean`        | AP-структура касаний | Арифметические прогрессии                   |
+| `PhaseClasses.lean`       | Классы фаз           | Классификация фаз                           |
+| `CosetAdmissibility.lean` | Косет-допустимость   | Критерий допустимости                       |
+| `NumeratorCarry.lean`     | Перенос числителя    | Рекуррентность N_k/M_k/d_k                  |
+| `OrdFact.lean`            | Порядковые факты     | Порядок 3 по модулю 2^t                     |
 
 ### CycleExclusion модули
 
-| Модуль | Назначение | Основные определения |
-|--------|------------|---------------------|
-| `CycleDefinition.lean` | Определения циклов | `Cycle`, `is_cycle` |
-| `Main.lean` | Основная теорема | `no_nontrivial_odd_cycles` |
-| `MixedCycles.lean` | Смешанные циклы | Анализ смешанных циклов |
-| `PeriodSum.lean` | Периодические суммы | Телескопический аргумент |
-| `PureE1Cycles.lean` | Чистые e=1 циклы | Анализ чистых циклов |
-| `RepeatTrick.lean` | Трюк повторения | Техника повторения |
+| Модуль                 | Назначение          | Основные определения       |
+| ---------------------- | ------------------- | -------------------------- |
+| `CycleDefinition.lean` | Определения циклов  | `Cycle`, `is_cycle`        |
+| `Main.lean`            | Основная теорема    | `no_nontrivial_odd_cycles` |
+| `MixedCycles.lean`     | Смешанные циклы     | Анализ смешанных циклов    |
+| `PeriodSum.lean`       | Периодические суммы | Телескопический аргумент   |
+| `PureE1Cycles.lean`    | Чистые e=1 циклы    | Анализ чистых циклов       |
+| `RepeatTrick.lean`     | Трюк повторения     | Техника повторения         |
 
 ### Convergence модули
 
-| Модуль | Назначение | Основные определения |
-|--------|------------|---------------------|
-| `MainTheorem.lean` | Основная теорема | `collatz_convergence` |
-| `FixedPoints.lean` | Неподвижные точки | Единственность неподвижной точки |
-| `Coercivity.lean` | Принудительность | Свойства принудительности |
-| `NoAttractors.lean` | Отсутствие аттракторов | Отсутствие аттракторов |
+| Модуль              | Назначение             | Основные определения                                                       |
+| ------------------- | ---------------------- | -------------------------------------------------------------------------- |
+| `MainTheorem.lean`  | Основная теорема       | `collatz_convergence_from_entry`, `main_convergence`, `global_convergence` |
+| `FixedPoints.lean`  | Неподвижные точки      | Единственность неподвижной точки                                           |
+| `Coercivity.lean`   | Принудительность       | Свойства принудительности                                                  |
+| `NoAttractors.lean` | Отсутствие аттракторов | Отсутствие аттракторов                                                     |
 
 ### Mixing модули
 
-| Модуль | Назначение | Основные определения |
-|--------|------------|---------------------|
-| `PhaseMixing.lean` | Смешивание фаз | Свойства смешивания |
-| `Semigroup.lean` | Полугруппы | Генерация полугрупп |
+| Модуль                | Назначение      | Основные определения   |
+| --------------------- | --------------- | ---------------------- |
+| `PhaseMixing.lean`    | Смешивание фаз  | Свойства смешивания    |
+| `Semigroup.lean`      | Полугруппы      | Генерация полугрупп    |
 | `TouchFrequency.lean` | Частота касаний | Анализ частоты касаний |
 
 ### Stratified модули
 
-| Модуль | Назначение | Основные определения |
-|--------|------------|---------------------|
-| `BranchingDensity.lean` | Плотность ветвления | Анализ плотности |
+| Модуль                        | Назначение           | Основные определения            |
+| ----------------------------- | -------------------- | ------------------------------- |
+| `BranchingDensity.lean`       | Плотность ветвления  | Анализ плотности                |
 | `CompleteStratification.lean` | Полная стратификация | Стратифицированная декомпозиция |
-| `Cylinders.lean` | Цилиндры | Цилиндрические множества |
-| `Parametrization.lean` | Параметризация | Параметризация траекторий |
-| `PreimageLayers.lean` | Слои прообразов | Слоистая структура |
+| `Cylinders.lean`              | Цилиндры             | Цилиндрические множества        |
+| `Parametrization.lean`        | Параметризация       | Параметризация траекторий       |
+| `PreimageLayers.lean`         | Слои прообразов      | Слоистая структура              |
 
 ### Utilities модули
 
-| Модуль | Назначение | Основные определения |
-|--------|------------|---------------------|
-| `Constants.lean` | Константы | Реестр всех констант |
-| `Examples.lean` | Примеры | Примеры использования |
-| `Notation.lean` | Нотация | Соглашения о нотации |
+| Модуль              | Назначение     | Основные определения     |
+| ------------------- | -------------- | ------------------------ |
+| `Constants.lean`    | Константы      | Реестр всех констант     |
+| `Examples.lean`     | Примеры        | Примеры использования    |
+| `Notation.lean`     | Нотация        | Соглашения о нотации     |
 | `TwoAdicDepth.lean` | 2-adic глубина | Специализированные леммы |
 
 ---
@@ -263,6 +267,7 @@
 ### Правила импортов
 
 #### ✅ Правильно:
+
 ```lean
 -- В специализированном модуле
 import Collatz.Foundations.Core
@@ -275,6 +280,7 @@ open Collatz.Epochs.Aliases (Depth StepType TEpoch)
 ```
 
 #### ❌ Неправильно:
+
 ```lean
 -- Прямой импорт специализированного модуля в Core
 import Collatz.Epochs.Structure  -- НЕ ДЕЛАЙТЕ ТАК!
@@ -303,6 +309,7 @@ import Collatz.Epochs.TouchAnalysis  -- НЕ ДЕЛАЙТЕ ТАК!
    - И т.д.
 
 2. **Импортируйте необходимые Core модули:**
+
    ```lean
    import Collatz.Foundations.Core
    import Collatz.Epochs.Core
@@ -311,6 +318,7 @@ import Collatz.Epochs.TouchAnalysis  -- НЕ ДЕЛАЙТЕ ТАК!
    ```
 
 3. **Используйте алиасы:**
+
    ```lean
    open Collatz.Epochs.Aliases (Depth StepType TEpoch)
    ```
@@ -346,30 +354,32 @@ import Collatz.Epochs.TouchAnalysis  -- НЕ ДЕЛАЙТЕ ТАК!
 
 ### Маппинг разделов статьи
 
-| Раздел статьи | Lean4 модули |
-|---------------|--------------|
-| **Основные результаты** | `Collatz.lean` |
-| SEDT | `SEDT.Core.lean` |
-| A.LONG.5 | `Epochs.LongEpochs.lean` |
-| Cycle Exclusion | `CycleExclusion.Main.lean` |
-| Final Convergence | `Convergence.MainTheorem.lean` |
-| **Приложение A** | `Foundations.Core.lean`, `Epochs.Core.lean` |
-| A.1-A.3 (Точные тождества) | `Foundations.Core.lean` |
-| A.E0-A.E1 (Структура эпох) | `Epochs.Structure.lean` |
-| A.E3.f-i (Гомогенизация хвоста) | `Epochs.Homogenization.lean` |
-| A.E4 (SEDT обертка) | `SEDT.Core.lean` |
-| A.MIX (Смешивание фаз) | `Mixing.PhaseMixing.lean` |
-| A.LONG (Длинные эпохи) | `Epochs.LongEpochs.lean` |
-| **Приложение B** | `CycleExclusion.*.lean` |
-| **Приложение C** | `Convergence.*.lean` |
-| **Приложение D** | `Utilities.Constants.lean` |
+| Раздел статьи                   | Lean4 модули                                |
+| ------------------------------- | ------------------------------------------- |
+| **Основные результаты**         | `Collatz.lean`                              |
+| SEDT                            | `SEDT.Core.lean`                            |
+| A.LONG.5                        | `Epochs.LongEpochs.lean`                    |
+| Cycle Exclusion                 | `CycleExclusion.Main.lean`                  |
+| Final Convergence               | `Convergence.MainTheorem.lean`              |
+| **Приложение A**                | `Foundations.Core.lean`, `Epochs.Core.lean` |
+| A.1-A.3 (Точные тождества)      | `Foundations.Core.lean`                     |
+| A.E0-A.E1 (Структура эпох)      | `Epochs.Structure.lean`                     |
+| A.E3.f-i (Гомогенизация хвоста) | `Epochs.Homogenization.lean`                |
+| A.E4 (SEDT обертка)             | `SEDT.Core.lean`                            |
+| A.MIX (Смешивание фаз)          | `Mixing.PhaseMixing.lean`                   |
+| A.LONG (Длинные эпохи)          | `Epochs.LongEpochs.lean`                    |
+| **Приложение B**                | `CycleExclusion.*.lean`                     |
+| **Приложение C**                | `Convergence.*.lean`                        |
+| **Приложение D**                | `Utilities.Constants.lean`                  |
 
 ### Критические пути зависимостей
 
 #### A.REC.2 → A.CYC.1 → A.LONG.4 → A.LONG.5
+
 - `Epochs.APStructure.lean` → `Epochs.Homogenization.lean` → `Epochs.LongEpochs.lean`
 
 #### SEDT зависимости
+
 - `Epochs.MultibitBonus.lean` → `Mixing.TouchFrequency.lean` → `SEDT.Core.lean`
 
 ---
@@ -402,7 +412,7 @@ import Collatz.Epochs.TouchAnalysis  -- НЕ ДЕЛАЙТЕ ТАК!
 ✅ **Соответствие статье:** Структура кода отражает структуру доказательств  
 ✅ **Удобство использования:** Система алиасов для часто используемых определений  
 ✅ **Масштабируемость:** Легкое добавление новых модулей  
-✅ **Качество:** Автоматические проверки и метрики  
+✅ **Качество:** Автоматические проверки и метрики
 
 **Статус:** ✅ Полностью интегрирован и готов к использованию
 
