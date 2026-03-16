@@ -1013,6 +1013,41 @@ def canonical_aperiodic_phase_return_fill_boundary_promoted_selected_event_admis
       (aperiodic_orbit_has_cofinal_gap_long_phase_returns n t U _ha)
       (hsplit _ha).eventAdmissible
 
+/-- Actual-skeleton theorem-source for the stronger certificate-level boundary
+seam: from the canonical successor-room geometry, produce the concrete boundary
+certificate without yet committing to any event-language admission. -/
+def canonical_aperiodic_phase_return_fill_boundary_promoted_selected_certificate_source_semantics
+    (n t U : ℕ) : Sort _ :=
+  ∀ _ha : ¬ Collatz.CycleExclusion.orbit_eventually_periodic n,
+    Epochs.GapLongPhaseReturnsBoundaryPromotedSelectedCertificateSourceOn
+      (aperiodic_orbit_has_cofinal_gap_long_phase_returns n t U _ha)
+
+/-- The canonical aperiodic successor-room theorem automatically populates the
+new certificate-level boundary seam. -/
+noncomputable def canonical_aperiodic_phase_return_fill_boundary_promoted_selected_certificate_source_semantics_of_aperiodic_successor_room
+    (n t U : ℕ) :
+    canonical_aperiodic_phase_return_fill_boundary_promoted_selected_certificate_source_semantics
+      n t U := by
+  intro _ha
+  exact
+    Epochs.gap_long_phase_returns_boundary_promoted_selected_certificate_source_on_of_successor_room
+      (aperiodic_orbit_has_cofinal_gap_long_phase_returns_successor_room n t U _ha)
+
+/-- Actual-skeleton consumer-specific seam below `eventAdmissible`: from the
+boundary certificate, produce the promotion-side event witness consumed by the
+direct split event-conflict theorem. This is exactly the new residual exposed by
+the certificate redesign. -/
+def canonical_aperiodic_phase_return_fill_boundary_promoted_selected_certificate_event_witness_adapter_semantics
+    (n t U : ℕ)
+    (hsplit :
+      canonical_aperiodic_phase_return_fill_canonical_next_left_split_witness_semantics
+        n t U) :
+    Sort _ :=
+  ∀ _ha : ¬ Collatz.CycleExclusion.orbit_eventually_periodic n,
+    Epochs.GapLongPhaseReturnsBoundaryPromotedSelectedCertificateEventWitnessAdapterOn
+      (aperiodic_orbit_has_cofinal_gap_long_phase_returns n t U _ha)
+      (hsplit _ha)
+
 /-- Actual-skeleton normalization seam for the split redesign: convert
 promotion-side event witnesses into next-left comparison witnesses. -/
 def canonical_aperiodic_phase_return_fill_canonical_next_left_split_normalization_semantics
@@ -1093,6 +1128,33 @@ theorem canonical_aperiodic_phase_return_fill_not_boundary_event_admissibility_b
       (hbridge := hbridge _ha)
       (hmin := hmin _ha)
 
+/-- Certificate-level guard theorem on the actual canonical aperiodic skeleton:
+even before any event-language admission is chosen, the stronger boundary
+certificate still forgets canonically to index/order-only comparison data. Hence
+structured minimality already rules out the whole certificate-to-comparison
+route. -/
+theorem canonical_aperiodic_phase_return_fill_not_boundary_certificate_source_and_structured_minimality
+    {n t U : ℕ}
+    {_ha : ¬ Collatz.CycleExclusion.orbit_eventually_periodic n}
+    {j : ℕ}
+    (hsimple :
+      Collatz.is_simple_step
+        ((Collatz.Foundations.collatz_step^[
+          (aperiodic_orbit_has_cofinal_gap_long_phase_returns n t U _ha).rightIdx j]) n))
+    (hsrc :
+      canonical_aperiodic_phase_return_fill_boundary_promoted_selected_certificate_source_semantics
+        n t U)
+    (hmin :
+      canonical_aperiodic_phase_return_fill_canonical_next_left_structured_minimality_semantics
+        n t U) :
+    False := by
+  exact
+    Epochs.not_gap_long_phase_returns_boundary_certificate_source_on_of_simple_step_and_structured_minimality
+      (j := j)
+      hsimple
+      (hsrc _ha)
+      (hmin _ha)
+
 /-- Strongest actual-skeleton no-go theorem currently available: once the real
 boundary event is admitted on the event side, even a direct event-conflict
 theorem source is impossible. Thus the next missing semantic slot lies strictly
@@ -1123,6 +1185,40 @@ theorem canonical_aperiodic_phase_return_fill_not_boundary_event_admissibility_b
         aperiodic_orbit_has_cofinal_gap_long_phase_returns_successor_room n t U _ha j)
       (hbridge := hbridge _ha)
       (hconf := hconf _ha)
+
+/-- Strongest certificate-level no-go theorem on the actual aperiodic skeleton:
+if the stronger boundary certificate can already be turned into the exact
+promotion-side event witness expected by the direct event-conflict consumer, then
+the contradiction occurs strictly below `eventAdmissible`, at the new
+certificate-to-consumer seam itself. -/
+theorem canonical_aperiodic_phase_return_fill_not_boundary_certificate_source_and_event_witness_adapter_and_event_conflict
+    {n t U : ℕ}
+    {hsplit :
+      canonical_aperiodic_phase_return_fill_canonical_next_left_split_witness_semantics
+        n t U}
+    {_ha : ¬ Collatz.CycleExclusion.orbit_eventually_periodic n}
+    {j : ℕ}
+    (hsimple :
+      Collatz.is_simple_step
+        ((Collatz.Foundations.collatz_step^[
+          (aperiodic_orbit_has_cofinal_gap_long_phase_returns n t U _ha).rightIdx j]) n))
+    (hsrc :
+      canonical_aperiodic_phase_return_fill_boundary_promoted_selected_certificate_source_semantics
+        n t U)
+    (hadapt :
+      canonical_aperiodic_phase_return_fill_boundary_promoted_selected_certificate_event_witness_adapter_semantics
+        n t U hsplit)
+    (hconf :
+      canonical_aperiodic_phase_return_fill_canonical_next_left_split_event_conflict_semantics
+        n t U hsplit) :
+    False := by
+  exact
+    Epochs.not_gap_long_phase_returns_boundary_certificate_source_on_of_simple_step_and_event_witness_adapter_and_event_conflict
+      (j := j)
+      hsimple
+      (hsrc _ha)
+      (hadapt _ha)
+      (hconf _ha)
 
 /-- The previous actual-skeleton event-level source immediately populates the
 repaired witness-relative promotion slot. -/

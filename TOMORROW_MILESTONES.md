@@ -275,13 +275,42 @@ If the phase-compatible proxy still proves too weak, too strong, or too disconne
   comparison language, via
   - `Epochs.sample_gap_long_phase_returns_15_0_0_not_trivial_event_phase_compatible_split_normalization`
   - `Epochs.not_all_gap_long_phase_returns_have_trivial_event_phase_compatible_split_normalization`
-- ACTIVE NEXT STEP: populate the new split seam between boundary admissibility
-  and next-left minimality.
-  This redesign is now in place; the active question is which honest lower
-  theorem sources populate:
-  - a refinement strictly below current event-side admission,
-  - or a sharper theorem-producing notion of which promotion-side events are
-    actually conflict-relevant for the canonical next-left mechanism.
+- DONE: the boundary branch is now further refined below `eventAdmissible`
+  itself, into a certificate-level seam:
+  - `Epochs.BoundaryPromotedSelectedCertificateOn`
+  - `Epochs.GapLongPhaseReturnsBoundaryPromotedSelectedCertificateSourceOn`
+  - `Epochs.GapLongPhaseReturnsBoundaryPromotedSelectedCertificateComparisonAdapterOn`
+  - `Epochs.GapLongPhaseReturnsBoundaryPromotedSelectedCertificateEventWitnessAdapterOn`
+    together with actual-skeleton wrappers in
+    `Collatz/Convergence/MainTheorem.lean`
+- DONE: the canonical successor-room route now theorem-produces the stronger
+  boundary certificate directly, without first committing to any event-language
+  admission predicate, via
+  - `Epochs.gap_long_phase_returns_boundary_promoted_selected_certificate_source_on_of_successor_room`
+  - `Convergence.canonical_aperiodic_phase_return_fill_boundary_promoted_selected_certificate_source_semantics_of_aperiodic_successor_room`
+- DONE: the certificate seam now carries its own guard theorems:
+  - the forgetful route from certificate to index/order-only comparison data is
+    already ruled out by structured minimality, via
+    `Epochs.not_gap_long_phase_returns_boundary_certificate_source_on_of_simple_step_and_structured_minimality`
+    and
+    `Convergence.canonical_aperiodic_phase_return_fill_not_boundary_certificate_source_and_structured_minimality`
+  - if one can already turn the certificate into the exact promotion-side event
+    witness consumed by direct event-conflict, contradiction now occurs strictly
+    at that certificate-to-consumer adapter seam, via
+    `Epochs.not_gap_long_phase_returns_boundary_certificate_source_on_of_simple_step_and_event_witness_adapter_and_event_conflict`
+    and
+    `Convergence.canonical_aperiodic_phase_return_fill_not_boundary_certificate_source_and_event_witness_adapter_and_event_conflict`
+- ACTIVE NEXT STEP: populate the new certificate-to-consumer seam below
+  `eventAdmissible`.
+  The comparison-side forgetful path is now formally sealed off, and the active
+  question is no longer whether to admit the concrete boundary event. The new
+  local residual is:
+  - which minimal extra semantic data, beyond the concrete boundary certificate,
+    theorem-produces the specific promotion-side event witness expected by the
+    canonical direct event-conflict consumer,
+  - without collapsing back to an index/order-only forgetful object,
+  - and without smuggling the downstream contradiction into the certificate
+    definition itself.
 
 ### Files
 
@@ -291,28 +320,30 @@ If the phase-compatible proxy still proves too weak, too strong, or too disconne
 
 ### Tasks
 
-1. Populate the split promotion-side event source on the canonical aperiodic
-   skeleton.
-2. Identify the weakest honest normalization theorem from event-language into
-   comparison-language.
-3. Reuse the stabilized comparison-side minimality theorem only where it really
-   belongs.
-4. Route the split lower trio into candidate exclusion and then into the
-   unchanged upper no-simple-step / complex-step / stepwise cascade.
+1. Keep the new certificate source fixed as the lower theorem-producing object
+   for the boundary branch.
+2. Identify the weakest honest certificate-to-event-witness adapter for the
+   direct split event-conflict consumer.
+3. Avoid the now-refuted certificate-to-comparison forgetful route except as a
+   guard/no-go theorem.
+4. Only after a non-circular certificate-to-consumer adapter exists, route that
+   local seam into candidate exclusion and then into the unchanged upper
+   no-simple-step / complex-step / stepwise cascade.
 
 ### Success Criteria
 
 - the lower target becomes more proof-oriented and less misleading
 - the redesign is strictly local to the concrete next-left layer
 - `lake build` passes for edited Lean modules and the full project still builds
-- the new interface no longer forces immediate contradiction between admitted
-  boundary events and next-left minimality
+- the new certificate seam isolates the remaining mismatch strictly below
+  `eventAdmissible`, at one explicit certificate-to-consumer adapter
 
 ### Failure Mode
 
-If boundary admissibility and next-left minimality still conflict for structural
-reasons, stop and split the seam rather than searching for yet another witness
-inside the same contradictory interface.
+If every plausible certificate-to-consumer adapter still forces immediate
+contradiction, stop and treat the downstream consumer contract itself as the
+next object to redesign, rather than reintroducing a stronger admission
+predicate.
 
 ## Milestone 4: Only After Minimality Stabilizes, Attack Promotion
 
@@ -419,6 +450,12 @@ Verify not just compilation but semantic honesty.
   builds, and full `lake build` remains green after adding it
 - DONE: the strongest consumer-driven no-go result also builds, and full
   `lake build` remains green after adding it
+- DONE: the new certificate-level seam also builds, and full `lake build`
+  remains green after adding:
+  - the boundary certificate object and source
+  - the certificate-level comparison guard theorem
+  - the certificate-to-event-witness adapter no-go theorem
+  - the corresponding actual-skeleton wrappers
 
 ### Tasks
 
@@ -465,10 +502,11 @@ By the end of tomorrow, aim to have one of these outcomes:
 2. a replacement event-level admissibility object plus repaired lower interfaces
 3. a local theorem or impossibility result showing why the current proxy still cannot support promotion from `simpleStep`
 
-Current achieved outcome: item 3, now in the strengthened form that even beyond
-the rejected phase-compatible witness, the current shared admissibility seam is
-itself incompatible with simultaneously admitting the concrete boundary event
-and maintaining witness-relative next-left minimality.
+Current achieved outcome: item 3, now in the further strengthened form that the
+remaining obstruction lies strictly below `eventAdmissible`: the concrete
+boundary branch can be theorem-produced up to a stronger boundary certificate,
+while the forgetful comparison route is ruled out and the only live residual is
+the certificate-to-direct-event-conflict adapter seam.
 
 ## Non-Goals for Tomorrow
 
@@ -486,12 +524,13 @@ Open:
 
 Then perform a 15-20 minute audit focused only on:
 
-- `Epochs.GapLongPhaseReturnsBoundaryPromotedSelectedAdmissibilityBridgeOn`
-- `Epochs.GapLongPhaseReturnsFillerCanonicalNextLeftWitnessMinimalityOn`
-- whether these two slots should continue to share a single admissibility
-  predicate
+- `Epochs.BoundaryPromotedSelectedCertificateOn`
+- `Epochs.GapLongPhaseReturnsBoundaryPromotedSelectedCertificateEventWitnessAdapterOn`
+- which minimal extra semantic field is still missing from the certificate to
+  theorem-produce the exact boundary event witness consumed by
+  `Epochs.GapLongPhaseReturnsFillerCanonicalNextLeftSplitEventConflictOn`
 
 The witness-selection audit is no longer the main frontier. The next active
-audit should decide whether the repaired lower layer needs two different local
-semantic predicates, or some weaker theorem-producing replacement for the
-current shared admissibility seam.
+audit should decide whether the remaining obstruction is solved by one minimal
+certificate enrichment, or whether the direct event-conflict consumer itself is
+still asking for the wrong local object.

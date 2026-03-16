@@ -1238,6 +1238,122 @@ theorem not_gap_long_phase_returns_boundary_promoted_selected_event_source_on_of
     boundary_promoted_selected_event_on_has_successor_room (hsrc j hsimple)
   exact Nat.not_le_of_lt hroom hcollapse
 
+/-- Certificate-level replacement seam for the boundary branch: remember the
+concrete boundary event together with the fact that, on the canonical
+successor-room route, the event sits exactly at the immediate successor of the
+right boundary. This is strictly richer than an index/order-only comparison
+object, but it still carries no event-language admissibility or contradiction
+data. -/
+structure BoundaryPromotedSelectedCertificateOn
+    {m t U : ℕ}
+    (hphase : OrbitHasCofinalGapLongPhaseReturns m t U)
+    (j : ℕ) where
+  event : BoundaryPromotedSelectedEventOn hphase j
+  atSuccessor : event.idx = hphase.rightIdx j + 1
+
+/-- Package one concrete boundary event into the stronger certificate object as
+soon as the proof-relevant successor identity has been established. -/
+def boundary_promoted_selected_certificate_on_of_event
+    {m t U : ℕ}
+    {hphase : OrbitHasCofinalGapLongPhaseReturns m t U}
+    {j : ℕ}
+    (hevent : BoundaryPromotedSelectedEventOn hphase j)
+    (hsucc : hevent.idx = hphase.rightIdx j + 1) :
+    BoundaryPromotedSelectedCertificateOn hphase j :=
+  { event := hevent
+    atSuccessor := hsucc }
+
+/-- On the canonical successor-room route, the concrete boundary event upgrades
+immediately to the stronger certificate object. -/
+def boundary_promoted_selected_certificate_on_of_successor_room
+    {m t U : ℕ}
+    {hphase : OrbitHasCofinalGapLongPhaseReturns m t U}
+    (j : ℕ)
+    (hroom : hphase.rightIdx j + 1 < hphase.leftIdx (j + 1)) :
+    BoundaryPromotedSelectedCertificateOn hphase j :=
+  boundary_promoted_selected_certificate_on_of_event
+    (boundary_promoted_selected_event_on_of_successor_room j hroom)
+    rfl
+
+/-- Local theorem-source for the new boundary certificate seam: for every
+boundary simple-step branch, produce the stronger certificate rather than
+immediately forcing the event into some downstream admissibility language. -/
+def GapLongPhaseReturnsBoundaryPromotedSelectedCertificateSourceOn
+    {m t U : ℕ}
+    (hphase : OrbitHasCofinalGapLongPhaseReturns m t U) : Sort _ :=
+  ∀ j : ℕ,
+    ∀ _hsimple :
+      Collatz.is_simple_step
+        ((Collatz.Foundations.collatz_step^[hphase.rightIdx j]) m),
+      BoundaryPromotedSelectedCertificateOn hphase j
+
+/-- Global theorem-source form of the previous certificate source. -/
+def GapLongPhaseReturnsBoundaryPromotedSelectedCertificateSource
+    (m t U : ℕ) : Sort _ :=
+  ∀ hphase : OrbitHasCofinalGapLongPhaseReturns m t U,
+    GapLongPhaseReturnsBoundaryPromotedSelectedCertificateSourceOn hphase
+
+/-- Therefore the same one-step room theorem also populates the stronger
+certificate-level boundary seam. -/
+def gap_long_phase_returns_boundary_promoted_selected_certificate_source_on_of_successor_room
+    {m t U : ℕ}
+    {hphase : OrbitHasCofinalGapLongPhaseReturns m t U}
+    (hroom : ∀ j : ℕ, hphase.rightIdx j + 1 < hphase.leftIdx (j + 1)) :
+    GapLongPhaseReturnsBoundaryPromotedSelectedCertificateSourceOn hphase := by
+  intro j _hsimple
+  exact boundary_promoted_selected_certificate_on_of_successor_room j (hroom j)
+
+/-- Global theorem-source form of the previous certificate constructor. -/
+def gap_long_phase_returns_boundary_promoted_selected_certificate_source_of_successor_room
+    {m t U : ℕ}
+    (hroom :
+      ∀ hphase : OrbitHasCofinalGapLongPhaseReturns m t U,
+        ∀ j : ℕ, hphase.rightIdx j + 1 < hphase.leftIdx (j + 1)) :
+    GapLongPhaseReturnsBoundaryPromotedSelectedCertificateSource m t U := by
+  intro hphase
+  exact
+    gap_long_phase_returns_boundary_promoted_selected_certificate_source_on_of_successor_room
+      (hroom hphase)
+
+/-- Comparison-side adapter for the new certificate seam: forgetting a boundary
+certificate down to index/order-only data is always possible. This isolates the
+already-proved no-go class at the certificate level. -/
+def GapLongPhaseReturnsBoundaryPromotedSelectedCertificateComparisonAdapterOn
+    {m t U : ℕ}
+    (hphase : OrbitHasCofinalGapLongPhaseReturns m t U) : Sort _ :=
+  ∀ {j : ℕ},
+    BoundaryPromotedSelectedCertificateOn hphase j →
+      PromotedFillerSelectedComparisonWitnessOn hphase j
+
+/-- The canonical forgetful comparison adapter simply drops value-level data and
+the successor certificate, keeping only index/order information. -/
+def gap_long_phase_returns_boundary_promoted_selected_certificate_comparison_adapter_on
+    {m t U : ℕ}
+    {hphase : OrbitHasCofinalGapLongPhaseReturns m t U} :
+    GapLongPhaseReturnsBoundaryPromotedSelectedCertificateComparisonAdapterOn hphase := by
+  intro j hcert
+  exact
+    { idx := hcert.event.idx
+      afterRight := hcert.event.afterRight
+      beforeNextLeft := hcert.event.beforeNextLeft }
+
+/-- Consumer-specific missing seam below event-language admission: a boundary
+certificate plus the local right-boundary simple-step fact may or may not be
+enough to produce the promotion-side event witness expected by direct
+event-conflict consumers. The present redesign isolates that burden here rather
+than treating the certificate itself as an admitted event. -/
+def GapLongPhaseReturnsBoundaryPromotedSelectedCertificateEventWitnessAdapterOn
+    {m t U : ℕ}
+    (hphase : OrbitHasCofinalGapLongPhaseReturns m t U)
+    (hsplit : CanonicalNextLeftSplitWitnessOn hphase) : Sort _ :=
+  ∀ {j : ℕ}
+    {hsimple :
+      Collatz.is_simple_step
+        ((Collatz.Foundations.collatz_step^[hphase.rightIdx j]) m)},
+    BoundaryPromotedSelectedCertificateOn hphase j →
+      PromotedFillerSelectedEventWitnessForOn hphase hsplit.eventAdmissible
+        (right_boundary_simple_step_candidate hphase j hsimple)
+
 /-- Separate admissibility bridge from the concrete boundary event language into
 one chosen witness-relative admissibility notion. This is where the comparison
 with a particular `CanonicalNextLeftSelectionWitnessOn` should happen, rather
@@ -1303,6 +1419,67 @@ def right_boundary_simple_step_promoted_filler_selected_event_witness_for_on_of_
     value := hevent.value
     realized := hevent.realized
     admissibleIdx := hadm }
+
+/-- Guard theorem for the new contract: once a boundary certificate source is
+available, forgetting that certificate down to index/order-only comparison data
+already suffices to contradict any structured minimality theorem. So any viable
+replacement seam must be strictly richer than this forgetful comparison route. -/
+theorem not_gap_long_phase_returns_boundary_certificate_source_on_of_simple_step_and_comparison_adapter_and_structured_minimality
+    {m t U : ℕ}
+    {hphase : OrbitHasCofinalGapLongPhaseReturns m t U}
+    {j : ℕ}
+    (hsimple :
+      Collatz.is_simple_step
+        ((Collatz.Foundations.collatz_step^[hphase.rightIdx j]) m))
+    (hsrc : GapLongPhaseReturnsBoundaryPromotedSelectedCertificateSourceOn hphase)
+    (hcmp :
+      GapLongPhaseReturnsBoundaryPromotedSelectedCertificateComparisonAdapterOn hphase)
+    (hmin :
+      FillerNextLeftStructuredMinimalityOn hphase) :
+    False := by
+  exact hmin.noEarlier (hcmp (hsrc j hsimple))
+
+/-- Specialized form of the previous guard theorem for the canonical forgetful
+comparison adapter. -/
+theorem not_gap_long_phase_returns_boundary_certificate_source_on_of_simple_step_and_structured_minimality
+    {m t U : ℕ}
+    {hphase : OrbitHasCofinalGapLongPhaseReturns m t U}
+    {j : ℕ}
+    (hsimple :
+      Collatz.is_simple_step
+        ((Collatz.Foundations.collatz_step^[hphase.rightIdx j]) m))
+    (hsrc : GapLongPhaseReturnsBoundaryPromotedSelectedCertificateSourceOn hphase)
+    (hmin :
+      FillerNextLeftStructuredMinimalityOn hphase) :
+    False := by
+  exact
+    not_gap_long_phase_returns_boundary_certificate_source_on_of_simple_step_and_comparison_adapter_and_structured_minimality
+      (j := j) hsimple hsrc
+      gap_long_phase_returns_boundary_promoted_selected_certificate_comparison_adapter_on
+      hmin
+
+/-- Strongest certificate-level no-go theorem currently visible below
+`eventAdmissible`: if a boundary certificate can be turned into the promotion-side
+event witness consumed by a direct event-conflict theorem, then the contradiction
+already happens at the certificate-to-consumer adapter layer. -/
+theorem not_gap_long_phase_returns_boundary_certificate_source_on_of_simple_step_and_event_witness_adapter_and_event_conflict
+    {m t U : ℕ}
+    {hphase : OrbitHasCofinalGapLongPhaseReturns m t U}
+    {hsplit : CanonicalNextLeftSplitWitnessOn hphase}
+    {j : ℕ}
+    (hsimple :
+      Collatz.is_simple_step
+        ((Collatz.Foundations.collatz_step^[hphase.rightIdx j]) m))
+    (hsrc : GapLongPhaseReturnsBoundaryPromotedSelectedCertificateSourceOn hphase)
+    (hadapt :
+      GapLongPhaseReturnsBoundaryPromotedSelectedCertificateEventWitnessAdapterOn
+        hphase hsplit)
+    (hconf :
+      GapLongPhaseReturnsFillerCanonicalNextLeftSplitEventConflictOn hphase hsplit) :
+    False := by
+  exact
+    hconf (right_boundary_simple_step_candidate hphase j hsimple)
+      (hadapt (j := j) (hsimple := hsimple) (hsrc j hsimple))
 
 /-- No-go theorem for all comparison outputs that remember only index/order
 content: once a concrete boundary event is admitted on the event side, the
