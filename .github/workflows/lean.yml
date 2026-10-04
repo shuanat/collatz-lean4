@@ -43,17 +43,23 @@ jobs:
 
       - name: No sorry / axiom / native_decide gate
         run: |
-          set -e
-          SORRY_COUNT=$(rg -n "\bsorry\b" Collatz | wc -l || true)
-          AXIOM_COUNT=$(rg -n "^axiom\b" Collatz | wc -l || true)
-          NATIVE_COUNT=$(rg -n "native_decide" Collatz | wc -l || true)
+          set -euo pipefail
+          # grep (not rg: ripgrep is not installed on ubuntu-latest; the old step
+          # silently counted 0 because the missing command was masked by `|| true`).
+          count() { { grep -rnE --include='*.lean' "$1" Collatz || true; } | wc -l; }
+          # Self-test: the gate must detect a planted violation, otherwise fail loudly.
+          printf 'theorem t : True := by sorry\n' | grep -qE '\bsorry\b'
+
+          SORRY_COUNT=$(count '\bsorry\b|\badmit\b')
+          AXIOM_COUNT=$(count '^[[:space:]]*axiom\b')
+          NATIVE_COUNT=$(count 'native_decide|implemented_by|@\[extern')
 
           echo "chain_sorry_count=$SORRY_COUNT" >> $GITHUB_ENV
           echo "chain_axiom_count=$AXIOM_COUNT" >> $GITHUB_ENV
 
           if [ "$SORRY_COUNT" -ne 0 ] || [ "$AXIOM_COUNT" -ne 0 ] || [ "$NATIVE_COUNT" -ne 0 ]; then
-            echo "Gate failed: found 'sorry', 'axiom' or 'native_decide' under Collatz/."
-            rg -n "\bsorry\b|^axiom\b|native_decide" Collatz || true
+            echo "Gate failed: found sorry/admit, axiom, or native_decide/implemented_by/extern under Collatz/."
+            grep -rnE --include='*.lean' '\bsorry\b|\badmit\b|^[[:space:]]*axiom\b|native_decide|implemented_by|@\[extern' Collatz || true
             exit 1
           fi
 
