@@ -12,7 +12,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Install elan
         run: |
@@ -25,7 +25,7 @@ jobs:
           elan default $(cat lean-toolchain)
 
       - name: Cache Lake dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: .lake
           key: ${{ runner.os }}-lake-${{ hashFiles('lakefile.lean', 'lean-toolchain') }}
