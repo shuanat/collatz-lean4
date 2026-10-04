@@ -1,5 +1,57 @@
 # Active Frontier
 
+## Status (2026-10 review) — authoritative
+
+The Collatz conjecture is **not** proved in this repository. The review found
+that several earlier "frontiers" were vacuous; they were fixed or removed:
+
+- `OrbitNoNontrivialPeriodicTail n` used to be `∀ hw, hw.period ≤ 1`, which is
+  equivalent to aperiodicity and false for `n = 1`. It now means "every
+  periodic tail of the orbit starts at `1`" (⇔ `NoNontrivialCycleOnOrbit n`).
+- `exclusion_premises` (and `main_cycle_exclusion`, `RepeatTrick`) was
+  unsatisfiable for every cycle; removed. No cycle-exclusion theorem exists.
+- The `∀ β` SEDT envelope is equivalent to eventual periodicity; frontiers that
+  combined it with the periodic residual had jointly unsatisfiable hypotheses.
+  Replaced by a single admissible `β`.
+- Trivially true residuals (`True`-valued F.3 residuals, orbit-independent
+  witness structures, telescoping residual) were removed.
+
+Current public endpoints (all conditional; all hypotheses hold for `n = 1`,
+see `Collatz/Tests/ResidualSanity.lean`):
+
+1. `collatz_of_no_cycles_and_bounded` — (no nontrivial cycles) ∧ (all odd
+   orbits bounded) ⇒ convergence; proved equivalent to the conjecture.
+2. `reaches_one_of_bounded_of_no_cycle_on_orbit` — pointwise version.
+3. `collatz_convergence_modulo_explicit_residuals` — periodic residual
+   (no nontrivial cycle on the orbit) + aperiodic residual (single-`β` SEDT
+   envelope guarded by aperiodicity). For odd `n` the aperiodic residual is
+   proved equivalent to eventual periodicity of the orbit, because the SEDT
+   envelope at dominant parameters is contradictory on every long-epoch stream
+   of an odd orbit (`false_of_orbit_epoch_sedt_envelope`).
+
+Open mathematical content: exactly (a) no nontrivial cycles and (b) no
+divergent orbits. Nothing in the Lean development reduces either to a weaker
+statement.
+
+Stage L2 clean-up (2026-10): deleted placeholder lemmas with paper names, the
+aperiodicity-guarded plumbing in `MainTheorem` / `Coercivity` / `LongEpochs`
+(incl. `AperiodicSelectedLongEpochResidual`), the SEDT depth-bookkeeping chain
+(`SEDT/{Theorems,Axioms,DepthBookkeeping,AperiodicGainBridge}`), the Mixing
+touch-frequency residual layer (trivially inhabited or false on every orbit
+reaching `1`), and the `Stratified/`, `Utilities/`, `Examples/`, `Epochs/Aliases`
+placeholder modules. No `sorry`, `axiom` or `native_decide` remains in
+`Collatz/`. Remaining algebra about the auxiliary sequence `N_k` and the
+admissibility predicate is labelled as such. Details:
+`../docs/residual-budget.md` §0, `Collatz/Documentation/PaperCodeMapping.lean`.
+
+---
+
+## SUPERSEDED historical log (pre-2026-10)
+
+Everything below is the earlier milestone journal. Names it refers to may no
+longer exist, and its claims about "honest" or "closed" frontiers are
+superseded by the status section above.
+
 Date: 2026-03-14
 Focus: formal-first closure of the filler-side residual on the canonical aperiodic skeleton
 

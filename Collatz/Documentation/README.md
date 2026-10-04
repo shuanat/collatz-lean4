@@ -9,21 +9,16 @@ than standalone generated Markdown manuals.
   primary maintained paper-to-code map for the current project state.
 - `ProofRoadmap.lean`:
   short proof-closure checklist.
-- `ProofStructure.lean`:
-  broader proof-structure notes; useful, but may lag implementation.
-
-## Historical / Verify Before Relying
 
 - `PaperMapping.lean`:
-  older paper-navigation file. Cross-check it against the current codebase
-  before treating it as authoritative.
+  short paper-section → module navigation (status lives in `PaperCodeMapping.lean`).
 
 ## Markdown Sources Outside This Folder
 
 - `../../README.md`:
   repository overview.
 - `../../ACTIVE_FRONTIER.md`:
-  active local milestone and residual log.
+  status block at the top; the log below it is historical.
 - `../../SEMANTIC_HARDENING_PLAN.md`:
   historical hardening log.
 - `../../../docs/reports/collatz-lean4/`:
@@ -39,3 +34,5 @@ non-compiling examples:
 - `TechnicalDetails.md`
 - `TargetArchitecture.md`
 - `UsageExamples.md`
+- `ProofStructure.lean` (removed 2026-10: described a proof chain through
+  deleted placeholder modules)

@@ -1,3 +1,5 @@
+> **SUPERSEDED (2026-10 review).** This is a historical log. Several "hardened" interfaces it describes were found vacuous and removed; see `README.md` and `ACTIVE_FRONTIER.md` for the current status.
+
 # Semantic Hardening Plan (D.1 -> I.1)
 
 ## Progress
