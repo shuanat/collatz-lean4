@@ -1,46 +1,13 @@
 /-
-Collatz Conjecture: SEDT Deep Formalization — Linear Surplus (Real form)
-(M2.1 — algebraic core cast to ℝ)
+Real-valued forms of the linear-surplus combiner (generic inequalities).
 
-This module is the real-valued cast of the integer linear surplus
-combiner from `Collatz.SEDT.LinearSurplus`. It is the bridge layer
-between the `Nat`-arithmetic of the algebraic foundations (M1.D, M1.E)
-and the `ℝ`-form `selected_multibit_gain_budget` used by the
-`SelectedCarryDepthSemantics` producer in M2.4.
+From the hypotheses of `LinearSurplus.linear_surplus` one gets
+`B ≥ ((2^U − 1)/2^U)·(L/P − P) = (1 − 2^{−U})·(L/P − P)` in `ℝ`.
 
-**Inputs (in ℕ form, supplied by orbit-side bridges).**
-
-* (Touch density, M1.D.4)
-    `N * P + P * P ≥ L`        (i.e. `N ≥ L/P − P` rearranged)
-
-* (Multibit bonus, M1.D.2)
-    `B * 2^U ≥ N * (2^U − 1)`  (average bonus per touch ≥ 1 − 2^{−U})
-
-Here `P, U, L, N, B : ℕ`, with `P ≥ 1` and `U ≥ 1`.
-
-**Outputs.**
-
-* Cross-multiplied integer-cast form
-
-    `(B : ℝ) * 2^U * P + (2^U − 1) * P^2 ≥ (2^U − 1) * L`,
-
-  obtained directly by `exact_mod_cast` from the integer combiner.
-
-* Division form
-
-    `(B : ℝ) ≥ ((2^U − 1) / 2^U) * (L/P − P)`,
-
-  obtained from the cross form by dividing by `2^U * P` and rearranging.
-
-* Selected-budget form
-
-    `(B : ℝ) ≥ (1 − 2^{−U}) * (L/P − P)`,
-
-  obtained from the division form by `(2^U − 1)/2^U = 1 − 2^{−U}`.
-
-The orbit-side gain accumulator (M2.3) instantiates `B` as the actual
-multibit gain on the orbit segment `[i, j)`; the bound then matches
-`selected_multibit_gain_budget` up to the choice of constants.
+Status (2026-10 review). These are *lower* bounds on `B`. They do not bound the
+orbit's multibit gain from above and therefore do not discharge the former
+`selected_multibit_gain_budget` depth residual (which was an upper-bound
+requirement); the hypotheses are not established for Collatz orbits either.
 -/
 
 import Mathlib.Tactic

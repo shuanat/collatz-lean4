@@ -1,64 +1,31 @@
 /-
-Collatz Conjecture: Epoch-Based Deterministic Framework
-Paper-to-Lean Mapping
-
-This file provides a mapping from paper sections to Lean modules:
-- Section 2: Setup → Foundations/
-- Section 3: Stratified → Stratified/
-- Appendix A: Epochs → Epochs/
-- Appendix A: SEDT → SEDT/
-- Appendix A: Mixing → Mixing/
-- Appendix B: Cycle Exclusion → CycleExclusion/
-- Appendix C: Convergence → Convergence/
+Paper-to-Lean navigation (short). The authoritative status table is
+`PaperCodeMapping.lean`.
 -/
 import Mathlib.Data.Nat.Basic
 
 namespace Collatz.Documentation
 
--- Paper-to-Lean Mapping
-
 -- Section 2: Setup
--- Def 2.1 (T_odd) → Foundations.Basic.T_odd
--- Def 2.2 (depth_minus) → Foundations.Core.depth_minus
--- Def 2.3 (e function) → Foundations.Core.step_type (backed by Foundations.Arithmetic.e)
+-- Def 2.1 (odd map T) → Foundations.Core.collatz_step (alias Basic.T_odd)
+-- Def 2.2 (depth₋) → Foundations.Core.depth_minus
+-- Def 2.3 (e function) → Foundations.Core.step_type (= Foundations.Arithmetic.e)
 
--- Section 3: Stratified
--- Thm 4.1 → Stratified.CompleteStratification.complete_stratification
--- Thm 4.3 → Stratified.BranchingDensity.branching_density_converges_to
+-- Section 3: Stratified preimage geometry → not formalized
 
--- Appendix A: Epochs
--- Def A.E0 (Epoch) → Epochs.Structure.Epoch
--- Def A.E1 (Phase Classes) → Epochs.PhaseClasses.phase_function
--- Def A.E2 (Homogenization) → Epochs.Homogenization.is_homogenized
--- Thm A.LONG.5 → Epochs.LongEpochs.long_epoch_theorem
-
--- Appendix A: SEDT
--- Def A.E3 (SEDT Axioms) → SEDT.Axioms.sedt_axioms
--- Def A.E4 (Potential Function) → SEDT.Core.potential_function
--- Thm A.SEDT (Envelope Theorem) → SEDT.Theorems.envelope_theorem
-
--- Appendix A: Mixing
--- Def A.MIX (Phase Mixing) → Mixing.PhaseMixing.is_phase_mixed
--- Thm A.HMix(t) → Mixing.PhaseMixing.homogenization_mixing
--- Def A.MIX (Touch Frequency) → Mixing.TouchFrequency.touch_frequency
-
--- Appendix B: Cycle Exclusion
--- Def B.1 (Cycle) → CycleExclusion.CycleDefinition.Cycle
--- Lem B.2 (Telescoping) → CycleExclusion.PeriodSum.telescoping_lemma
--- Thm C.B (Pure E1 Cycles) → CycleExclusion.PureE1Cycles.pure_e1_cycles
--- Thm B.3 (Mixed Cycles) → CycleExclusion.MixedCycles.mixed_cycles
--- Thm B.4 (Main Cycle Exclusion) → CycleExclusion.Main.main_cycle_exclusion
-
--- Appendix C: Convergence
--- Lem C.1 (Coercivity / I.2 bridge) → Convergence.Coercivity.coercivity,
---   Convergence.Coercivity.coercivity_concatenation,
---   Convergence.Coercivity.coercivity_absorption
--- Thm C.2 (No Attractors) → Convergence.NoAttractors.no_other_attractors
--- Thm C.3 (Main Convergence bridge) → Convergence.MainTheorem.main_convergence
--- Thm C.4 (Global Convergence bridge) → Convergence.MainTheorem.global_convergence
--- Thm C.5 (Fixed Points) → Convergence.FixedPoints.fixed_point_uniqueness
-
--- Constants Mapping
--- Appendix D (Constants) → Utilities.Constants
+-- Appendix B: Lemma B.2 → Epochs.OrdFact.orderOf_three_eq_pow_two (proved)
+-- Appendix C: depth dynamics → SEDT.OrbitBridge, SEDT.OrbitDepth (proved, orbit-level)
+-- Appendix D: auxiliary sequence N_k → SEDT.AffineNumerator (algebra only; not the
+--   orbit numerator for k ≥ 1)
+-- Appendix E: SEDT (E.2 withdrawn) → only the constants and envelope expression in
+--   SEDT.Core; the envelope appears as a hypothesis in Convergence.Coercivity
+-- Appendix F: F.0.1 / F.6 per plateau → Mixing.AdmissibleTail, Mixing.AdmissibleTailBridge
+--   (algebra in ZMod (2^t)); F.6 aggregate → Mixing.AggregateTouchRate (open, unused)
+-- Appendix G: G.5c pure form → Epochs.G.PhaseUniqueness.phase_uniqueness_pure_mod_Qt
+-- Appendix H: cycle exclusion (withdrawn) → open hypothesis
+--   CycleExclusion.NoNontrivialCycles; proved: CycleExclusion.no_pure_e1_cycle
+-- Appendix I: conditional endpoints → Convergence.MainTheorem
+--   (collatz_of_no_cycles_and_bounded, collatz_convergence_modulo_explicit_residuals);
+--   fixed point → Convergence.FixedPoints.fixed_point_eq_one (proved)
 
 end Collatz.Documentation

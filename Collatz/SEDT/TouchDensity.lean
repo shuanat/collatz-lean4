@@ -1,26 +1,13 @@
 /-
-Collatz Conjecture: SEDT Deep Formalization — Touch Density
-(Appendix D.4 algebraic core)
+Counting lemmas for periodic predicates (generic).
 
-This module implements the **algebraic core** of Lemma D.4:
+For a `P`-periodic decidable predicate `f` with `c = touchCount f P`:
+`touchCount f (q·P) = q·c` and `(L/P)·c ≤ touchCount f L ≤ (L/P + 1)·c`.
 
-* For a `P`-periodic decidable predicate `f : ℕ → Prop`,
-  `touchCount f (q · P) = q · touchCount f P`.
-
-* Hence `touchCount f L ≥ (L / P) · c`, where `c = touchCount f P`.
-
-* And `touchCount f L ≤ (L / P + 1) · c`.
-
-In the application: along a homogenized t-epoch tail, the touch
-indicator `f k := (3 M_k + 5) ≡ 0 (mod 2^t)` is periodic with
-period dividing `Q_t = 2^{t-2}` (Lemma D.10), and exactly one
-residue class triggers a touch (Lemma D.1 Part B). So the touch
-density on a tail of length `L` lies between `(L / Q_t)` and
-`(L / Q_t + 1)`, i.e. `≈ Q_t⁻¹` with discrepancy `≤ 1`.
-
-This file is purely an algebraic counting result; the orbit-side
-periodicity hypothesis is supplied separately by the
-homogenization / touch-residue layer.
+These are correct and generic. In the paper (Lemma D.4) they are applied with
+`f k := (M_k ≡ s_t mod 2^t)` for the auxiliary sequence `(M_k)`, which is
+eventually `Q_t`-periodic; touches of actual Collatz orbits are **not** known
+to be periodic, and no orbit-level touch-density statement is proved here.
 -/
 
 import Mathlib.Tactic

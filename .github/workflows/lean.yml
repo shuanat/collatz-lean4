@@ -37,51 +37,23 @@ jobs:
           lake exe cache get || true
           lake build Collatz
 
-      - name: Proof-chain no-sorry/no-axiom gate
+      - name: Build sanity / regression / axiom-check targets
+        run: |
+          lake build Collatz.Tests.ResidualSanity Collatz.Tests.VacuityRegression Collatz.Tests.AxiomCheck
+
+      - name: No sorry / axiom / native_decide gate
         run: |
           set -e
-          CHAIN_FILES=(
-            "Collatz.lean"
-            "Collatz/Production.lean"
-            "Collatz/Foundations/Core.lean"
-            "Collatz/Epochs/Core.lean"
-            "Collatz/Epochs/APStructure.lean"
-            "Collatz/Epochs/Homogenization.lean"
-            "Collatz/Epochs/NumeratorCarry.lean"
-            "Collatz/Epochs/LongEpochs.lean"
-            "Collatz/SEDT/Core.lean"
-            "Collatz/SEDT/Axioms.lean"
-            "Collatz/SEDT/Theorems.lean"
-            "Collatz/Mixing/Semigroup.lean"
-            "Collatz/Mixing/PhaseMixing.lean"
-            "Collatz/Mixing/TouchFrequency.lean"
-            "Collatz/CycleExclusion/CycleDefinition.lean"
-            "Collatz/CycleExclusion/PeriodSum.lean"
-            "Collatz/CycleExclusion/PureE1Cycles.lean"
-            "Collatz/CycleExclusion/MixedCycles.lean"
-            "Collatz/CycleExclusion/RepeatTrick.lean"
-            "Collatz/CycleExclusion/Main.lean"
-            "Collatz/Convergence/Coercivity.lean"
-            "Collatz/Convergence/FixedPoints.lean"
-            "Collatz/Convergence/NoAttractors.lean"
-            "Collatz/Convergence/MainTheorem.lean"
-          )
-
-          SORRY_COUNT=$(rg -n "\\bsorry\\b" "${CHAIN_FILES[@]}" | wc -l || true)
-          AXIOM_COUNT=$(rg -n "\\baxiom\\b" "${CHAIN_FILES[@]}" | wc -l || true)
+          SORRY_COUNT=$(rg -n "\bsorry\b" Collatz | wc -l || true)
+          AXIOM_COUNT=$(rg -n "^axiom\b" Collatz | wc -l || true)
+          NATIVE_COUNT=$(rg -n "native_decide" Collatz | wc -l || true)
 
           echo "chain_sorry_count=$SORRY_COUNT" >> $GITHUB_ENV
           echo "chain_axiom_count=$AXIOM_COUNT" >> $GITHUB_ENV
 
-          if [ "$SORRY_COUNT" -ne 0 ]; then
-            echo "Proof-chain gate failed: found 'sorry'."
-            rg -n "\\bsorry\\b" "${CHAIN_FILES[@]}" || true
-            exit 1
-          fi
-
-          if [ "$AXIOM_COUNT" -ne 0 ]; then
-            echo "Proof-chain gate failed: found 'axiom'."
-            rg -n "\\baxiom\\b" "${CHAIN_FILES[@]}" || true
+          if [ "$SORRY_COUNT" -ne 0 ] || [ "$AXIOM_COUNT" -ne 0 ] || [ "$NATIVE_COUNT" -ne 0 ]; then
+            echo "Gate failed: found 'sorry', 'axiom' or 'native_decide' under Collatz/."
+            rg -n "\bsorry\b|^axiom\b|native_decide" Collatz || true
             exit 1
           fi
 

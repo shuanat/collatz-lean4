@@ -1,34 +1,14 @@
 /-
-Collatz Conjecture: SEDT Deep Formalization — Tail Homogenization
-(Appendix D.10 algebraic core)
+Homogenization of affine congruence recurrences (generic algebra).
 
-This module implements the **algebraic core** of Lemma D.10 from the
-paper:
+If `M_{k+1} ≡ 3 M_k + c_k` and `u_{k+1} ≡ 3 u_k + c_k (mod n)`, then
+`M̃ = M − u` satisfies `M̃_{k+1} ≡ 3 M̃_k`, hence `M̃_{k+m} ≡ 3^m M̃_k`, and
+`M̃` is `P`-periodic mod `n` whenever `3^P ≡ 1 (mod n)`.
 
-* The **homogenization principle** (generic): if two integer sequences
-  `M, u : ℕ → ℤ` satisfy the same affine update mod `n`,
-
-      `M_{k+1} ≡ 3 M_k + c_k  (mod n)`,
-      `u_{k+1} ≡ 3 u_k + c_k  (mod n)`,
-
-  then their difference `Mtilde_k := M_k − u_k` satisfies the **homogeneous**
-  update
-
-      `Mtilde_{k+1} ≡ 3 Mtilde_k  (mod n)`.
-
-  This is the substance of the standard "subtract a particular solution"
-  reduction.
-
-* The **`Q_t` order bound**: if `Mtilde_{k+1} ≡ 3 Mtilde_k (mod n)`, then
-  `Mtilde_{k+m} ≡ 3^m Mtilde_k (mod n)` by trivial induction. The order of `3`
-  in the unit group `(ℤ/n)ˣ` then bounds the period of `Mtilde_k`.
-
-The full statement of Lemma D.10 (existence of a periodic forcing
-`c_k` along an actual t-epoch tail of the Collatz orbit) requires
-the orbit-side tail structure (which lives downstream of the
-affine numerator module). This file deliberately separates the
-**algebraic** half (provable by pure `Int.ModEq` arithmetic) from
-the **orbit-side** half (which needs the deeper t-epoch analysis).
+These are generic statements about integer sequences. In the paper they are
+applied to the auxiliary sequence `(N_k)` of `AffineNumerator` (paper Lemma
+D.10); no orbit sequence satisfying the hypotheses is constructed here, and
+paper Lemma D.10 as an orbit statement is not formalized.
 -/
 
 import Mathlib.Tactic
@@ -36,10 +16,8 @@ import Mathlib.Data.Int.ModEq
 
 namespace Collatz.SEDT.Homogenization
 
-/-- **Generic homogenization principle.** Two integer sequences
-satisfying the same affine update modulo `n` differ by a sequence
-satisfying the homogeneous update. This is the algebraic core of
-Lemma D.10. -/
+/-- Two integer sequences satisfying the same affine update modulo `n` differ by
+a sequence satisfying the homogeneous update `x_{k+1} ≡ 3 x_k`. -/
 theorem homogenization_principle
     (n : ℤ) (M u c : ℕ → ℤ) (k : ℕ)
     (hM : M (k + 1) ≡ 3 * M k + c k [ZMOD n])
@@ -90,16 +68,5 @@ theorem homogenized_periodic_of_order_dvd
     hord.mul_right (Mtilde k)
   have : Mtilde (k + P) ≡ 1 * Mtilde k [ZMOD n] := hiter.trans hone
   simpa using this
-
-/-- Touch condition translates between affine and homogenized
-representations: `3 M_k + 5 ≡ 0 (mod n)` iff
-`3 Mtilde_k + (3 u_k + 5) ≡ 0 (mod n)`, where `Mtilde_k = M_k − u_k`. This
-is the algebraic core of Lemma D.1.b (touch condition preservation
-under homogenization). -/
-theorem touch_iff_homogenized (n : ℤ) (M u : ℕ → ℤ) (k : ℕ) :
-    (3 * M k + 5 ≡ 0 [ZMOD n]) ↔
-    (3 * (M k - u k) + (3 * u k + 5) ≡ 0 [ZMOD n]) := by
-  have heq : 3 * (M k - u k) + (3 * u k + 5) = 3 * M k + 5 := by ring
-  rw [heq]
 
 end Collatz.SEDT.Homogenization

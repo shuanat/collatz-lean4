@@ -1,26 +1,16 @@
 /-
-Collatz Conjecture: SEDT Deep Formalization — Orbit Bridge
+Base case `k = 0` of the auxiliary numerator, and per-step depth identities.
 
-This module provides the **algebraic-to-orbit bridge** at the base
-index `k = 0`. It identifies the algebraic numerator
-`N_k_int r₀ k` (Appendix D.0) with the underlying Collatz step
-quantities at `k = 0`:
+1. Base case. For the auxiliary sequence `N_k = 3^{k+1}(r₀+2) − 5·2^k`
+   (`AffineNumerator`): `N_0 = 3r₀ + 1`, `d_0 = e(r₀)`, `M_0 = T(r₀)`. For
+   `k ≥ 1`, `N_k` is **not** the orbit numerator: if `e(r_0) = … = e(r_{k−1}) = 1`
+   the true identity is `2^k (3 r_k + 1) = 3^{k+1}(r₀ + 1) − 2^{k+1}`, while for
+   odd `r₀` and `k ≥ 1` the number `N_k` is odd (so `d_k = 0`). Results about
+   `N_k, d_k, M_k` for `k ≥ 1` therefore do not transfer to the orbit.
 
-* `N_k_nat r₀ 0 = 3 r₀ + 1` (the Collatz numerator);
-* `d_k r₀ 0 = step_type r₀` (the trailing-zero count);
-* `M_k r₀ 0 = collatz_step r₀` (one normalized odd step).
-
-Together with `Sublemma D.8` (case-split for `d_{k+1}`) and Lemma
-D.1 Part A (the `+5` shift formula), this base case is the
-algebraic seed used to lift touch-counting and depth-bookkeeping
-results from the algebraic numerator to the actual Collatz orbit.
-
-For `k ≥ 1` the algebraic numerator `N_k` no longer literally
-equals the orbit numerator `r_{k+1} · 2^{e₀ + … + e_k}` (the
-algebraic recurrence carries a `+5 · 2^k` term while the orbit
-recurrence carries `+ 2^{e_0}`), so the further bridge passes
-through the homogenization machinery of Lemma D.10 / D.11 rather
-than through pointwise equality.
+2. Per-step depth identities on the orbit (true, used by `OrbitDepth`): for odd
+   `r`, `e(r) ≥ 2 ⇔ depth₋(r) = 1`, and if `e(r) = 1` then
+   `depth₋(T r) + 1 = depth₋(r)`.
 -/
 
 import Collatz.SEDT.AffineNumerator
@@ -31,8 +21,7 @@ namespace Collatz.SEDT.OrbitBridge
 open Collatz.SEDT.AffineNumerator
 open Collatz.Foundations
 
-/-- **Orbit bridge — base case.** At index `0` the algebraic
-numerator equals the Collatz step numerator `3 r₀ + 1`. -/
+/-- `N_0 = 3 r₀ + 1`. -/
 theorem N_k_nat_zero (r₀ : ℕ) (hr : 1 ≤ r₀) :
     N_k_nat (r₀ : ℤ) 0 = 3 * r₀ + 1 := by
   have hrI : (1 : ℤ) ≤ (r₀ : ℤ) := by exact_mod_cast hr
@@ -42,25 +31,19 @@ theorem N_k_nat_zero (r₀ : ℕ) (hr : 1 ≤ r₀) :
     rw [N_k_nat_eq (r₀ : ℤ) hrI 0, hint]
   exact_mod_cast hcast
 
-/-- **Orbit bridge — base case for `d_k`.** At index `0` the
-algebraic 2-adic valuation matches `step_type r₀`. -/
+/-- `d_0 = e(r₀)`. -/
 theorem d_k_zero (r₀ : ℕ) (hr : 1 ≤ r₀) :
     d_k (r₀ : ℤ) 0 = step_type r₀ := by
   unfold d_k step_type Collatz.Arithmetic.e
   rw [N_k_nat_zero r₀ hr]
 
-/-- **Orbit bridge — base case for `M_k`.** At index `0` the
-algebraic odd part equals one Collatz step `collatz_step r₀`. -/
+/-- `M_0 = T(r₀)`. -/
 theorem M_k_zero (r₀ : ℕ) (hr : 1 ≤ r₀) :
     M_k (r₀ : ℤ) 0 = collatz_step r₀ := by
   unfold M_k collatz_step
   rw [N_k_nat_zero r₀ hr, d_k_zero r₀ hr]
 
-/-- **Orbit bridge consequence.** For odd `r₀ ≥ 1`, the algebraic
-diagonal at index `0` (`d_0 = 0`) holds **iff** the trailing
-2-exponent of the Collatz numerator vanishes, which never happens
-for odd starting values — so the algebraic trajectory always
-starts strictly above the diagonal at `k = 0`. -/
+/-- For odd `r₀`, `d_0 = e(r₀) ≥ 1`. -/
 theorem d_k_zero_pos_of_odd (r₀ : ℕ) (hr : OddPred r₀) :
     0 < d_k (r₀ : ℤ) 0 := by
   have hr1 : 1 ≤ r₀ := by
@@ -69,33 +52,11 @@ theorem d_k_zero_pos_of_odd (r₀ : ℕ) (hr : OddPred r₀) :
   rw [d_k_zero r₀ hr1]
   exact step_type_odd_pos hr
 
-/-! ## Per-step depth identities (M2.2)
+/-! ## Per-step depth identities
 
-The plan's original M2.2 statement (`M_k = collatz_step^[k] r₀` on the
-diagonal) is **not** true: the algebraic numerator carries a `+5 · 2^k`
-correction in its recurrence (`N_{k+1} = 3 N_k + 5 · 2^k`) while the
-orbit numerator carries only `+ 2^{e_0}` (`n_{k+1} = 3 n_k + 2^k` in
-the touch-only case), and these differ even on the diagonal.
-
-We therefore replace M2.2 with a stronger *orbit-side* package: the
-**per-step depth identities** that drive the cumulative depth
-bookkeeping in M2.3 / M2.4. These identities are derived directly from
-the definition of `collatz_step` and `depth_minus`, without going
-through `N_k_int`.
-
-### Key arithmetic facts
-
-For an odd value `r` with `s = depth_minus r = ν₂(r + 1)`:
-
-* If `s ≥ 2`, then `step_type r = 1` (non-touch), and
-  `depth_minus (collatz_step r) = s − 1`.
-* If `s = 1`, then `step_type r ≥ 2` (touch), and
-  `depth_minus (collatz_step r)` is residue-dependent (the "multibit
-  bonus" content).
-
-These are equivalences: `step_type r = 1 ↔ depth_minus r ≥ 2` for
-odd `r`.
--/
+For odd `r` with `s = depth₋(r) = ν₂(r + 1)`: if `s ≥ 2` then `e(r) = 1` and
+`depth₋(T r) = s − 1`; if `s = 1` then `e(r) ≥ 2` and `depth₋(T r)` depends on
+the residue of `r`. -/
 
 /-- **Touch ↔ depth_minus = 1.** For odd `r`, `step_type r ≥ 2`
 exactly when `depth_minus r = 1`. -/

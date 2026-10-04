@@ -26,14 +26,7 @@ lemma singleton_attractor_fixed_point (n : ℕ)
   have hstep : collatz_step n ∈ ({n} : Set ℕ) := hattr.2 n (by simp)
   simpa [is_fixed_point] using hstep
 
-/-- No nontrivial attractor can be certified without producing a nontrivial cycle witness. -/
-theorem no_other_attractors (s : Set ℕ)
-    (_hattr : is_attractor s)
-    (hcycle : ∃ xs : List ℕ, Collatz.CycleExclusion.detect_nontrivial_cycle xs) :
-    False := by
-  rcases hcycle with ⟨xs, hxs⟩
-  exact Collatz.CycleExclusion.cycle_detection_negative xs hxs
-
+/-- Reaching `1` means entering the trivial cycle `{1}` (restatement). -/
 theorem convergence_to_trivial_cycle (n : ℕ)
     (hreach : ∃ k : ℕ, (collatz_step^[k]) n = 1) :
     ∃ k : ℕ, (collatz_step^[k]) n ∈ trivialCycleSet := by

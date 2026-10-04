@@ -1,33 +1,12 @@
 /-
-Collatz Conjecture: SEDT Deep Formalization — Multibit Bonus
-(Appendix D.2 algebraic core)
+Geometric-sum and coset-counting identities (generic).
 
-This module implements the **algebraic core** of Corollary D.2.
+Inside `range (2^U)`, exactly `2^(U−u)` indices are divisible by `2^u`
+(`u ≤ U`), and `∑_{j < 2^U} min(ν₂ j, U) = 2^U − 1` (with `ν₂ 0 := U`).
 
-The mathematical content of D.2 reduces, after the homogenization
-(Lemma D.10) and touch-residue (Lemma D.1.b) layers are applied,
-to the following purely combinatorial identities inside one period
-of length `Q_{t+U} = 2^U · Q_t`:
-
-  *  Inside one period there are exactly `2^U` t-touches, indexed by
-     `j ∈ Finset.range (2^U)`.
-
-  *  The "bonus ≥ u" condition at the j-th touch is equivalent to
-     `2 ^ u ∣ j` (modulo the index `j = 0`).
-
-  *  The number of `j ∈ range (2 ^ U)` divisible by `2 ^ u` equals
-     `2 ^ (U - u)` for `u ≤ U`.
-
-  *  Consequently the cumulative bonus over one period equals
-
-       `∑_{u=1}^{U} 2 ^ (U - u)  =  2 ^ U - 1`,
-
-     yielding the average `(2 ^ U - 1) / 2 ^ U = 1 - 2^{-U}`.
-
-The orbit-side input "inside one `Q_{t+U}`-period there are exactly
-`2^U` t-touches indexed by `j ∈ range (2^U)`" is supplied by the
-homogenization / touch-residue layer; the present file delivers the
-clean integer identities used to extract the bound.
+These identities are correct. In the paper (Corollary D.2) they are applied to
+the touches of the auxiliary sequence `(M_k)` inside one `Q_{t+U}`-period; no
+corresponding statement about touches of Collatz orbits is proved.
 -/
 
 import Mathlib.Tactic
@@ -102,10 +81,10 @@ theorem card_filter_dvd_pow_two (U u : ℕ) (h : u ≤ U) :
   exact Finset.card_range _
 
 /-!
-## Bonus distribution over one period
+## Bonus distribution over `range (2^U)`
 
-We model one `Q_{t+U}`-period of t-touches abstractly as the index
-set `range (2 ^ U)`. The bonus function `bonus j := min (ν₂ j) U`,
+The index set `range (2 ^ U)` is an abstract model (in the paper: the touches of
+the auxiliary sequence in one `Q_{t+U}`-period). The bonus function `bonus j := min (ν₂ j) U`,
 with the convention `ν₂ 0 := U` (since the touch at `j = 0` lies in
 all 2-adic refinements up to level `t + U`), encodes the multibit
 contribution. The complementary identity

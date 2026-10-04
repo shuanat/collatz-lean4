@@ -1,36 +1,18 @@
 /-
-Collatz Conjecture: SEDT Deep Formalization — Linear Surplus
-(Appendix D.5 algebraic core)
+Linear-surplus combiner (generic integer inequality).
 
-This module implements the **algebraic core** of Proposition D.5
-(Linear Surplus on long t-epochs).
+For naturals `P, U ≥ 1` and `L, N, B`:
+if `N·P + P·P ≥ L` and `B·2^U ≥ N·(2^U − 1)`, then
+`B·2^U·P + (2^U − 1)·P·P ≥ (2^U − 1)·L`.
 
-**Setup.**  Fix abstract parameters `P, U ≥ 1` modeling
-`P = Q_t = 2^{t-2}` and the refinement depth `U`.
-On a tail of length `L`, three input estimates are available:
-
-* (Touch Density, Lemma D.4)
-    `N · P + P · P ≥ L`           (i.e. `N ≥ L/P − P` rearranged)
-
-* (Multibit Bonus, Corollary D.2 / period-level identity)
-    `B · 2^U ≥ N · (2^U − 1)`     (average bonus per touch ≥ 1 − 2^{−U})
-
-Here `N` is the number of t-touches and `B` is the cumulative
-multibit bonus on the tail.
-
-**Conclusion.**  Cross-multiplying gives the clean integer
-*linear surplus* inequality
-
-    `B · 2^U · P ≥ (2^U − 1) · L − (2^U − 1) · P · P`,
-
-equivalently `e*(L) ≥ (α − 1) · L − C` with
-
-    `α − 1 = (1 − 2^{−U}) / Q_t,  C = (1 − 2^{−U}) · Q_t`.
-
-The orbit-side estimates `N · P + P² ≥ L` and `B · 2^U ≥ N · (2^U − 1)`
-are supplied by `TouchDensity.lean` and `MultibitBonus.lean`
-respectively (after the periodicity layer is closed); the present
-module assembles them into the final linear bound.
+Status (2026-10 review). This is a correct *lower* bound on `B` in terms of `L`.
+It does **not** discharge the depth-bookkeeping residual of the former SEDT
+chain, which required an *upper* bound on the orbit's multibit gain
+(`multibit_gain_on_orbit ≤ budget`, see `OrbitDepth`). Moreover the two
+hypotheses are not established for Collatz orbits: in the paper they come from
+the auxiliary sequence `(N_k)` (`TouchDensity`, `MultibitBonus`). The paper's
+use of this bound inside the proof of E.2 (a lower bound substituted where an
+upper bound is needed) is one of the errors behind the withdrawal of E.2.
 -/
 
 import Mathlib.Tactic
@@ -48,11 +30,7 @@ then the cumulative bonus satisfies the linear surplus bound
 
     `B * 2 ^ U * P + (2 ^ U - 1) * P * P ≥ (2 ^ U - 1) * L`.
 
-This is the integer-arithmetic form of
-
-    `e*(L) ≥ (1 − 2^{−U}) · (L / Q_t − Q_t)`,
-
-cross-multiplied through by `Q_t` and `2^U`. -/
+Equivalently `B ≥ (1 − 2^{−U}) · (L / P − P)` (a lower bound on `B`). -/
 theorem linear_surplus
     (P U L N B : ℕ) (hP : 1 ≤ P) (hU : 1 ≤ U)
     (hTouch : N * P + P * P ≥ L)
@@ -79,9 +57,7 @@ theorem linear_surplus
 
     `B * 2^U * P ≥ (2^U - 1) * L / 2`.
 
-This is the simplest "linear in L" reformulation; for a sharper
-constant one keeps `(2^U - 1) * P * P` as an additive correction
-(matching the paper's `C(t, U) ≤ (1 - 2^{-U}) Q_t`). -/
+Again a lower bound on `B`. -/
 theorem linear_surplus_long
     (P U L N B : ℕ) (hP : 1 ≤ P) (hU : 1 ≤ U)
     (hLong : L ≥ 2 * P * P)

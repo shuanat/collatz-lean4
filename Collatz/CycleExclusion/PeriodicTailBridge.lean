@@ -1,20 +1,23 @@
 /-
-Periodic-tail bridge for cycle exclusion.
+Periodic side of the convergence argument.
 
-After separating raw closed-cycle validity from the optional normalization
-`cycle_node c 0 = 1`, the periodic side can now produce a genuine orbit-derived
-cycle object from a structured periodic-tail witness. The remaining open step is
-no longer the construction of the cycle itself, but the H-level premises needed
-to feed `main_cycle_exclusion`.
+* `cycle_of_periodic_tail_witness` turns a periodic-tail witness into a valid
+  closed `Cycle` object (a genuine construction).
+* `OrbitNoNontrivialPeriodicTail n` / `NoNontrivialCycleOnOrbit n` state that
+  every value which recurs along the odd-step orbit of `n` equals `1`, i.e. the
+  orbit of `n` does not run into a nontrivial cycle. This is an OPEN hypothesis
+  (it is the "no nontrivial cycles" half of the Collatz conjecture, restricted
+  to one orbit); it is satisfied by `n = 1` and by every `n` whose orbit reaches
+  `1` (`no_cycle_on_orbit_of_reaches_one`).
+* `NoNontrivialCycles` is the global open conjecture "the only periodic odd
+  point of the odd-step map is `1`".
 
-This file:
-
-* constructs the canonical raw cycle carried by `OrbitPeriodicTailWitness`;
-* proves that period `> 1` yields a nontrivial closed cycle object;
-* exposes the remaining H-level theorem source as
-  `PeriodicTailCycleExclusionPremisesSource n`;
-* keeps the older vacuous `OrbitNoNontrivialPeriodicTail n` reduction as a
-  compatibility fallback for the current top-level residual packaging.
+History: the previous definition `OrbitNoNontrivialPeriodicTail n :=
+∀ hw, hw.period ≤ 1` did not require minimal periods and was therefore
+equivalent to `¬ orbit_eventually_periodic n` (false for `n = 1`, which has
+period-2 witnesses). It was replaced by the present definition. The H-level
+premise package `PeriodicTailCycleExclusionPremisesSource` (built on the
+unsatisfiable `exclusion_premises`) was removed.
 -/
 import Collatz.CycleExclusion.Main
 
@@ -118,8 +121,9 @@ theorem cycle_of_periodic_tail_witness_valid {n : ℕ}
               (cycle_of_periodic_tail_witness hw).len) := by
           rw [hlast]
 
-/-- Period `> 1` on a periodic tail witness yields a genuinely nontrivial raw
-closed cycle. -/
+/-- Period `> 1` on a periodic tail witness yields a closed cycle object with at
+least two nodes (`Cycle.is_nontrivial`). Since periods are not minimal, the
+nodes may all equal `1` (e.g. a period-2 witness on the fixed point). -/
 theorem cycle_of_periodic_tail_witness_nontrivial {n : ℕ}
     (hw : OrbitPeriodicTailWitness n) (hgt : 1 < hw.period) :
     (cycle_of_periodic_tail_witness hw).is_nontrivial := by
@@ -127,80 +131,84 @@ theorem cycle_of_periodic_tail_witness_nontrivial {n : ℕ}
   simpa [cycle_of_periodic_tail_witness] using Nat.sub_pos_of_lt hgt
 
 /-- The orbit-derived raw cycle attached to a periodic tail witness has zero
-period sum by pure telescoping of successive potential changes. -/
+period sum. This is the bookkeeping identity `period_sum_zero` (true for every
+`Cycle`); it carries no information about the dynamics. -/
 theorem cycle_of_periodic_tail_witness_period_sum_zero {n : ℕ}
     (hw : OrbitPeriodicTailWitness n) :
     period_sum (cycle_of_periodic_tail_witness hw) = 0 := by
   simpa using period_sum_zero (cycle_of_periodic_tail_witness hw)
 
-/-- Exact remaining H-level theorem source after repairing the periodic cycle
-interface: the orbit-derived raw cycle attached to each period-`> 1` tail must
-satisfy the premises needed by `main_cycle_exclusion`. -/
-def PeriodicTailCycleExclusionPremisesSource (n : ℕ) : Prop :=
-  ∀ hw : OrbitPeriodicTailWitness n, 1 < hw.period →
-    exclusion_premises 0 (cycle_of_periodic_tail_witness hw)
+/-- **Open hypothesis (per orbit).** No nontrivial cycle on the orbit of `n`:
+every value that recurs along the odd-step orbit of `n` equals `1`. -/
+def NoNontrivialCycleOnOrbit (n : ℕ) : Prop :=
+  ∀ k p : ℕ, 0 < p → (collatz_step^[k + p]) n = (collatz_step^[k]) n →
+    (collatz_step^[k]) n = 1
 
-/-- Once the H-level premises are available for the canonical orbit-derived raw
-cycle, the theorem-level periodic bridge is discharged without further
-packaging. -/
-theorem periodic_tail_cycle_bridge_of_constructed_cycle_premises
-    (n : ℕ) (hsource : PeriodicTailCycleExclusionPremisesSource n) :
-    periodic_tail_cycle_bridge n := by
-  intro hw hgt
-  refine ⟨cycle_of_periodic_tail_witness hw,
-    cycle_of_periodic_tail_witness_nontrivial hw hgt, hsource hw hgt⟩
+/-- **Open conjecture (global).** The only odd periodic point of the odd-step
+map is `1`, i.e. there is no nontrivial cycle. -/
+def NoNontrivialCycles : Prop :=
+  ∀ x : ℕ, Odd x → ∀ p : ℕ, 0 < p → (collatz_step^[p]) x = x → x = 1
 
-/-- Explicit residual exposed by the cycle-exclusion architecture: the orbit of
-`n` admits no periodic tail of period strictly greater than `1`. This is exactly
-the no-nontrivial-cycle part of the Collatz conjecture, and is the minimal
-residual through which the `periodic_tail_cycle_bridge n` interface can be
-honestly discharged. -/
+/-- **Open hypothesis (per orbit), witness form.** Every periodic tail of the
+orbit of `n` starts at the value `1`. Equivalent to `NoNontrivialCycleOnOrbit n`
+(`orbit_no_nontrivial_periodic_tail_iff_no_cycle_on_orbit`). -/
 def OrbitNoNontrivialPeriodicTail (n : ℕ) : Prop :=
-  ∀ hw : OrbitPeriodicTailWitness n, hw.period ≤ 1
+  ∀ hw : OrbitPeriodicTailWitness n, (collatz_step^[hw.start]) n = 1
 
-/-- The repaired raw-cycle theorem source already rules out every nontrivial
-periodic tail on the orbit: if such a tail existed, its canonical cycle would
-simultaneously satisfy `exclusion_premises 0` and be nontrivial, contradicting
-`main_cycle_exclusion`. -/
-theorem no_nontrivial_periodic_tail_of_cycle_premises_source
-    (n : ℕ) (hsource : PeriodicTailCycleExclusionPremisesSource n) :
-    OrbitNoNontrivialPeriodicTail n := by
-  intro hw
-  rcases orbit_periodic_tail_period_one_or_gt_one hw with hperiod1 | hgt
-  · omega
-  · exact False.elim <|
-      main_cycle_exclusion
-        (cycle_of_periodic_tail_witness hw)
-        (cycle_of_periodic_tail_witness_nontrivial hw hgt)
-        (hsource hw hgt)
-
-/-- Conversely, the repaired raw-cycle theorem source follows vacuously from the
-absence of every nontrivial periodic tail. This makes the current periodic
-frontier equivalent to `OrbitNoNontrivialPeriodicTail`. -/
-theorem periodic_tail_cycle_premises_source_of_no_nontrivial_periodic_tail
-    (n : ℕ) (hno : OrbitNoNontrivialPeriodicTail n) :
-    PeriodicTailCycleExclusionPremisesSource n := by
-  intro hw hgt
-  exact False.elim (Nat.not_lt.mpr (hno hw) hgt)
-
-/-- Under the current raw-cycle interface, the theorem source
-`PeriodicTailCycleExclusionPremisesSource n` is equivalent to the explicit
-residual `OrbitNoNontrivialPeriodicTail n`. -/
-theorem periodic_tail_cycle_premises_source_iff_no_nontrivial_periodic_tail
-    (n : ℕ) :
-    PeriodicTailCycleExclusionPremisesSource n ↔ OrbitNoNontrivialPeriodicTail n := by
+theorem orbit_no_nontrivial_periodic_tail_iff_no_cycle_on_orbit (n : ℕ) :
+    OrbitNoNontrivialPeriodicTail n ↔ NoNontrivialCycleOnOrbit n := by
   constructor
-  · exact no_nontrivial_periodic_tail_of_cycle_premises_source n
-  · exact periodic_tail_cycle_premises_source_of_no_nontrivial_periodic_tail n
+  · intro h k p hp hkp
+    exact h (OrbitPeriodicTailWitness.ofIterateEq k p hp hkp)
+  · intro h hw
+    exact h hw.start hw.period hw.period_pos (by simpa using hw.periodic 0)
 
-/-- Compatibility reduction of the older `periodic_tail_cycle_bridge` interface
-to the explicit no-tail residual. This remains valid, but is now strictly
-weaker than constructing the actual orbit-derived raw cycle. -/
-theorem periodic_tail_cycle_bridge_of_no_nontrivial_periodic_tail
-    (n : ℕ) (hno : OrbitNoNontrivialPeriodicTail n) :
-    periodic_tail_cycle_bridge n := by
-  intro hw hgt
-  have hle : hw.period ≤ 1 := hno hw
-  exact absurd hgt (Nat.not_lt.mpr hle)
+/-- The global conjecture implies the per-orbit hypothesis for every start. -/
+theorem no_cycle_on_orbit_of_no_nontrivial_cycles (h : NoNontrivialCycles) (n : ℕ) :
+    NoNontrivialCycleOnOrbit n := by
+  intro k p hp hkp
+  have hodd : Odd ((collatz_step^[k]) n) := by
+    rw [← hkp]
+    obtain ⟨q, rfl⟩ : ∃ q, p = q + 1 := ⟨p - 1, by omega⟩
+    rw [show k + (q + 1) = (k + q) + 1 by omega, Function.iterate_succ_apply']
+    exact collatz_step_is_odd
+  refine h _ hodd p hp ?_
+  rw [← Function.iterate_add_apply, show p + k = k + p by omega, hkp]
+
+/-- A repetition at time `k` with period `p` repeats at every multiple of `p`. -/
+lemma iterate_add_mul_eq_of_iterate_add_eq {n k p : ℕ}
+    (hkp : (collatz_step^[k + p]) n = (collatz_step^[k]) n) (m : ℕ) :
+    (collatz_step^[k + m * p]) n = (collatz_step^[k]) n := by
+  induction m with
+  | zero => simp
+  | succ m ih =>
+      rw [show k + (m + 1) * p = p + (k + m * p) by ring, Function.iterate_add_apply, ih,
+        ← Function.iterate_add_apply, show p + k = k + p by omega, hkp]
+
+/-- Every orbit that reaches `1` satisfies `NoNontrivialCycleOnOrbit`; so the
+hypothesis is implied by the conclusion of the Collatz conjecture and is not
+inconsistent with it. -/
+theorem no_cycle_on_orbit_of_reaches_one {n k₀ : ℕ} (h : (collatz_step^[k₀]) n = 1) :
+    NoNontrivialCycleOnOrbit n := by
+  intro k p hp hkp
+  have h1 := iterate_add_mul_eq_of_iterate_add_eq hkp k₀
+  have hle : k₀ ≤ k + k₀ * p := by nlinarith
+  rw [← h1, ← Nat.sub_add_cancel hle, Function.iterate_add_apply, h, iterate_collatz_step_one]
+
+/-- Periodic branch, with no vacuous hypotheses: an eventually periodic orbit
+without a nontrivial cycle reaches `1`. -/
+theorem reaches_one_of_periodic_of_no_cycle {n : ℕ}
+    (hper : orbit_eventually_periodic n) (hno : NoNontrivialCycleOnOrbit n) :
+    ∃ k : ℕ, (collatz_step^[k]) n = 1 := by
+  obtain ⟨k, p, hp, h⟩ := hper
+  exact ⟨k, hno k p hp (by simpa using h 0)⟩
+
+/-- Sanity: the per-orbit hypothesis holds for `n = 1`. -/
+theorem no_cycle_on_orbit_one : NoNontrivialCycleOnOrbit 1 :=
+  fun k _ _ _ => iterate_collatz_step_one k
+
+/-- Sanity: the witness form holds for `n = 1`. -/
+theorem orbit_no_nontrivial_periodic_tail_one : OrbitNoNontrivialPeriodicTail 1 :=
+  fun hw => iterate_collatz_step_one hw.start
 
 end Collatz.CycleExclusion

@@ -1,29 +1,24 @@
 /-
-Collatz Conjecture: SEDT Deep Formalization — Orbit-side cumulative
-depth identity (M2.3)
+Exact depth identity along an odd orbit.
 
-This module assembles the **cumulative depth identity** for the
-`collatz_step` orbit: over any segment `[i, j)` of the odd orbit,
-the change of `depth_minus` plus the segment length equals the sum
-of the post-touch depth values (the "uncapped multibit gain").
+With `r_k := T^[k] m` (odd `m`), define the "uncapped multibit gain"
 
-Concretely, with `r_k := (collatz_step^[k]) m`, define
+    multibit_gain_on_orbit m i j := ∑_{k ∈ [i, j)} (if e(r_k) ≥ 2 then depth₋(r_{k+1}) else 0).
 
-    `multibit_gain_on_orbit m i j :=`
-        `∑ k ∈ [i, j), if step_type r_k ≥ 2 then depth_minus r_{k+1} else 0`.
+Then (`cumulative_depth_identity`)
 
-Then for odd `m`,
+    depth₋(r_j) − depth₋(r_i) + (j − i) = multibit_gain_on_orbit m i j.
 
-    `(depth_minus r_j : ℤ) − depth_minus r_i + (j − i)`
-        `= multibit_gain_on_orbit m i j`.
+This is a true identity about the orbit (it follows from F3: `e(r) = 1 ⇔
+depth₋(r) ≥ 2`, and then `depth₋(T r) = depth₋(r) − 1`). Here "touch" means a
+step with `e(r_k) ≥ 2` (equivalently `depth₋(r_k) = 1`); it is *not* the paper's
+`t`-touch `r ≡ s_t (mod 2^t)`.
 
-This identity is the orbit-side foundation for the
-`SelectedCarryDepthSemantics` producer in M2.4: it converts the
-algebraic-side bonus accounting (M1.E + M2.1) into a concrete
-inequality on the orbital `depth_minus`. The U-capped form needed
-by `SelectedPaperCarryArguments` follows by replacing
-`depth_minus r_{k+1}` with `min (depth_minus r_{k+1}) U` and
-inheriting the inequality direction.
+The identity shows that bounding the depth change from above is the same as
+bounding `multibit_gain_on_orbit` from above. No such upper bound is proved; the
+former consumers (`DepthBookkeeping`, `AperiodicGainBridge`, the
+`SelectedCarryDepthSemantics` chain) only repackaged that missing bound as a
+hypothesis and were deleted.
 -/
 
 import Collatz.SEDT.OrbitBridge
@@ -34,13 +29,11 @@ open Collatz.Foundations
 open Collatz.SEDT.OrbitBridge
 open Finset
 
-/-- **Per-step touch indicator (Bool form).** -/
+/-- Indicator of `e(T^[k] m) ≥ 2` (Bool form). -/
 def isTouch (m k : ℕ) : Bool :=
   decide (2 ≤ step_type ((collatz_step^[k]) m))
 
-/-- **Per-touch depth value.** Counts the post-touch depth value
-`depth_minus r_{k+1}` only when step `k` is a touch step; otherwise
-contributes `0`. -/
+/-- `depth₋(r_{k+1})` if `e(r_k) ≥ 2`, else `0`. -/
 def touchDepth (m k : ℕ) : ℕ :=
   if 2 ≤ step_type ((collatz_step^[k]) m)
     then depth_minus ((collatz_step^[k + 1]) m)

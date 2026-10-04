@@ -1,45 +1,22 @@
 /-
-Collatz Conjecture: paper Definition F.0.1 (revised) ⇒ late-window touchCount = 1
-**(Wave 2F bridge).**
+Admissibility ⇒ exactly one solution per period (algebra in `ZMod (2^t)`).
 
-This module realises the elementary algebraic bridge derived in Wave 2D
-`collatz-verification/research/wave2-d10b-empirical/REPORT-reverse-engineering.md`
-§2: under the **revised** paper Definition F.0.1 admissibility predicate
-`Collatz.Mixing.AdmissibleTailF01 t Mentry v` (Wave 2E), the count of late-regime
-window touches over the canonical period `Q_t t = 2^(t-2)` equals exactly `1`.
+Status (2026-10 review). The results here are correct algebra:
 
-Concretely, given the per-plateau-anchored algebraic data
-`(Mentry, v : ZMod (2^t))` and the admissibility witness
-`∃ n, s_t = 3^n · (v + 3^t · Mentry)`, the equation
-
-    3^j · (v + 3^t · Mentry) = s_t   in `ZMod (2^t)`
-
-has **exactly one** solution `j ∈ [0, Q_t t)`. The proof is the elementary
-§2 algebra:
-
-* `s_t` is a unit in `ZMod (2^t)` (`Collatz.OrdFact.isUnit_natCast_s_t`,
-  since `s_t = -5 · 3⁻¹` and both `-5` and `3⁻¹` are units modulo `2^t`).
-* Hence `v + 3^t · Mentry` is a unit (`isUnit_of_mul_isUnit_right` applied
-  to the admissibility equation).
-* Therefore `3^j · w = 3^n · w ⇒ 3^j = 3^n` (via `IsUnit.mul_right_cancel`
-  on the right factor `w`).
-* Since `orderOf (3 : ZMod (2^t)) = Q_t t` (paper Lemma B.2,
-  `Collatz.OrdFact.orderOf_three_eq_pow_two`), the map `j ↦ 3^j` is
-  injective on `[0, Q_t t)` (`pow_injOn_Iio_orderOf`).
-* The unique solution is the witness `n` provided by
-  `AdmissibleTailF01_witness_lt_Qt`, hence the filter equals `{n}` and its
-  cardinality is `1`.
-
-This is the **algebraic-core biconditional** (admissibility ⇒ touchCount = 1)
-on the algebraic data `(Mentry, v)`. The remaining orbit-side bridge — tying
-`Mentry := M 0 - u 0` and `v := u t` from `LocalAffinePairSemantics` and
-deriving `one_touch_per_period_input` from `admissible` — additionally requires
-encoding the late-regime `c_k = 0 (k ≥ t)` flush guard; that is queued as a
-separate orbit-side residual (`R-OrbitSideAdmissibleDensity`) and not closed
-in this module.
-
-No `sorry`, no `axiom`, no proxy. Every theorem below is intended to be
-axiom-clean (`#print axioms` ⊆ `{propext, Classical.choice, Quot.sound}`).
+* `AdmissibleTailF01.touch_count_eq_one` (and `_expanded`): if `t ≥ 3` and
+  `AdmissibleTailF01 t Mentry v`, then `3^j · (v + 3^t · Mentry) = s_t` has
+  exactly one solution `j ∈ [0, Q_t)`. Proof: `s_t` is a unit, hence so is
+  `v + 3^t · Mentry`, and `j ↦ 3^j` is injective below `orderOf 3 = Q_t`.
+* `AdmissibleTailF01.touch_count_eq_one_of_realized`: a conditional version on
+  an orbit window. Its hypotheses ask for integer sequences `M, u, c` with the
+  affine updates `M_{k+1} ≡ 3M_k + c_k`, `u_{k+1} ≡ 3u_k + c_k (mod 2^t)`,
+  `Q_t`-periodic `u`, `c_k ≡ 0` for `k ≥ t`, and `M_k ≡ T^[i+k] m (mod 2^t)` for
+  **all** `k`. These hypotheses are not known to be satisfiable on any genuine
+  orbit window: for an orbit that reaches `1` they are contradictory for
+  `t ≥ 3` (late in the window they force `1 ≡ 3 (mod 2^t)`). In the paper the
+  data come from the auxiliary sequence `a_k = 3^{k+1}(r₀+2) − 5·2^k`, which is
+  not the orbit numerator. So no statement about touch counts on actual orbits
+  follows from this module.
 -/
 
 import Mathlib.Tactic
@@ -47,7 +24,6 @@ import Mathlib.GroupTheory.OrderOfElement
 import Collatz.Epochs.Core
 import Collatz.Epochs.OrdFact
 import Collatz.Mixing.AdmissibleTail
-import Collatz.Mixing.TouchFrequencyLocal
 import Collatz.SEDT.Homogenization
 import Collatz.SEDT.TouchDensity
 
@@ -55,21 +31,10 @@ namespace Collatz.Mixing
 
 open Collatz.Epochs
 
-/-- **Wave 2F bridge — admissibility ⇒ exactly 1 touch in the late-regime
-window.**
-
-Given the per-plateau algebraic data `(Mentry, v : ZMod (2^t))` (paper
-notation: `Mentry := M_{k_start} mod 2^t`, `v := u_{k_start + t} mod 2^t`)
-and the revised Wave 2D paper Definition F.0.1 admissibility predicate
-`AdmissibleTailF01 t Mentry v`, the touch count over the canonical period
-`Q_t t = 2^(t-2)` equals exactly `1`. The proof is the elementary algebra
-of `wave2-d10b-empirical/REPORT-reverse-engineering.md` §2:
-
-    M_{k_start + t + j} ≡ 3^j · (v + 3^t · Mentry)  (mod 2^t),
-
-so a touch at offset `j` is `3^j · (v + 3^t · Mentry) = s_t`, which has
-exactly one `j ∈ [0, Q_t t)` because `3` has order `Q_t t = 2^(t-2)` in
-`(ZMod (2^t))ˣ` (paper Lemma B.2). -/
+/-- For `t ≥ 3` and `AdmissibleTailF01 t Mentry v`, the equation
+`3^j · (v + 3^t · Mentry) = s_t` in `ZMod (2^t)` has exactly one solution
+`j ∈ [0, Q_t)`. Pure algebra in `ZMod (2^t)`; see the module docstring for what
+this does *not* say about orbits. -/
 theorem AdmissibleTailF01.touch_count_eq_one {t : ℕ} (ht : 3 ≤ t)
     {Mentry v : ZMod (2 ^ t)}
     (hadm : AdmissibleTailF01 t Mentry v) :
@@ -119,14 +84,8 @@ theorem AdmissibleTailF01.touch_count_eq_one {t : ℕ} (ht : 3 ≤ t)
       exact h_inj hj_in hn_in h_pow
   rw [hfilter, Finset.card_singleton]
 
-/-- **Expanded form of the Wave 2F bridge (paper §2.2 notation).**
-
-The same conclusion as `AdmissibleTailF01.touch_count_eq_one`, but with the
-touch indicator written in the un-factored form
-`v · 3^j + 3^t · Mentry · 3^j = s_t` matching the paper §2.2 derivation
-verbatim. The two filters are pointwise equal because
-`v · 3^j + 3^t · Mentry · 3^j = 3^j · (v + 3^t · Mentry)` in any
-commutative ring. -/
+/-- `AdmissibleTailF01.touch_count_eq_one` with the equation written as
+`v · 3^j + 3^t · Mentry · 3^j = s_t`. -/
 theorem AdmissibleTailF01.touch_count_eq_one_expanded {t : ℕ} (ht : 3 ≤ t)
     {Mentry v : ZMod (2 ^ t)}
     (hadm : AdmissibleTailF01 t Mentry v) :
@@ -155,18 +114,11 @@ theorem AdmissibleTailF01.touch_count_eq_one_expanded {t : ℕ} (ht : 3 ≤ t)
   rw [hfilter_eq]
   exact AdmissibleTailF01.touch_count_eq_one ht hadm
 
-/-! ## Wave 2G — orbit-faithful local algebraic-stack bridge with flush guard
+/-! ## Conditional window version
 
-The lemmas below close the **local** orbit-side direction of the
-biconditional `revised F.0.1 ⇔ late-window touchCount = 1`: given the
-algebraic data of a `LocalAffinePairSemantics` (paper Lemma D.10.b)
-extended with the late-regime flush guard `c_k ≡ 0 (k ≥ t)` and the
-natural identifications `Mentry := M 0 - u 0`, `v := u t`, the orbit-side
-predicate `selected_segment_tail_touch m t i` has exactly one touch per
-canonical `Q_t`-window. This converts `one_touch_per_period_input` from a
-free honest input into a *derived* consequence of `admissible` + the
-flush guard. The remaining open piece is the orbit-side **density**
-target on actual Collatz orbits (`R-OrbitSideAdmissibleDensity`). -/
+The hypotheses of `touch_count_eq_one_of_realized` are not known to be
+satisfiable on actual orbit windows and are contradictory on every orbit that
+reaches `1` (see the module docstring). -/
 
 /-- Bridge between integer modular equality and the corresponding `ZMod`
 equation, for a positive natural modulus `m`. -/
@@ -220,40 +172,19 @@ private lemma touchCount_shift_eq_of_periodic
   | succ s ih =>
     rw [touchCount_shift_succ_of_periodic P hper s, ih]
 
-/-- **Wave 2G algebraic-stack bridge — orbit-faithful `touchCount = 1` from
-admissibility plus the late-regime flush guard.**
+/-- Conditional window statement: given integer sequences `M, u, c` with the
+affine updates mod `2^t`, `Q_t`-periodic `u`, the flush guard `c_k ≡ 0`
+(`k ≥ t`), `M_k ≡ T^[i+k] m (mod 2^t)` for all `k`, and admissibility of
+`(Mentry, v) = (M 0 − u 0, u t)`, the touch count of the orbit window over one
+period `Q_t` is `1`.
 
-Given the local affine pair data `(M, u, c)` on an admissible-tail
-window of the Collatz orbit (paper Lemma D.10.b minimal honest interface
-plus the **flush guard** `c k ≡ 0 (k ≥ t)` and the natural identifications
-`Mentry := M 0 - u 0 (mod 2^t)`, `v := u t (mod 2^t)`), the revised paper
-Definition F.0.1 admissibility predicate `AdmissibleTailF01 t Mentry v`
-algebraically forces
+Caveat: these hypotheses are contradictory for every orbit that reaches `1`
+(and `t ≥ 3`): once `T^[i+k] m = 1`, the realization and the flushed affine
+update force `1 ≡ 3 (mod 2^t)`. No orbit is known for which they hold.
 
-    Collatz.SEDT.TouchDensity.touchCount
-      (selected_segment_tail_touch m t i) (Q_t t) = 1.
-
-Proof outline (Wave 2D §2 algebra applied to the orbit-realised data):
-
-1. `Mtilde k := M k - u k` satisfies `Mtilde (k+1) ≡ 3 * Mtilde k (mod 2^t)`
-   by `homogenization_principle`. Hence
-   `Mtilde k ≡ 3^k * Mtilde 0 (mod 2^t)` by `homogenized_iterate`.
-2. `Q_t`-periodicity of `Mtilde` from `3^(Q_t) ≡ 1 (mod 2^t)` and
-   `homogenized_periodic_of_order_dvd`. Combined with `uPeriodic` this gives
-   `Q_t`-periodicity of `M`.
-3. By `realized` and the cast bridge, `selected_segment_tail_touch m t i`
-   is `Q_t`-periodic.
-4. From the **flush guard** for `k ≥ t`, `u (k+1) ≡ 3 * u k (mod 2^t)`,
-   so `u (t + j) ≡ 3^j * u t (mod 2^t)` by `homogenized_iterate` again.
-5. Combining (1) + (4) yields `M (t + j) ≡ 3^j * (u t + 3^t * (M 0 - u 0))
-   (mod 2^t)`, which after the identifications `Mentry`, `v` casts to
-   `(M (t + j) : ZMod (2^t)) = 3^j * (v + 3^t * Mentry)`.
-6. Hence the touch indicator `selected_segment_tail_touch m t i (t + j)`
-   is pointwise equivalent to `3^j * (v + 3^t * Mentry) = s_t` in
-   `ZMod (2^t)`, and `touchCount_shift_eq_of_periodic` translates the
-   touch count over the canonical window `[0, Q_t)` into the count over
-   `[t, t + Q_t)`, which equals `1` by
-   `AdmissibleTailF01.touch_count_eq_one`. -/
+Proof: `M − u` satisfies the homogeneous update, hence is `Q_t`-periodic; the
+late-window values are `3^j (v + 3^t Mentry)`; conclude by
+`AdmissibleTailF01.touch_count_eq_one` and shift invariance of the count. -/
 theorem AdmissibleTailF01.touch_count_eq_one_of_realized
     {m t i : ℕ} (ht : 3 ≤ t)
     (M u c : ℕ → ℤ)

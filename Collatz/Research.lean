@@ -1,20 +1,14 @@
 /-
-Research and draft surface for collatz-lean4.
-This module keeps work-in-progress modules and examples isolated from production.
+Research / documentation surface for collatz-lean4 (not part of `lake build
+Collatz`). It re-exports the library aggregators and the documentation modules.
+The former `Stratified`, `Utilities` and `Examples` modules consisted of
+unproved placeholders and were deleted in the 2026-10 clean-up.
 -/
+import Collatz
+import Collatz.Foundations
 import Collatz.Epochs
+import Collatz.SEDT
 import Collatz.Mixing
 import Collatz.CycleExclusion
 import Collatz.Convergence
-import Collatz.Stratified
-import Collatz.Utilities
 import Collatz.Documentation
-import Collatz.Examples.BasicDefinitions
-import Collatz.Examples.EpochAnalysis
-import Collatz.Examples.SEDTAnalysis
-import Collatz.Examples.EpochSEDTIntegration
-import Collatz.Examples.NewEpochModule
-import Collatz.Examples.FullIntegration
-import Collatz.Examples.ArchitectureTesting
-import Collatz.Examples.AntiExamples
-

@@ -1,10 +1,6 @@
 /-
-Collatz Conjecture: Epoch-Based Deterministic Framework
-Step classification definitions
-
-This file contains definitions for classifying Collatz steps:
-- e=1 steps (simple steps)
-- e≥2 steps (complex steps)
+Mod-4 classification of odd steps: `3m+1 ≡ 2 (mod 4)` ("simple", `e(m) = 1`,
+`T(m) > m`) versus `3m+1 ≡ 0 (mod 4)` ("complex", `e(m) ≥ 2`, `T(m) ≤ m`).
 -/
 import Collatz.Foundations.Core
 
@@ -12,12 +8,10 @@ namespace Collatz
 
 open Collatz.Foundations (step_type)
 
-/-- Simple step proxy used in non-production modules:
-    `3m+1 ≡ 2 (mod 4)`, matching the paper characterization for odd inputs. -/
+/-- Simple step: `3m+1 ≡ 2 (mod 4)` (for odd `m`, equivalent to `e(m) = 1`). -/
 def is_simple_step (m : ℕ) : Prop := (3 * m + 1) % 4 = 2
 
-/-- Complex step proxy used in non-production modules:
-    `3m+1 ≡ 0 (mod 4)`, matching the paper characterization for odd inputs. -/
+/-- Complex step: `3m+1 ≡ 0 (mod 4)` (for odd `m`, equivalent to `e(m) ≥ 2`). -/
 def is_complex_step (m : ℕ) : Prop := (3 * m + 1) % 4 = 0
 
 /-- Simple step characterization in mod-4 form. -/
@@ -30,8 +24,7 @@ lemma complex_step_iff_mod_four {m : ℕ} (_hm : m ≠ 0) :
   is_complex_step m ↔ (3 * m + 1) % 4 = 0 := by
   rfl
 
-/-- Bridge to the canonical exponent model used in production (`step_type = e`):
-    for odd `m`, a simple step implies at least one factor 2 in `3m+1`. -/
+/-- For odd `m`, a simple step has `e(m) ≥ 1`. -/
 lemma simple_step_implies_step_type_pos {m : ℕ} (hodd : Odd m) (_hs : is_simple_step m) :
     1 ≤ step_type m := by
   have h_even : Even (3 * m + 1) := by
@@ -47,8 +40,7 @@ lemma simple_step_implies_step_type_pos {m : ℕ} (hodd : Odd m) (_hs : is_simpl
   simpa [step_type] using hcore
 
 /-- A complex step already forces two factors of `2` in `3m+1`, hence
-`step_type m ≥ 2`. This is the mod-4 bridge underlying the narrower
-stream-side filler target. -/
+`step_type m ≥ 2`. -/
 lemma complex_step_implies_step_type_ge_two {m : ℕ}
     (hodd : Odd m) (hs : is_complex_step m) :
     2 ≤ step_type m := by
@@ -78,8 +70,7 @@ lemma complex_step_implies_step_type_ge_two {m : ℕ}
   exact hnot hpow4
 
 /-- For odd inputs, the mod-4 simple-step classification is equivalent to having
-local Collatz exponent exactly `1`. This is the sharp arithmetic reason why a
-simple step cannot belong to the `step_type ≥ 2` branch. -/
+local Collatz exponent exactly `1`. -/
 lemma simple_step_implies_step_type_eq_one {m : ℕ}
     (hodd : Odd m) (hs : is_simple_step m) :
     step_type m = 1 := by
@@ -104,8 +95,7 @@ lemma simple_step_implies_step_type_eq_one {m : ℕ}
   omega
 
 /-- On odd inputs, a simple step is a strict growth step for the normalized odd
-Collatz map. This is the value-level obstruction that lets nonincrease recover
-the lower arithmetic target `step_type ≥ 2`. -/
+Collatz map. -/
 lemma collatz_step_gt_self_of_simple_step {m : ℕ}
     (hodd : Odd m) (hs : is_simple_step m) :
     Collatz.Foundations.collatz_step m > m := by
@@ -141,9 +131,7 @@ lemma odd_is_simple_or_complex {m : ℕ} (hodd : Odd m) :
   | inr htwo =>
       exact Or.inl (by simpa [is_simple_step] using htwo)
 
-/-- Therefore, on odd inputs, excluding simple steps forces complex ones. This
-is the exact bridge used when filler semantics are naturally phrased as
-"no simple step appears" rather than directly as a complex-step theorem. -/
+/-- On odd inputs, a step that is not simple is complex. -/
 lemma complex_step_of_not_simple {m : ℕ}
     (hodd : Odd m) (hns : ¬ is_simple_step m) :
     is_complex_step m := by

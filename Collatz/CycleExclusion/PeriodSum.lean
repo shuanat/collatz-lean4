@@ -1,5 +1,5 @@
 import Collatz.CycleExclusion.CycleDefinition
-import Collatz.SEDT.Theorems
+import Collatz.SEDT.Core
 
 namespace Collatz.CycleExclusion
 
@@ -33,7 +33,10 @@ lemma telescoping_lemma (c : Cycle) :
   simpa [F] using htel (Nat.succ c.len)
 
 /-- Because `cycle_node` is indexed modulo the cycle length, the full-period sum
-of successive potential changes vanishes identically for every cycle object. -/
+of successive potential changes vanishes identically for every cycle object.
+
+This is a bookkeeping identity with no dynamical content: it holds for every
+`Cycle`, valid or not, and in particular cannot by itself exclude any cycle. -/
 lemma period_sum_zero (c : Cycle) :
     period_sum c = 0 := by
   rw [telescoping_lemma]
@@ -41,10 +44,5 @@ lemma period_sum_zero (c : Cycle) :
     simpa using cycle_node_mod c (Nat.succ c.len)
   rw [hwrap]
   ring
-
-lemma period_sum_with_density_negative (_t _U : ℕ) (_β : ℝ) (c : Cycle)
-    (hneg : period_sum c < 0) :
-    ∃ (v : ℝ), v < 0 ∧ period_sum c = v := by
-  exact ⟨period_sum c, hneg, rfl⟩
 
 end Collatz.CycleExclusion

@@ -1,12 +1,12 @@
 /-
-Collatz Conjecture: S7.1.A.1 — Pure group-theoretic core for paper Lemma G.5c
+Pure group-theoretic core of paper Lemma G.5c
 (boxed Q_t-block phase uniqueness).
 
-This module proves the **paper-faithful pure group-theoretic content** of
-Lemma G.5c (good phase uniqueness on a t-epoch tail), separated cleanly from
-the orbit-side application (which is blocked on the foundational replatform of
-`Collatz/Epochs/{Structure,PhaseClasses,...}.lean` and is surfaced as
-`EpochTailGeometryResidual` in `Collatz/Epochs/G/Residuals.lean`).
+This module proves a pure group-theoretic statement about powers of `3` in
+`ZMod (2^t)`, used as the algebraic core of Lemma G.5c. Nothing about Collatz
+orbits is formalized here; the orbit-side application is not formalized (the
+former placeholder `EpochTailGeometryResidual` was removed because it did not
+mention the orbit and was trivially inhabited).
 
 The pure statement is:
 
@@ -17,17 +17,13 @@ The pure statement is:
 
 Hence the solutions of the touch-equation `3^j * x = y` for fixed `x, y` (with
 `x` a unit) form a single residue class modulo `Q_t t`. This is exactly the
-algebraic content of paper G.5c; the orbit-side application is the assertion
-that on every t-epoch tail this residue class is realized, which is encoded as
-the `EpochTailGeometryResidual` open math residual (paper G.1+G.2+G.4+G.5b
-jointly).
+algebraic content used in paper G.5c; the orbit-side assertion that on every
+t-epoch tail this residue class is realized is not formalized (and the paper's
+G.5 results are withdrawn in the corrected version).
 
 Implementation note: the canonical paper Lemma B.2 (`orderOf (3 : ZMod (2^t))
 = 2^(t-2)` for `t ≥ 3`) is consumed via import from `Collatz.Epochs.OrdFact`
-(`Collatz.OrdFact.orderOf_three_eq_pow_two`). S7.0.A housekeeping fixed the
-Mathlib API drift in `OrdFact.lean` (replaced stale `decide`/`simp` tactics
-with `orderOf_eq_prime` / `map_natCast` / `orderOf_pow'` based proofs), so
-the inline copy that S7.1 carried as a workaround has been removed.
+(`Collatz.OrdFact.orderOf_three_eq_pow_two`).
 
 Paper-correspondence:
 - `phase_uniqueness_pure_mod_Qt`: paper Appendix G, Lemma G.5c (pure form);
@@ -60,8 +56,8 @@ private lemma isOfFinOrder_three_ZMod_pow_two {t : ℕ} (ht : 3 ≤ t) :
   rw [← orderOf_pos_iff, orderOf_three_ZMod_pow_two ht]
   exact pow_pos (by decide) _
 
-/-- **S7.1.A.1 — Pure group-theoretic G.5c uniqueness (paper Lemma G.5c, pure
-form).**
+/-- **Phase uniqueness modulo `Q_t` (pure group-theoretic form of paper Lemma
+G.5c).**
 
 For every `t ≥ 3`, two non-negative powers of `(3 : ZMod (2^t))` agree iff
 their exponents are congruent modulo `Q_t t = 2^(t-2)`. This is the algebraic

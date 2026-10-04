@@ -3,11 +3,10 @@ Collatz Conjecture: Ord-Fact Theorem (paper Lemma B.2)
 
 Main theorem: `orderOf (3 : ZMod (2^t)) = 2^(t-2)` for `t ≥ 3`.
 
-This module replaces the previous Wave A scaffolding (which stated
-`True := by sorry`) with a real, axiom-clean proof of the multiplicative
-order of `3` modulo `2^t`.
+A complete proof of the multiplicative order of `3` modulo `2^t`, using only
+the standard kernel axioms.
 
-Proof strategy (S7.1.0.B2 of the deep formalization plan):
+Proof strategy:
   1. `orderOf (9 : ZMod (2^(n+3))) = 2^n` follows from Mathlib's
      `ZMod.orderOf_one_add_mul_prime_pow` with `p = 2`, `m = 3`, `a = 1`
      (since `1 + 2^3 * 1 = 9`).
@@ -18,11 +17,8 @@ Proof strategy (S7.1.0.B2 of the deep formalization plan):
      `orderOf (3 : ZMod 4) = 2`, and `orderOf` is monotone under ring homs.
   5. Combining: `2^n = orderOf 3 / 2`, hence `orderOf 3 = 2^(n+1) = 2^(t-2)`.
 
-Compatibility: the original stub name `ord_fact_main` is preserved as an alias.
-The previous meaningless `helper_lemma_*`, `ord_fact_examples*`,
-`ord_fact_phase_mixing`, `ord_fact_touch_frequency`, `ord_fact_corollary`,
-`ord_fact_specific_values` stubs (all of type `True := by sorry`) had no
-substantive downstream use and have been removed.
+`ord_fact_main` is kept as an alias of `orderOf_three_eq_pow_two`. Former
+placeholder stubs with `True`-valued statements were removed.
 -/
 
 import Mathlib.RingTheory.ZMod.UnitsCyclic
@@ -124,15 +120,12 @@ theorem orderOf_three_eq_pow_two {t : ℕ} (ht : 3 ≤ t) :
     linarith
   rw [hAeq, pow_succ, mul_comm]
 
-/-- Backward-compatible alias matching the original stub theorem name.
-The original stub had type `True`; the real type is now the paper-faithful
-statement above. -/
+/-- Alias of `orderOf_three_eq_pow_two` (paper Lemma B.2). -/
 theorem ord_fact_main (t : ℕ) (ht : 3 ≤ t) :
     orderOf (3 : ZMod (2 ^ t)) = 2 ^ (t - 2) :=
   orderOf_three_eq_pow_two ht
 
-/-! ## Step (4) — bridge to integer congruence used by the
-    SEDT/Homogenization toolkit (Wave 1 of S7.2 Path 1.algebraic) -/
+/-! ## Step (4) — `3^{Q_t} = 1` in `ZMod (2^t)` and as an integer congruence -/
 
 /-- Order specialization to the epoch period: `3 ^ (Q_t t) = 1` in
 `ZMod (2 ^ t)` for `t ≥ 3`. Direct consequence of `orderOf_three_eq_pow_two`
@@ -148,12 +141,11 @@ lemma three_pow_Qt_eq_one_zmod {t : ℕ} (ht : 3 ≤ t) :
               rw [hQt, hord]
     _   = 1 := pow_orderOf_eq_one _
 
-/-! ## Step (5) — Wave 2F bridge bricks (`admissible ⇒ touchCount = 1`)
+/-! ## Step (5) — unit facts
 
 Auxiliary `IsUnit` facts about `(3 : ZMod (2^t))`, its inverse, and the
 paper touch residue `s_t t = -5 · 3⁻¹` cast back to `ZMod (2^t)`. These
-are the algebraic prerequisites for the Wave 2F bridge theorem
-`Collatz.Mixing.AdmissibleTailF01.touch_count_eq_one`. -/
+are used by `Collatz.Mixing.AdmissibleTailF01.touch_count_eq_one`. -/
 
 /-- `(3 : ZMod (2^t))` is a unit for `t ≥ 1`. Direct consequence of
 `Nat.Coprime 3 (2^t)` (since `gcd(3, 2) = 1`) and `ZMod.isUnit_iff_coprime`. -/
@@ -213,8 +205,7 @@ lemma isUnit_natCast_s_t {t : ℕ} (ht : 2 ≤ t) :
   have hneg5 : IsUnit (-5 : ZMod (2 ^ t)) := h5.neg
   exact hneg5.mul h3inv
 
-/-- **Bridge lemma (Wave 1 of S7.2 Path 1.algebraic).**
-Reformulation of the order fact in `Int.ModEq` shape consumed by
+/-- Reformulation of the order fact in `Int.ModEq` shape consumed by
 `Collatz.SEDT.Homogenization.homogenized_periodic_of_order_dvd`:
 `3 ^ (Q_t t) ≡ 1 (mod 2 ^ t)` as integers. -/
 theorem three_pow_Qt_modEq_one {t : ℕ} (ht : 3 ≤ t) :

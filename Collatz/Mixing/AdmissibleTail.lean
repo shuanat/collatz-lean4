@@ -1,66 +1,30 @@
 /-
-Collatz Conjecture: Paper Definition F.0.1 — admissible-tail predicate
-(**Wave 2E revision**, route α₃).
+Admissible-tail predicate (algebraic form of paper Definition F.0.1, revised).
 
-This module formalises the **algebraic core** of paper Definition F.0.1 in
-its **revised** form derived in Wave 2D. The previous "single-residue coset
-test on the homogenized entry residue" form (canonical paper F.0.1) was
-empirically shown to score at a 47% empirical hit rate (matches a 50/50
-baseline) on the late-window touchCount-equals-1 question; the Wave 2D
-reverse-engineering report identifies the **exact** algebraic predicate
-that is biconditionally equivalent to "exactly one touch in the late-regime
-window" on every plateau.
+Status (2026-10 review). Everything in this module is a statement about
+residues in `ZMod (2^t)`; it does **not** mention the Collatz orbit. In the paper
+the data `M_entry`, `v` come from the auxiliary sequence
+`a_k = 3^{k+1}(r₀ + 2) − 5·2^k` (and its odd parts), which is *not* the orbit
+numerator for `k ≥ 1` (see `Collatz/SEDT/AffineNumerator.lean`). Hence the
+predicate and the counting lemma built on it
+(`AdmissibleTailF01.touch_count_eq_one` in `AdmissibleTailBridge.lean`) are true
+algebra about that auxiliary data only; no statement about touches on actual
+orbits follows from them.
 
-  Reference: `collatz-verification/research/wave2-d10b-empirical/REPORT-
-  reverse-engineering.md`, especially §2 (the elementary derivation) and
-  §5.2 (the recommended Lean form).
+The predicate is
 
-The revised predicate is
+    AdmissibleTailF01 t M_entry v  ⇔  ∃ n, s_t = 3^n · (v + 3^t · M_entry)  in ZMod (2^t),
 
-    AdmissibleTailF01 t M_entry v
-      ⇔  ∃ n : ℕ, (s_t t) = (3 : ZMod (2^t)) ^ n * (v + 3^t * M_entry)
+i.e. `v + 3^t · M_entry` lies in the coset `s_t · ⟨3⟩` of `(ZMod (2^t))ˣ`, where
+`⟨3⟩` has order `Q_t = 2^{t−2}` for `t ≥ 3` (`Collatz.OrdFact.orderOf_three_eq_pow_two`).
 
-where
-
-* `M_entry := (M_{k_start}) mod 2^t` is the algebraic numerator residue at
-  the plateau entry (before the late-regime flush window of length `t`),
-* `v := (u_{k_start + t}) mod 2^t` is the per-plateau-anchored homogenizer
-  freeze value at the late-regime entry (purely multiplicative-by-3 from
-  there onwards),
-* `s_t t = -5 · 3⁻¹ (mod 2^t)` is the paper touch residue
-  (`Collatz.Epochs.s_t`),
-* `⟨3⟩ ⊂ (ZMod (2^t))ˣ` is the cyclic subgroup of order
-  `Q_t t = 2^(t-2)` (paper Lemma B.2 / `Collatz.OrdFact.three_pow_Qt_eq_one_zmod`).
-
-In paper-style coset notation the predicate reads
-
-    s_t · (v + 3^t · M_entry)⁻¹  ∈  ⟨3⟩
-
-(both forms are equivalent because `⟨3⟩` is closed under inversion).
-
-The predicate is exposed in the **paper-faithful, orbit-agnostic** form: it
-takes only the algebraic data `M_entry, v : ZMod (2^t)` and only fixes the
-algebraic shape of the revised F.0.1 coset condition. The orbit-side
-supplier (Wave 3) will instantiate `M_entry` and `v` from the actual
-Collatz orbit at the plateau entry — concretely from
-`(LocalAffinePairSemantics.M 0 - LocalAffinePairSemantics.u 0)` and
-`LocalAffinePairSemantics.u t`, projected into `ZMod (2^t)`.
-
-This file introduces:
-* `Collatz.Mixing.IsPowerOfThree` — membership in `⟨3⟩` viewed at the level
-  of residues in `ZMod (2^t)`,
-* `Collatz.Mixing.AdmissibleTailF01` — the revised F.0.1 predicate,
-* `AdmissibleTailF01_iff_exists_pow` — `Iff.rfl` unfolding,
-* `AdmissibleTailF01_witness_lt_Qt` — period-reduction of the witnessing
-  exponent to `[0, Q_t t)` using `Collatz.OrdFact.three_pow_Qt_eq_one_zmod`.
-
-A bridge to "late-window touchCount = 1" (Wave 2D §2 algebra) is documented
-here at the algebraic level; its full Lean discharge requires connecting
-`M_entry`/`v` to the actual orbit semantics in
-`Collatz.Mixing.TouchFrequencyHomogenization` and is tracked as a separate
-formal-first task (see Wave 2E summary). No `sorry`, no `axiom`, no proxy
-stubs are introduced here — every theorem below is intended to be
-axiom-clean.
+Contents:
+* `selected_segment_tail_touch` — the orbit touch predicate `T^[i+k] m ≡ s_t`
+  (mod `2^t`) in local coordinates (used by `AdmissibleTailBridge` and
+  `AggregateTouchRate`);
+* `IsPowerOfThree`, `AdmissibleTailF01`;
+* `AdmissibleTailF01_iff_exists_pow` (`Iff.rfl`);
+* `AdmissibleTailF01_witness_lt_Qt` — the exponent can be reduced below `Q_t`.
 -/
 
 import Mathlib.Tactic
@@ -71,64 +35,40 @@ import Collatz.Epochs.OrdFact
 
 namespace Collatz.Mixing
 
-/-- Membership in the cyclic subgroup `⟨3⟩` of `(ZMod (2^t))ˣ`, expressed at
-the level of residues: `x` is a power of `3` iff there exists `n : ℕ` with
-`(3 : ZMod (2^t)) ^ n = x`.
+/-- Touch predicate on the orbit of `m` in local coordinates starting at time
+`i`: `selected_segment_tail_touch m t i k ↔ T^[i+k] m ≡ s_t (mod 2^t)`. -/
+def selected_segment_tail_touch (m t i : ℕ) (k : ℕ) : Prop :=
+  Collatz.Epochs.selected_segment_t_touch m (i + k) t
 
-For `t ≥ 3`, `⟨3⟩` is exactly the order-`Q_t t` (= `2^(t-2)`) cyclic subgroup
-of `(ZMod (2^t))ˣ` (paper Lemma B.2 / `Collatz.OrdFact.orderOf_three_eq_pow_two`),
-so any `x : ZMod (2^t)` satisfying `IsPowerOfThree` is automatically a unit. -/
+instance selected_segment_tail_touch_decidable (m t i : ℕ) :
+    DecidablePred (selected_segment_tail_touch m t i) := by
+  intro k
+  dsimp [selected_segment_tail_touch, Collatz.Epochs.selected_segment_t_touch,
+    Collatz.Epochs.is_t_touch]
+  infer_instance
+
+/-- `x` is a power of `3` in `ZMod (2^t)`. For `t ≥ 3`, `⟨3⟩` has order
+`Q_t t = 2^(t-2)` (`Collatz.OrdFact.orderOf_three_eq_pow_two`). -/
 def IsPowerOfThree {t : ℕ} (x : ZMod (2 ^ t)) : Prop :=
   ∃ n : ℕ, (3 : ZMod (2 ^ t)) ^ n = x
 
-/-- **Paper Definition F.0.1 (revised, Wave 2E) — admissibility predicate
-(algebraic core).**
-
-A plateau is *F.0.1-admissible at level `t`* iff the algebraic invariant
-`v + 3^t · M_entry` lies in the coset `s_t · ⟨3⟩` of `(ZMod (2^t))ˣ`, where
-`M_entry := M_{k_start} mod 2^t`, `v := u_{k_start + t} mod 2^t` is the
-late-regime per-plateau homogenizer freeze value, and
-`s_t := -5 · 3⁻¹ mod 2^t`.
-
-Equivalently, in paper-style notation,
-    `s_t · (v + 3^t · M_entry)⁻¹ ∈ ⟨3⟩`.
-
-Wave 2D (`REPORT-reverse-engineering.md` §2) proves that this predicate is
-biconditionally equivalent to "the late-regime window
-`[k_start + t, k_start + t + Q_t)` contains exactly one touch
-`M_k ≡ s_t (mod 2^t)`" on every eligible plateau, and ablations confirm
-that the previous canonical paper F.0.1 (a coset test on `M_entry` alone,
-ignoring `v` and the `3^t`-rotation) is at the random baseline.
-
-This is the **paper-faithful, orbit-agnostic** form: the orbit-side
-supplier (future Wave 3 of `R-D10b`) instantiates `M_entry` and `v` from
-the real Collatz orbit at the plateau entry; here we only fix the
-algebraic shape of the revised F.0.1 coset condition. -/
+/-- Admissibility predicate (algebraic form of the revised Definition F.0.1):
+`v + 3^t · Mentry ∈ s_t · ⟨3⟩` in `ZMod (2^t)`. A statement about two residues;
+in the paper they are read off the auxiliary sequence `(a_k)`, not off the
+Collatz orbit (see the module docstring). -/
 def AdmissibleTailF01 (t : ℕ) (Mentry v : ZMod (2 ^ t)) : Prop :=
   ∃ n : ℕ, (Collatz.Epochs.s_t t : ZMod (2 ^ t)) =
     (3 : ZMod (2 ^ t)) ^ n * (v + (3 : ZMod (2 ^ t)) ^ t * Mentry)
 
-/-- **Power-form characterization (Wave 2E revision).** Direct unfolding of
-`AdmissibleTailF01`: an admissible plateau is exactly the data of a
-natural number `n` exhibiting
-
-    `s_t = 3^n · (v + 3^t · M_entry)`   in `ZMod (2^t)`.
-
-This makes the revised F.0.1 paper condition explicitly equivalent to the
-`s_t · (v + 3^t · M_entry)⁻¹ ∈ ⟨3⟩` paper-style statement. -/
+/-- Unfolding of `AdmissibleTailF01` (`Iff.rfl`). -/
 theorem AdmissibleTailF01_iff_exists_pow (t : ℕ) (Mentry v : ZMod (2 ^ t)) :
     AdmissibleTailF01 t Mentry v ↔
       ∃ n : ℕ, (Collatz.Epochs.s_t t : ZMod (2 ^ t)) =
         (3 : ZMod (2 ^ t)) ^ n * (v + (3 : ZMod (2 ^ t)) ^ t * Mentry) :=
   Iff.rfl
 
-/-- **Period bound on the witnessing exponent (Wave 2E revision).**
-
-If `t ≥ 3` and `AdmissibleTailF01 t Mentry v` holds, the witnessing exponent
-`n` in the power-form equation can always be chosen in the canonical range
-`[0, Q_t t)`. The reduction uses the order fact
-`Collatz.OrdFact.three_pow_Qt_eq_one_zmod` (paper Lemma B.2):
-`(3 : ZMod (2^t))^(Q_t t) = 1`. -/
+/-- For `t ≥ 3`, the witnessing exponent can be chosen in `[0, Q_t)`, because
+`3^{Q_t} = 1` in `ZMod (2^t)` (`Collatz.OrdFact.three_pow_Qt_eq_one_zmod`). -/
 theorem AdmissibleTailF01_witness_lt_Qt {t : ℕ} (ht : 3 ≤ t)
     {Mentry v : ZMod (2 ^ t)} (h : AdmissibleTailF01 t Mentry v) :
     ∃ n : ℕ, n < Collatz.Epochs.Q_t t ∧

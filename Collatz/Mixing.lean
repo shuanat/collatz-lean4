@@ -1,23 +1,10 @@
 /-
-Collatz Conjecture: Epoch-Based Deterministic Framework
-Mixing Theory Aggregator
-
-This module aggregates all mixing theory components from Appendix A.MIX:
-- Phase mixing analysis
-- Touch frequency analysis
-- Semigroup theory
+Mixing-layer aggregator. Contents (none of it is used by a convergence theorem):
+- `AdmissibleTail`, `AdmissibleTailBridge`: algebra in `ZMod (2^t)` about the
+  admissibility predicate (auxiliary-sequence data, not orbit data);
+- `AggregateTouchRate`: an unused open hypothesis on touch rates of
+  non-eventually-periodic orbits.
 -/
 import Collatz.Mixing.AdmissibleTail
-import Collatz.Mixing.Semigroup
-import Collatz.Mixing.PhaseMixing
-import Collatz.Mixing.TouchFrequency
-import Collatz.Mixing.TouchFrequencyLocal
-import Collatz.Mixing.TouchFrequencyHomogenization
-import Collatz.Mixing.TouchFrequencyBridge
+import Collatz.Mixing.AdmissibleTailBridge
 import Collatz.Mixing.AggregateTouchRate
-
--- This module aggregates all mixing theory definitions and properties from Appendix A.MIX
--- All definitions are available through their respective modules:
--- - Collatz.Mixing.Semigroup
--- - Collatz.Mixing.PhaseMixing
--- - Collatz.Mixing.TouchFrequency

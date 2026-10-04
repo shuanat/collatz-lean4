@@ -1,6 +1,9 @@
 /-
-Collatz Conjecture: Epoch-Based Deterministic Framework
-Foundations Core
+Foundations: the odd-step map `T(n) = (3n+1)/2^{ν₂(3n+1)}` (`collatz_step`), the
+exponent `e(n) = ν₂(3n+1)` (`step_type`), the depth `depth₋(n) = ν₂(n+1)`
+(`depth_minus`), and elementary one-step facts (oddness is preserved, the
+logarithmic growth bound `T(n) + 1 ≤ (3/2)(n + 1)`, and its iterate).
+`collatz_step` is the odd-step map, not the full mixed even/odd Collatz map.
 -/
 import Mathlib
 import Mathlib.Data.Nat.Factorization.Basic
@@ -20,14 +23,6 @@ def step_type (r : ℕ) : ℕ := Collatz.Arithmetic.e r
 /-- Odd-step Collatz map `T_odd(m) = (3m+1)/2^{e(m)}`. -/
 def collatz_step (r : ℕ) : ℕ := (3 * r + 1) / (2 ^ step_type r)
 
-/-- Odd-step operator. -/
-def collatz_step_odd (r : ℕ) : ℕ := if OddPred r then collatz_step r else r
-
-/-- Orbit iterator. -/
-def collatz_orbit (r : ℕ) : ℕ → ℕ := fun n => (collatz_step_odd^[n]) r
-
-lemma depth_minus_nonneg (r : ℕ) : depth_minus r ≥ 0 := Nat.zero_le _
-
 lemma depth_minus_zero : depth_minus 0 = 0 := by
   simp [depth_minus]
 
@@ -39,9 +34,6 @@ lemma depth_minus_odd_pos {r : ℕ} (h : OddPred r) : depth_minus r ≥ 1 := by
   have h_pos : r + 1 ≠ 0 := by omega
   simpa [depth_minus] using Nat.Prime.factorization_pos_of_dvd Nat.prime_two h_pos h_dvd
 
-lemma step_type_pos (r : ℕ) : step_type r ≥ 0 := by
-  exact Nat.zero_le _
-
 lemma step_type_odd_pos {r : ℕ} (h : OddPred r) : step_type r ≥ 1 := by
   have h_even : Even (3 * r + 1) := Collatz.Arithmetic.three_mul_odd_plus_one_even h
   obtain ⟨k, hk⟩ := h_even
@@ -51,10 +43,6 @@ lemma step_type_odd_pos {r : ℕ} (h : OddPred r) : step_type r ≥ 1 := by
   have h_pos : 3 * r + 1 ≠ 0 := by omega
   simpa [step_type, Collatz.Arithmetic.e] using
     Nat.Prime.factorization_pos_of_dvd Nat.prime_two h_pos h_dvd
-
-lemma collatz_step_odd_preserves_odd {r : ℕ} (h : OddPred r) :
-    collatz_step_odd r = collatz_step r := by
-  simp [collatz_step_odd, h]
 
 lemma collatz_step_is_odd {r : ℕ} : OddPred (collatz_step r) := by
   unfold collatz_step step_type
@@ -70,25 +58,23 @@ lemma odd_iterates_of_odd {r : ℕ} (h : OddPred r) :
   | succ k ih =>
       simpa [Function.iterate_succ_apply'] using collatz_step_is_odd (r := ((collatz_step^[k]) r))
 
-/-- The odd-step Collatz map is not pointwise nonincreasing on odd inputs:
-already `3 ↦ 5` is a strict growth step. This is a useful obstruction when
-separating honest filler-side value semantics from generic odd-orbit facts. -/
+/-- `T(3) = 5`: `ν₂(10) = 1`. Kernel proof via `Nat.factorization`. -/
 lemma collatz_step_three_eq_five : collatz_step 3 = 5 := by
-  native_decide
+  have h10 : (10 : ℕ).factorization 2 = 1 := by
+    rw [show (10 : ℕ) = 2 * 5 by norm_num,
+      Nat.factorization_mul (by norm_num) (by norm_num),
+      Finsupp.add_apply, Nat.Prime.factorization_self Nat.prime_two,
+      Nat.factorization_eq_zero_of_not_dvd (by norm_num)]
+  simp [collatz_step, step_type, Collatz.Arithmetic.e, h10]
 
-/-- Concrete strict-growth odd-step example showing that raw oddness of the
-orbit does not by itself force one-step nonincrease. Any stream-side filler
-monotonicity theorem must therefore use genuine extra semantics. -/
+/-- The odd-step map is not pointwise nonincreasing on odd inputs: `T(3) = 5`. -/
 theorem exists_odd_strict_growth_step : ∃ r : ℕ, OddPred r ∧ collatz_step r > r := by
   refine ⟨3, ?_, ?_⟩
   · norm_num
   · rw [collatz_step_three_eq_five]
     norm_num
 
-/-- Arithmetic one-step descent criterion for the odd-step Collatz map: once the
-local two-adic exponent is at least `2`, the normalized odd step cannot exceed
-its input. This is the exact bridge needed to turn filler-side `step_type ≥ 2`
-control into value-level nonincrease. -/
+/-- One-step descent: if `e(r) ≥ 2` then `T(r) ≤ r` (for odd `r`). -/
 theorem collatz_step_le_self_of_step_type_ge_two {r : ℕ}
     (hodd : OddPred r)
     (hstep : 2 ≤ step_type r) :
@@ -186,6 +172,8 @@ lemma iterate_log_delta_le_of_odd {r : ℕ} (h : OddPred r) :
         ring
       exact hsum.trans_eq hsucc
 
+/-- Logarithmic growth bound over `L` odd steps:
+`log₂(T^[i+L] m + 1) − log₂(T^[i] m + 1) ≤ L · log₂(3/2)`. -/
 theorem iterate_log_compression_of_odd_segment (m i L : ℕ) (hm : OddPred m) :
     (Real.log (((collatz_step^[i + L]) m : ℝ) + 1) -
         Real.log (((collatz_step^[i]) m : ℝ) + 1)) / Real.log 2 ≤
@@ -201,49 +189,5 @@ theorem iterate_log_compression_of_odd_segment (m i L : ℕ) (hm : OddPred m) :
     simpa [show i + L = L + i by omega, Function.iterate_add_apply] using hdelta
   have hdiv := div_le_div_of_nonneg_right hseg (le_of_lt hlog2)
   simpa [div_eq_mul_inv, mul_assoc, mul_left_comm, mul_comm] using hdiv
-
-lemma affine_iterate_identity (r_0 : ℕ) : collatz_orbit r_0 0 = r_0 := by
-  simp [collatz_orbit]
-
-lemma minimal_exponent_pinning (r_0 : ℕ) (k : ℕ) : r_0 ≤ r_0 + k := by
-  exact Nat.le_add_right r_0 k
-
-lemma lte_3k_minus_1 (k : ℕ) (hk : k ≥ 1) : 2 ≤ 3 * k - 1 := by
-  omega
-
-lemma step_type_classification (m : ℕ) : step_type m = Collatz.Arithmetic.e m := by
-  rfl
-
-lemma step_type_classification_ge_two (m : ℕ) : step_type m ≤ (3 * m + 1).factorization 2 := by
-  simp [step_type, Collatz.Arithmetic.e]
-
-lemma e1_block_bound_via_depth (r : ℕ) (t : ℕ) (ht : t = depth_minus r) : t ≤ depth_minus r := by
-  cases ht
-  exact le_rfl
-
-lemma e1_block_length_characterization (r : ℕ) (ℓ : ℕ) :
-    ℓ = depth_minus r → depth_minus r = ℓ := by
-  intro hℓ
-  simp [hℓ]
-
-abbrev Depth := depth_minus
-abbrev StepType := step_type
-abbrev CollatzStep := collatz_step
-abbrev CollatzStepOdd := collatz_step_odd
-abbrev Orbit := collatz_orbit
-
-abbrev DepthNonneg := depth_minus_nonneg
-abbrev DepthZero := depth_minus_zero
-abbrev DepthOddPos {r : ℕ} (h : OddPred r) := depth_minus_odd_pos h
-abbrev StepTypePos := step_type_pos
-abbrev StepOddPreservesOdd {r : ℕ} (h : OddPred r) := collatz_step_odd_preserves_odd h
-
-abbrev AffineIdentity := affine_iterate_identity
-abbrev MinExpPinning := minimal_exponent_pinning
-abbrev LTE3kMinus1 := lte_3k_minus_1
-abbrev StepTypeClass := step_type_classification
-abbrev StepTypeClassGeTwo := step_type_classification_ge_two
-abbrev E1BlockBound := e1_block_bound_via_depth
-abbrev E1BlockLength := e1_block_length_characterization
 
 end Collatz.Foundations

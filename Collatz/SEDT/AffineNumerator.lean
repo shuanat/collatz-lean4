@@ -1,36 +1,19 @@
 /-
-Collatz Conjecture: SEDT Deep Formalization — Affine Numerator (Appendix D foundations)
+The auxiliary sequence `N_k(r₀) = 3^{k+1}(r₀ + 2) − 5·2^k` (paper Appendix D.0).
 
-This module is the first concrete brick of the multi-session proof project that
-aims to close `AperiodicSelectedLongEpochResidual` and `AperiodicFillDriftResidual`
-without axioms. See `c:\Users\anato\.cursor\plans\sedt_deep_formalization_d8eaf9c1.plan.md`.
+Status (2026-10 review). `N_k` depends only on `r₀` and satisfies
+`N_{k+1} = 3 N_k + 5·2^k`. It agrees with the orbit numerator only at `k = 0`
+(`N_0 = 3r₀ + 1`). For `k ≥ 1` it is **not** the orbit numerator: if
+`e(r_0) = … = e(r_{k−1}) = 1` the correct identity is
+`2^k (3 r_k + 1) = 3^{k+1}(r₀ + 1) − 2^{k+1}` (e.g. `r₀ = 7`, `k = 1`:
+`2(3·11 + 1) = 68` but `N_1 = 71`). Moreover, for odd `r₀` and `k ≥ 1`, `N_k` is
+odd, so `d_k = ν₂(N_k) = 0` and the "diagonal" case `d_k = k` never occurs.
 
-Content of this file:
-
-* Definition of the algebraic numerator from Appendix D.0:
-
-    `N_k_int r₀ k = 3^(k+1) * (r₀ + 2) - 5 * 2^k`
-
-  working in `ℤ` to avoid `Nat`-subtraction underflow at small `k`.
-
-* The exact recurrence (Sublemma D.8):
-
-    `N_k_int r₀ (k+1) = 3 * N_k_int r₀ k + 5 * 2^k`
-
-  proved by `ring` after expanding the definition.
-
-* Strict positivity for any `r₀ ≥ 1`:
-
-    `0 < N_k_int r₀ k`
-
-  proved by induction on `k` from `9 * 3^k > 5 * 2^k` for `k ≥ 0` and
-  `(r₀ + 2) ≥ 3`.
-
-These are real proved theorems with **no `sorry`**, **no `axiom`**, **no `admit`**,
-and they do not depend on any open SEDT residual. They are the algebraic
-foundation on top of which the Appendix D / E machinery (case-split on `d_k`,
-`+5` shift formula, touch residue, tail homogenization, multibit bonus, linear
-surplus) will be built in subsequent sessions.
+All lemmas below are correct algebra about this auxiliary sequence
+(`d_k := ν₂(N_k)`, `M_k := N_k / 2^{d_k}`), including the case split on `d_k`
+versus `k` (paper Sublemma D.8), the `+5` formula on the diagonal (paper
+Lemma D.1 A) and the touch residue (D.1 B). They are **not** statements about
+Collatz orbits, and no orbit-level consequence is derived from them.
 -/
 
 import Mathlib.Tactic
@@ -39,9 +22,8 @@ namespace Collatz.SEDT.AffineNumerator
 
 open Int
 
-/-- The exact algebraic numerator of Appendix D.0:
-`N_k(r₀) := 3^(k+1) (r₀ + 2) - 5 · 2^k`, working in `ℤ` to avoid `Nat`
-subtraction underflow at small `k`. -/
+/-- The auxiliary sequence `N_k(r₀) := 3^(k+1) (r₀ + 2) - 5 · 2^k` (in `ℤ`).
+Not the orbit numerator for `k ≥ 1` (see the module docstring). -/
 def N_k_int (r₀ : ℤ) (k : ℕ) : ℤ :=
   3 ^ (k + 1) * (r₀ + 2) - 5 * (2 : ℤ) ^ k
 
@@ -57,9 +39,7 @@ example : N_k_int 1 0 = 4 := by
 example : N_k_int 1 1 = 17 := by
   simp [N_k_int]
 
-/-- **Sublemma D.8 (recurrence).** The algebraic numerator satisfies the
-exact integer recurrence `N_{k+1} = 3 N_k + 5 · 2^k`. This is the
-foundational identity from Appendix D.0 / D.8. -/
+/-- Recurrence `N_{k+1} = 3 N_k + 5 · 2^k` of the auxiliary sequence. -/
 theorem N_k_int_recurrence (r₀ : ℤ) (k : ℕ) :
     N_k_int r₀ (k + 1) = 3 * N_k_int r₀ k + 5 * (2 : ℤ) ^ k := by
   unfold N_k_int
@@ -94,9 +74,7 @@ lemma five_pow_two_lt_nine_pow_three_int (k : ℕ) :
               exact this
         _ = 9 * 3 ^ (k + 1) := by rw [h3]; ring
 
-/-- **Strict positivity.** For any starting odd value `r₀ ≥ 1` (in `ℤ`),
-the affine numerator stays strictly positive at every index `k`. The
-proof bounds `3^(k+1) (r₀+2) ≥ 9 · 3^k > 5 · 2^k`. -/
+/-- `N_k(r₀) > 0` for `r₀ ≥ 1`, since `3^(k+1) (r₀+2) ≥ 9 · 3^k > 5 · 2^k`. -/
 theorem N_k_int_pos (r₀ : ℤ) (hr : 1 ≤ r₀) (k : ℕ) :
     0 < N_k_int r₀ k := by
   unfold N_k_int
@@ -113,9 +91,7 @@ theorem N_k_int_pos (r₀ : ℤ) (hr : 1 ≤ r₀) (k : ℕ) :
     linarith [this]
   linarith [hslack, hlower]
 
-/-- The natural number underlying `N_k_int r₀ k` for `r₀ ≥ 1`. This is the
-quantity on which `d_k`, `M_k` and the rest of Appendix D's bookkeeping
-will eventually be defined in subsequent sessions. -/
+/-- `N_k` as a natural number (for `r₀ ≥ 1`). -/
 noncomputable def N_k_nat (r₀ : ℤ) (k : ℕ) : ℕ := (N_k_int r₀ k).toNat
 
 lemma N_k_nat_eq (r₀ : ℤ) (hr : 1 ≤ r₀) (k : ℕ) :
@@ -133,8 +109,7 @@ lemma N_k_nat_pos (r₀ : ℤ) (hr : 1 ≤ r₀) (k : ℕ) : 0 < N_k_nat r₀ k 
 lemma N_k_nat_ne_zero (r₀ : ℤ) (hr : 1 ≤ r₀) (k : ℕ) : N_k_nat r₀ k ≠ 0 :=
   (N_k_nat_pos r₀ hr k).ne'
 
-/-- **Sublemma D.8 — recurrence at the natural-number level.** Lifts
-`N_k_int_recurrence` through `Int.toNat`, using strict positivity. -/
+/-- The recurrence at the natural-number level. -/
 lemma N_k_nat_recurrence (r₀ : ℤ) (hr : 1 ≤ r₀) (k : ℕ) :
     N_k_nat r₀ (k + 1) = 3 * N_k_nat r₀ k + 5 * 2 ^ k := by
   have hint : N_k_int r₀ (k + 1) = 3 * N_k_int r₀ k + 5 * (2 : ℤ) ^ k :=
@@ -150,13 +125,12 @@ lemma N_k_nat_recurrence (r₀ : ℤ) (hr : 1 ≤ r₀) (k : ℕ) :
     rw [eR]
   exact_mod_cast hcast
 
-/-- The 2-adic valuation `d_k(r₀)` of the affine numerator. For
-`r₀ ≥ 1` this is well-defined since `N_k_nat r₀ k > 0`. -/
+/-- `d_k = ν₂(N_k)` (auxiliary sequence). -/
 noncomputable def d_k (r₀ : ℤ) (k : ℕ) : ℕ :=
   (N_k_nat r₀ k).factorization 2
 
-/-- The odd part `M_k(r₀)` of the affine numerator: by definition
-`N_k_nat = 2^{d_k} * M_k`. -/
+/-- Odd part `M_k = N_k / 2^{d_k}` (auxiliary sequence; not an orbit value for
+`k ≥ 1`). -/
 noncomputable def M_k (r₀ : ℤ) (k : ℕ) : ℕ :=
   N_k_nat r₀ k / 2 ^ d_k r₀ k
 
@@ -190,7 +164,7 @@ lemma factorization_two_of_pow_mul_odd (d : ℕ) {m : ℕ}
       Nat.factorization_eq_zero_of_not_dvd (Odd.not_two_dvd_nat hodd),
       Nat.add_zero]
 
-/-- **Sublemma D.8, case `d_k < k` (sub-diagonal).** The 2-adic
+/-- Case `d_k < k` (auxiliary sequence). The 2-adic
 valuation is preserved by the recurrence:
 
   `d_{k+1} = d_k`  whenever `d_k < k`.
@@ -228,7 +202,7 @@ theorem d_k_succ_of_lt (r₀ : ℤ) (hr : 1 ≤ r₀) {k : ℕ}
   rw [hsplit]
   exact factorization_two_of_pow_mul_odd d hpos_sum hodd_sum
 
-/-- **Sublemma D.8, case `d_k > k` (super-diagonal).** The next
+/-- Case `d_k > k` (auxiliary sequence). The next
 2-adic valuation lands exactly at the diagonal index `k`:
 
   `d_{k+1} = k`  whenever `k < d_k`.
@@ -266,7 +240,8 @@ theorem d_k_succ_of_gt (r₀ : ℤ) (hr : 1 ≤ r₀) {k : ℕ}
   rw [hsplit]
   exact factorization_two_of_pow_mul_odd k hpos_sum hodd_sum
 
-/-- **Sublemma D.8, diagonal case `d_k = k`.** The next 2-adic
+/-- Case `d_k = k` (auxiliary sequence; for odd `r₀` this happens only at
+`k = 0`). The next 2-adic
 valuation jumps by the `+5`-shift contribution:
 
   `d_{k+1} = k + ν₂(3 M_k + 5)`.
@@ -292,14 +267,13 @@ theorem d_k_succ_of_eq (r₀ : ℤ) (hr : 1 ≤ r₀) {k : ℕ}
   rw [hsplit, Nat.factorization_mul hpk hpos_sum.ne',
       Finsupp.add_apply, Nat.factorization_pow_self Nat.prime_two]
 
-/-- **Lemma D.1 Part A — `+5` shift formula at the orbit (`M`) level.**
-On the diagonal `d_k = k`, the next normalized odd part satisfies the
-canonical `+5` recurrence
+/-- `+5` formula for the auxiliary sequence (paper Lemma D.1 A, which the paper
+wrongly reads as an orbit statement). On the diagonal `d_k = k`, the next odd
+part satisfies
 
   `M_{k+1} = (3 M_k + 5) / 2^{ν₂(3 M_k + 5)}`,
 
-i.e. it is the odd part of `3 M_k + 5`. This is the precise
-formulation used as input to the touch-residue lemma (Part B). -/
+i.e. it is the odd part of `3 M_k + 5`. -/
 theorem M_k_succ_of_eq (r₀ : ℤ) (hr : 1 ≤ r₀) {k : ℕ}
     (h : d_k r₀ k = k) :
     M_k r₀ (k + 1)
@@ -328,15 +302,12 @@ theorem M_k_succ_of_eq (r₀ : ℤ) (hr : 1 ≤ r₀) {k : ℕ}
   rw [show (3 * M + 5) = 2 ^ e * M_k r₀ (k + 1) from hcancel.symm,
       Nat.mul_div_cancel_left _ hp2e_pos]
 
-/-! ### Lemma D.1 Part B — Touch residue
+/-! ### Touch residue (pure arithmetic)
 
-The condition `ν₂(3 M_k + 5) ≥ t`, i.e. `2^t ∣ 3 M_k + 5`, depends only
-on the residue class of `M_k` modulo `2^t`. Moreover, for every level
-`t` there is a unique solution residue `s_t < 2^t` (constructed by
-Hensel lifting). -/
+For any natural `M`, the condition `2^t ∣ 3M + 5` depends only on `M mod 2^t`,
+and there is a residue `s < 2^t` satisfying it. -/
 
-/-- **Lemma D.1 Part B — equivalence form.** The 2-adic touch
-condition `2^t ∣ 3 M + 5` depends only on `M mod 2^t`. -/
+/-- `2^t ∣ 3 M + 5` depends only on `M mod 2^t`. -/
 theorem touch_residue_iff_modEq (t : ℕ) {M M' : ℕ}
     (h : M ≡ M' [MOD 2 ^ t]) :
     (2 ^ t ∣ 3 * M + 5) ↔ (2 ^ t ∣ 3 * M' + 5) := by
@@ -345,12 +316,7 @@ theorem touch_residue_iff_modEq (t : ℕ) {M M' : ℕ}
   rw [← Nat.modEq_zero_iff_dvd, ← Nat.modEq_zero_iff_dvd]
   exact ⟨h5.symm.trans, h5.trans⟩
 
-/-- **Lemma D.1 Part B — existence (Hensel lifting).** For every level
-`t`, there exists a residue `s < 2^t` such that `2^t ∣ 3 s + 5`.
-
-This is the canonical "touch residue": every `M ≡ s (mod 2^t)`
-triggers a length-`t` touch, and conversely every touch lies in this
-residue class (by `touch_residue_iff_modEq`). -/
+/-- For every `t` there is `s < 2^t` with `2^t ∣ 3 s + 5` (Hensel lifting). -/
 theorem exists_touch_residue (t : ℕ) :
     ∃ s : ℕ, s < 2 ^ t ∧ 2 ^ t ∣ (3 * s + 5) := by
   induction t with
@@ -376,33 +342,13 @@ theorem exists_touch_residue (t : ℕ) :
             linarith [hsum]
           rw [hexpand, hc', hpow_succ]; ring
 
-/-! ### Sublemma D.10 — algebraic carry brick (Wave 2A substep E.2)
+/-! ### Exact odd-part recurrences off the diagonal (auxiliary sequence)
 
-Paper Sublemma D.10 (`appendices/pdf-content/D-leverage.md` L466–L472) states that
-on a plateau of the minimal term in `S_k`, for any fixed `t ≥ 1`,
-`M_{k+1} ≡ 3 M_k + c_k (mod 2^t)` with `c_k := 5 · 2^{k - d_k} (mod 2^t)`,
-periodic of period dividing `2^{t-2}`.
+From `N_{k+1} = 2^{d_k} (3 M_k + 5 · 2^{k - d_k})` (if `d_k ≤ k`) one reads off
+`M_{k+1}` exactly when `d_k < k`, and similarly when `d_k > k`. These are
+statements about `(N_k)`, not about orbit values. -/
 
-The paper proof reduces `N_{k+1} = 2^{d_k} (3 M_k + 5 · 2^{k - d_k})` modulo
-`2^{d_k + t}` and divides by `2^{d_k}`, valid for `d_k ≤ k`. On the algebraic
-side this splits cleanly into two cases:
-
-* `d_k < k` (sub-diagonal): the inner factor `3 M_k + 5 · 2^{k - d_k}` is
-  already odd, so it *equals* `M_{k+1}` exactly, and the `Int.ModEq` form
-  follows trivially.
-* `d_k > k` (super-diagonal): the analogous inner factor `3 · 2^{d_k-k} M_k + 5`
-  is odd and equals `M_{k+1}` exactly.
-
-The diagonal case `d_k = k` is handled by `M_k_succ_of_eq` above and
-*does not* admit a simple linear-with-carry `Int.ModEq` form — it carries
-the `+5`-shift jump captured separately by `d_k_succ_of_eq`.
-
-Periodicity of the carry `(c_k)` and the orbit-side connection (plateau
-of the minimal term in `S_k`) are *not* part of this brick: they require
-plateau control that the algebraic numerator alone does not see.
--/
-
-/-- **Sublemma D.10 (sub-diagonal branch, exact form).** When the
+/-- Case `d_k < k` (auxiliary sequence): when the
 2-adic valuation lags behind the index (`d_k r₀ k < k`), the next
 normalized odd part satisfies the **exact** linear-with-carry equality
 
@@ -430,7 +376,7 @@ theorem M_k_succ_of_lt (r₀ : ℤ) (hr : 1 ≤ r₀) {k : ℕ}
   have hp2d : (0 : ℕ) < 2 ^ d := by positivity
   exact Nat.eq_of_mul_eq_mul_left hp2d hdec_k1
 
-/-- **Sublemma D.10 (super-diagonal branch, exact form).** When the
+/-- Case `d_k > k` (auxiliary sequence): when the
 2-adic valuation is ahead of the index (`k < d_k r₀ k`), the next
 normalized odd part satisfies the **exact** equality
 
@@ -458,19 +404,8 @@ theorem M_k_succ_of_gt (r₀ : ℤ) (hr : 1 ≤ r₀) {k : ℕ}
   have hp2k : (0 : ℕ) < 2 ^ k := by positivity
   exact Nat.eq_of_mul_eq_mul_left hp2k hdec_k1
 
-/-- **Sublemma D.10 — algebraic `Int.ModEq` carry brick (sub-diagonal
-branch).** Lifting `M_k_succ_of_lt` to integer congruences: at every
-level `t ≥ 0`,
-
-  `M_{k+1} ≡ 3 M_k + 5 · 2^{k - d_k}  (mod 2^t)`,
-
-i.e. the next odd part agrees with `3 M_k` plus the algebraic carry
-`c_k := 5 · 2^{k - d_k}` modulo `2^t`. This is the Lean-formalized
-honest leaf of paper Sublemma D.10 on the sub-diagonal branch.
-
-Periodicity of `(c_k)` and the orbit-side plateau hypothesis remain
-open as separate bricks; this theorem captures the algebraic recurrence
-form only. -/
+/-- Congruence form of `M_k_succ_of_lt`: for `d_k < k`,
+`M_{k+1} ≡ 3 M_k + 5 · 2^{k - d_k} (mod 2^t)` (auxiliary sequence). -/
 theorem M_k_ModEq_succ_of_lt (r₀ : ℤ) (hr : 1 ≤ r₀) {k t : ℕ}
     (h : d_k r₀ k < k) :
     ((M_k r₀ (k + 1) : ℤ))

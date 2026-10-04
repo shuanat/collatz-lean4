@@ -8,15 +8,12 @@ def Cycle.is_mixed (c : Cycle) : Prop :=
   (∃ i : ℕ, i < Nat.succ c.len ∧ Collatz.Foundations.step_type (cycle_node c i) = 1) ∧
   (∃ j : ℕ, j < Nat.succ c.len ∧ 2 ≤ Collatz.Foundations.step_type (cycle_node c j))
 
-theorem no_mixed_cycles (c : Cycle) (hpure : c.is_pure_e1) : ¬c.is_mixed := by
+/-- Definitional exclusivity: a pure `e = 1` cycle is not mixed. (This says
+nothing about the existence of mixed cycles.) -/
+theorem not_mixed_of_pure_e1 (c : Cycle) (hpure : c.is_pure_e1) : ¬c.is_mixed := by
   intro hmixed
   rcases hmixed.2 with ⟨j, hj, hge2⟩
   have h1 : Collatz.Foundations.step_type (cycle_node c j) = 1 := hpure j hj
   omega
-
-lemma mixed_cycles_negative_drift (c : Cycle) (h : c.is_mixed) :
-    ∃ δ : ℝ, δ < 0 ∧ δ = -1 := by
-  have _ := h.1
-  exact ⟨-1, by norm_num, rfl⟩
 
 end Collatz.CycleExclusion

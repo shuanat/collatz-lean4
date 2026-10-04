@@ -4,6 +4,21 @@ import Collatz.SEDT.Core
 
 namespace Collatz.CycleExclusion
 
+/-- `1` is a fixed point of the odd-step map: `T(1) = (3·1+1)/2^2 = 1`.
+Proved by unfolding the 2-adic valuation of `4`. -/
+theorem collatz_step_one : Collatz.Foundations.collatz_step 1 = 1 := by
+  have h4 : (4 : ℕ).factorization 2 = 2 := by
+    rw [show (4 : ℕ) = 2 ^ 2 by norm_num, Nat.factorization_pow]
+    simp [Nat.Prime.factorization_self Nat.prime_two]
+  simp [Collatz.Foundations.collatz_step, Collatz.Foundations.step_type,
+    Collatz.Arithmetic.e, h4]
+
+/-- Every iterate of the odd-step map fixes `1`. -/
+theorem iterate_collatz_step_one (k : ℕ) : (Collatz.Foundations.collatz_step^[k]) 1 = 1 :=
+  Function.iterate_fixed collatz_step_one k
+
+/-- A cycle object: `len + 1` nodes indexed by `Fin (len + 1)`. No dynamics are
+built in; see `is_valid_cycle`. -/
 structure Cycle where
   len : ℕ
   atIdx : Fin (Nat.succ len) → ℕ
@@ -56,6 +71,19 @@ lemma cycle_zero_is_one {c : Cycle} (hnorm : is_normalized_cycle c) : cycle_node
 lemma cycle_wrap_step {c : Cycle} (hvalid : is_valid_cycle c) :
     cycle_node c 0 = Collatz.Foundations.collatz_step (cycle_node c c.len) :=
   hvalid.2
+
+/-- A single repetition `T^[k+p](m) = T^[k](m)` with `p > 0` already yields a
+periodic-tail witness (determinism of the odd-step map). -/
+def OrbitPeriodicTailWitness.ofIterateEq {m : ℕ} (k p : ℕ) (hp : 0 < p)
+    (hkp : (Collatz.Foundations.collatz_step^[k + p]) m =
+      (Collatz.Foundations.collatz_step^[k]) m) :
+    OrbitPeriodicTailWitness m where
+  start := k
+  period := p
+  period_pos := hp
+  periodic := fun i => by
+    rw [show k + i + p = i + (k + p) by omega, Function.iterate_add_apply, hkp,
+      ← Function.iterate_add_apply, show i + k = k + i by omega]
 
 lemma orbit_periodic_tail_period_one_or_gt_one
     {m : ℕ} (hw : OrbitPeriodicTailWitness m) :

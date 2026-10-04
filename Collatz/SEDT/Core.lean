@@ -3,6 +3,25 @@ import Mathlib.Analysis.SpecialFunctions.Log.Basic
 import Collatz.Foundations.Core
 import Collatz.Epochs.Core
 
+/-!
+# SEDT constants and the envelope expression
+
+Definitions of the constants `α, β₀, C, L₀, ε` and of the expression
+`sedt_envelope t U β L = −ε(t,U,β)·L + β·C(t,U)` from paper Appendix E, plus
+elementary facts about them (`1 < α < 2` for `t ≥ 3`, `β₀ > 0`, `ε > 0` for
+`β > β₀`).
+
+Status (2026-10 review): the paper's Theorem E.2 ("SEDT": the potential change
+over every long epoch is at most `sedt_envelope`) is false as stated and is
+NOT formalized; it appears in this library only as an explicit hypothesis
+(`orbit_epoch_sedt_envelope`, `Convergence/Coercivity.lean`), which is
+contradictory on every long-epoch stream of an odd orbit
+(`Collatz.Convergence.false_of_orbit_epoch_sedt_envelope`). The placeholder
+lemmas formerly in this module and in `SEDT/Theorems.lean`, `SEDT/Axioms.lean`
+(e.g. `sedt_full_bound_technical`, `touch_provides_onebit_bonus`,
+`period_sum_with_density_negative`) were deleted.
+-/
+
 namespace Collatz.SEDT
 
 open Collatz.Epochs (Q_t)
@@ -16,27 +35,16 @@ noncomputable def C (t U : ℕ) : ℝ := (2^(t + 1) + 3 * t + 3 * U : ℝ)
 
 def L₀ (t U : ℕ) : ℕ := 2^(t + U) * Q_t (t + U)
 
-def K_glue (t : ℕ) : ℕ := max (2 * Q_t t) (3 * t)
-
 noncomputable def ε (t U : ℕ) (β : ℝ) : ℝ := β * (2 - α t U) - Real.log (3 / 2) / Real.log 2
 
 noncomputable def sedt_envelope (t : ℕ) (U : ℕ) (β : ℝ) (L : ℕ) : ℝ :=
   -(ε t U β) * (L : ℝ) + β * C t U
-
-def sedt_negativity_condition (t : ℕ) (U : ℕ) (β : ℝ) : Prop := ε t U β > 0
-
-def sedt_parameter_valid (t U : ℕ) (β : ℝ) : Prop := β > β₀ t U
 
 noncomputable def augmented_potential (n : ℕ) (β : ℝ) : ℝ :=
   Real.log (n + 1) / Real.log 2 + β * (Collatz.Foundations.depth_minus n : ℝ)
 
 noncomputable def potential_change (start_val end_val : ℕ) (β : ℝ) : ℝ :=
   augmented_potential end_val β - augmented_potential start_val β
-
-structure SEDTEpoch where
-  length : ℕ
-  head_overhead : ℝ
-  boundary_overhead : ℝ
 
 lemma alpha_gt_one (t U : ℕ) : α t U > 1 := by
   unfold α
@@ -94,52 +102,24 @@ lemma epsilon_pos (t U : ℕ) (β : ℝ)
     simpa [hcancel] using hβmul
   linarith
 
-lemma two_mul_le_two_pow (t : ℕ) (_ht : t ≥ 3) : 2 * t ≤ 2^t + 2 * t := by
-  exact Nat.le_add_left _ _
+/-- Exact split of the change of `augmented_potential` into a logarithmic part
+and a depth part. -/
+lemma potential_change_eq_log_part_plus_depth_part
+    (startVal endVal : ℕ) (β : ℝ) :
+    potential_change startVal endVal β =
+      (Real.log (endVal + 1) - Real.log (startVal + 1)) / Real.log 2 +
+        β * (((Collatz.Foundations.depth_minus endVal : ℝ) -
+          (Collatz.Foundations.depth_minus startVal : ℝ))) := by
+  unfold potential_change augmented_potential
+  ring_nf
 
-lemma max_K_glue_le_pow_two (t : ℕ) (_ht : t ≥ 4) :
-    (K_glue t : ℝ) ≤ ((2 * Q_t t + 3 * t : ℕ) : ℝ) := by
-  unfold K_glue
-  have h1 : 2 * Q_t t ≤ 2 * Q_t t + 3 * t := Nat.le_add_right _ _
-  have h2 : 3 * t ≤ 2 * Q_t t + 3 * t := Nat.le_add_left _ _
-  exact_mod_cast ((max_le_iff).2 ⟨h1, h2⟩)
-
-lemma sedt_overhead_bound (t U : ℕ) (β : ℝ) :
-  abs (β * C t U) ≤ abs β * abs (C t U) := by
-  simp [abs_mul]
-
-lemma t_log_bound_for_sedt (t : ℕ) (_ht : t ≥ 3) :
-    0 ≤ (t : ℝ) * Real.log (3 / 2) / Real.log 2 := by
-  have h1 : 0 ≤ (t : ℝ) := by exact_mod_cast (Nat.zero_le t)
-  have h2 : 0 ≤ Real.log (3 / 2) := by
-    have : (1 : ℝ) ≤ 3 / 2 := by norm_num
-    exact Real.log_nonneg this
-  have h3 : 0 ≤ Real.log 2 := by
-    have : (1 : ℝ) ≤ 2 := by norm_num
-    exact Real.log_nonneg this
-  positivity
-
-lemma sedt_full_bound_technical (_t _U : ℕ) (_β ΔV_head drift_per_step ΔV_boundary : ℝ) (_L : ℕ)
-  (_ht : _t ≥ 3) (_hU : _U ≥ 1) (_hβ_ge_one : _β ≥ 1)
-  (_h_head : abs ΔV_head ≤ _β * (2^_t : ℝ) + (_t : ℝ) * Real.log (3/2) / Real.log 2)
-  (_h_drift_neg : drift_per_step ≤ -(ε _t _U _β))
-  (_h_boundary : abs ΔV_boundary ≤ _β * (K_glue _t : ℝ)) :
-  abs ΔV_head ≤ _β * (2^_t : ℝ) + (_t : ℝ) * Real.log (3/2) / Real.log 2 ∧
-  abs ΔV_boundary ≤ _β * (K_glue _t : ℝ) := by
-  exact ⟨_h_head, _h_boundary⟩
-
-lemma touch_provides_onebit_bonus (n : ℕ) (β : ℝ) :
-    augmented_potential n β - Real.log (n + 1) / Real.log 2 =
-      β * (Collatz.Foundations.depth_minus n : ℝ) := by
-  simp [augmented_potential]
-
-noncomputable abbrev SlopeParam := α
-noncomputable abbrev NegativityThreshold := β₀
-noncomputable abbrev DriftDiscrepancy := C
-abbrev LongEpochThreshold := L₀
-abbrev GlueConstant := K_glue
-noncomputable abbrev DriftRate := ε
-noncomputable abbrev SEDTEnvelope := sedt_envelope
-noncomputable abbrev AugmentedPotential := augmented_potential
+/-- Rewriting of the SEDT envelope as `L·log₂(3/2) + β((α − 2)L + C)`. -/
+lemma sedt_envelope_eq_log_depth_form
+    (t U : ℕ) (β : ℝ) (L : ℕ) :
+    sedt_envelope t U β L =
+      (L : ℝ) * (Real.log (3 / 2) / Real.log 2) +
+        β * ((α t U - 2) * (L : ℝ) + C t U) := by
+  unfold sedt_envelope ε
+  ring
 
 end Collatz.SEDT
