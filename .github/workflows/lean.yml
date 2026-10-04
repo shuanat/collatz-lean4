@@ -59,8 +59,10 @@ jobs:
 
       - name: Paper-label mapping gate
         run: |
-          rg -n "D.1|E.2|F.6|F.7|G.5|H.main|I.1" "Collatz/Documentation/PaperCodeMapping.lean" > /dev/null
-          rg -n "#lem:D1|#thm:E2|#thm:F6|#cor:F7|#thm:G5|#thm:Hmain|#thm:I1" "../collatz-paper/paper/src/md/appendices/internal/INDEX.md" > /dev/null
+          # The mapping file must still mention every paper result it tracks.
+          # (The paper lives in a separate private repository that is not checked out
+          # here; its anchors are checked locally by the workspace lint hook.)
+          grep -Eq "D\.1|E\.2|F\.6|F\.7|G\.5|H\.main|I\.1" Collatz/Documentation/PaperCodeMapping.lean
 
       - name: Generate CI summary
         if: always()
