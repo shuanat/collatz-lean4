@@ -4,9 +4,8 @@ import Collatz.Convergence.Coercivity
 import Collatz.Convergence.FixedPoints
 import Collatz.Convergence.NoAttractors
 import Collatz.CycleExclusion.Main
+import Collatz.CycleExclusion.PeriodicTailBridge
 import Collatz.Epochs.LongEpochs
-import Collatz.Epochs.LongEpochs
-import Collatz.Convergence.Coercivity
 
 namespace Collatz.Convergence
 
@@ -20,6 +19,50 @@ def enters_trivial_cycle (n : ℕ) : Prop :=
 def periodic_orbit_bridge_contract (n : ℕ) : Prop :=
   Collatz.CycleExclusion.periodic_tail_cycle_bridge n ∧
     (∀ x : ℕ, Collatz.Foundations.collatz_step x = x → 3 * x + 1 = 4 * x)
+
+/-- Reduction of the periodic-side bridge contract to the explicit residual
+`OrbitNoNontrivialPeriodicTail n`. The fixed-point canonization clause is
+discharged unconditionally by `collatz_step_fixed_point_canonical`; only the
+"no nontrivial periodic tail in the orbit of `n`" clause remains as the
+honest open mathematical residual exposed by the cycle-exclusion architecture.
+-/
+theorem periodic_orbit_bridge_contract_of_no_nontrivial_periodic_tail
+    (n : ℕ) (hno : Collatz.CycleExclusion.OrbitNoNontrivialPeriodicTail n) :
+    periodic_orbit_bridge_contract n :=
+  ⟨Collatz.CycleExclusion.periodic_tail_cycle_bridge_of_no_nontrivial_periodic_tail
+      n hno,
+   fun x hx => collatz_step_fixed_point_canonical x hx⟩
+
+/-- Periodic-side bridge contract from the repaired raw-cycle constructor: once
+the orbit-derived cycle carried by every period-`> 1` tail satisfies the
+H-level exclusion premises, the remaining period-1 branch is handled by the
+fixed-point canonization theorem exactly as before. -/
+theorem periodic_orbit_bridge_contract_of_cycle_premises_source
+    (n : ℕ)
+    (hsource :
+      Collatz.CycleExclusion.PeriodicTailCycleExclusionPremisesSource n) :
+    periodic_orbit_bridge_contract n :=
+  ⟨Collatz.CycleExclusion.periodic_tail_cycle_bridge_of_constructed_cycle_premises
+      n hsource,
+   fun x hx => collatz_step_fixed_point_canonical x hx⟩
+
+/-- Minimal honest periodic residual for the current production proof chain.
+Under the present cycle interface, this is exactly the assertion that the odd
+orbit of `n` has no periodic tail of period strictly greater than `1`. -/
+abbrev PeriodicConvergenceResidual (n : ℕ) : Prop :=
+  Collatz.CycleExclusion.OrbitNoNontrivialPeriodicTail n
+
+/-- Minimal honest aperiodic residual package for the current production proof
+chain at the canonical parameter choice `t = 3`, `U = 1`: uniformly in every
+admissible `β`, the non-periodic odd orbit of `n` supplies the structured
+`OrbitLongEpochE2Witness`. This packages exactly the remaining `E.2 + G.5`
+content currently required by `collatz_convergence_with_parameter_choice`
+without pretending that the lower endpoint-route subcontracts are already
+closed. -/
+abbrev AperiodicConvergenceResidual (n : ℕ) :=
+  ∀ β : ℝ, sedt_dominant_parameters 3 1 β →
+    ∀ _ha : ¬Collatz.CycleExclusion.orbit_eventually_periodic n,
+      OrbitLongEpochE2Witness n 3 1 β
 
 /-- Honest W6 bridge theorem: once an odd orbit enters `{1}`, it reaches 1. -/
 theorem collatz_convergence_from_entry (n : ℕ) (_hn : Odd n)
@@ -686,6 +729,15 @@ def canonical_aperiodic_phase_return_fill_stepwise_bridge
     Epochs.GapLongPhaseReturnsFillerStepwiseBridgeOn
       (aperiodic_orbit_has_cofinal_gap_long_phase_returns n t U _ha)
 
+/-- Strict-interior fragment of the previous filler-stepwise bridge on the
+actual canonical aperiodic skeleton: the first boundary step is omitted and may
+be supplied separately by a boundary-local theorem target. -/
+def canonical_aperiodic_phase_return_fill_strict_interior_stepwise_bridge
+    (n t U : ℕ) : Sort _ :=
+  ∀ _ha : ¬ Collatz.CycleExclusion.orbit_eventually_periodic n,
+    Epochs.GapLongPhaseReturnsFillerStrictInteriorStepwiseBridgeOn
+      (aperiodic_orbit_has_cofinal_gap_long_phase_returns n t U _ha)
+
 /-- Arithmetic lower filler-side source on the actual canonical aperiodic
 skeleton: every orbit point inside the filler interval has local Collatz
 exponent at least `2`. Combined with oddness of the orbit, this is enough to
@@ -972,6 +1024,76 @@ def canonical_aperiodic_phase_return_fill_canonical_next_left_split_witness_sema
     Epochs.CanonicalNextLeftSplitWitnessOn
       (aperiodic_orbit_has_cofinal_gap_long_phase_returns n t U _ha)
 
+/-- Actual-skeleton direct fixed-index boundary frontier: on each right-boundary
+simple-step branch, the split witness admits the single canonical successor
+index `rightIdx j + 1`. This names the live local target without reintroducing
+the lower object wrapper. -/
+def canonical_aperiodic_phase_return_fill_boundary_canonical_successor_index_admissible_semantics
+    (n t U : ℕ)
+    (hsplit :
+      canonical_aperiodic_phase_return_fill_canonical_next_left_split_witness_semantics
+        n t U) :
+    Sort _ :=
+  ∀ _ha : ¬ Collatz.CycleExclusion.orbit_eventually_periodic n,
+    Epochs.GapLongPhaseReturnsBoundaryCanonicalSuccessorIndexAdmissibleOn
+      (aperiodic_orbit_has_cofinal_gap_long_phase_returns n t U _ha)
+      (hsplit _ha)
+
+/-- Actual-skeleton direct boundary consumer after closing the admission-side
+batch negatively: the primary boundary contradiction target is now stated on the
+canonical successor object itself, without routing through `eventAdmissible`. -/
+def canonical_aperiodic_phase_return_fill_boundary_canonical_successor_conflict_semantics
+    (n t U : ℕ) : Sort _ :=
+  ∀ _ha : ¬ Collatz.CycleExclusion.orbit_eventually_periodic n,
+    Epochs.GapLongPhaseReturnsBoundaryCanonicalSuccessorConflictOn
+      (aperiodic_orbit_has_cofinal_gap_long_phase_returns n t U _ha)
+
+/-- Even lower actual-skeleton boundary target: on the right boundary branch of
+the canonical aperiodic skeleton itself, the iterate at `rightIdx j` is not a
+simple step. This removes even the fixed-index successor object wrapper from
+the active local target. -/
+def canonical_aperiodic_phase_return_fill_boundary_simple_step_exclusion_semantics
+    (n t U : ℕ) : Sort _ :=
+  ∀ _ha : ¬ Collatz.CycleExclusion.orbit_eventually_periodic n,
+    Epochs.GapLongPhaseReturnsBoundarySimpleStepExclusionOn
+      (aperiodic_orbit_has_cofinal_gap_long_phase_returns n t U _ha)
+
+/-- Lower positive arithmetic version of the previous actual-skeleton boundary
+target: on the right boundary branch, the iterate at `rightIdx j` is already a
+complex step in the mod-4 sense. -/
+def canonical_aperiodic_phase_return_fill_boundary_complex_step_semantics
+    (n t U : ℕ) : Prop :=
+  ∀ _ha : ¬ Collatz.CycleExclusion.orbit_eventually_periodic n,
+    Epochs.GapLongPhaseReturnsBoundaryComplexStepOn
+      (aperiodic_orbit_has_cofinal_gap_long_phase_returns n t U _ha)
+
+/-- Still lower actual-skeleton arithmetic boundary target: on the right
+boundary branch, the iterate at `rightIdx j` has local Collatz exponent at
+least `2`. -/
+def canonical_aperiodic_phase_return_fill_boundary_step_type_two_semantics
+    (n t U : ℕ) : Prop :=
+  ∀ _ha : ¬ Collatz.CycleExclusion.orbit_eventually_periodic n,
+    Epochs.GapLongPhaseReturnsBoundaryStepTypeTwoOn
+      (aperiodic_orbit_has_cofinal_gap_long_phase_returns n t U _ha)
+
+/-- Still lower actual-skeleton value-level boundary target: on the right
+boundary branch, the next odd Collatz step from `rightIdx j` is already
+nonincreasing. -/
+def canonical_aperiodic_phase_return_fill_boundary_step_nonincrease_semantics
+    (n t U : ℕ) : Prop :=
+  ∀ _ha : ¬ Collatz.CycleExclusion.orbit_eventually_periodic n,
+    Epochs.GapLongPhaseReturnsBoundaryStepNonincreaseOn
+      (aperiodic_orbit_has_cofinal_gap_long_phase_returns n t U _ha)
+
+/-- Lowest currently exposed actual-skeleton boundary order target: on the right
+boundary branch, the next odd Collatz step from `rightIdx j` is not a strict
+growth step. -/
+def canonical_aperiodic_phase_return_fill_boundary_step_growth_exclusion_semantics
+    (n t U : ℕ) : Prop :=
+  ∀ _ha : ¬ Collatz.CycleExclusion.orbit_eventually_periodic n,
+    Epochs.GapLongPhaseReturnsBoundaryStepGrowthExclusionOn
+      (aperiodic_orbit_has_cofinal_gap_long_phase_returns n t U _ha)
+
 /-- Actual-skeleton explicit promoted-event source for the split redesign. -/
 def canonical_aperiodic_phase_return_fill_canonical_next_left_split_promotion_event_source_semantics
     (n t U : ℕ)
@@ -1047,6 +1169,142 @@ def canonical_aperiodic_phase_return_fill_boundary_promoted_selected_certificate
     Epochs.GapLongPhaseReturnsBoundaryPromotedSelectedCertificateEventWitnessAdapterOn
       (aperiodic_orbit_has_cofinal_gap_long_phase_returns n t U _ha)
       (hsplit _ha)
+
+/-- Actual-skeleton minimal missing bridge below the certificate seam: from the
+boundary certificate alone, produce only the `admissibleIdx` field for the
+promotion-side event language of the split witness. -/
+def canonical_aperiodic_phase_return_fill_boundary_promoted_selected_certificate_admissibility_bridge_semantics
+    (n t U : ℕ)
+    (hsplit :
+      canonical_aperiodic_phase_return_fill_canonical_next_left_split_witness_semantics
+        n t U) :
+    Sort _ :=
+  ∀ _ha : ¬ Collatz.CycleExclusion.orbit_eventually_periodic n,
+    Epochs.GapLongPhaseReturnsBoundaryPromotedSelectedCertificateAdmissibilityBridgeOn
+      (aperiodic_orbit_has_cofinal_gap_long_phase_returns n t U _ha)
+      (hsplit _ha).eventAdmissible
+
+/-- Once the certificate-to-admissibility bridge is available on the actual
+aperiodic skeleton, the stronger certificate-to-event-witness adapter is only a
+transparent packaging step. -/
+noncomputable def canonical_aperiodic_phase_return_fill_boundary_promoted_selected_certificate_event_witness_adapter_semantics_of_admissibility
+    {n t U : ℕ}
+    {hsplit :
+      canonical_aperiodic_phase_return_fill_canonical_next_left_split_witness_semantics
+        n t U}
+    (hbridge :
+      canonical_aperiodic_phase_return_fill_boundary_promoted_selected_certificate_admissibility_bridge_semantics
+        n t U hsplit) :
+    canonical_aperiodic_phase_return_fill_boundary_promoted_selected_certificate_event_witness_adapter_semantics
+      n t U hsplit := by
+  intro _ha
+  exact
+    Epochs.gap_long_phase_returns_boundary_promoted_selected_certificate_event_witness_adapter_on_of_admissibility
+      (hbridge _ha)
+
+/-- Actual-skeleton even-lower seam beneath the certificate-admissibility bridge:
+on the canonical boundary simple-step branch, the promotion-side event language
+admits the single successor index `rightIdx j + 1`. -/
+def canonical_aperiodic_phase_return_fill_boundary_promoted_selected_successor_admissibility_semantics
+    (n t U : ℕ)
+    (hsplit :
+      canonical_aperiodic_phase_return_fill_canonical_next_left_split_witness_semantics
+        n t U) :
+    Sort _ :=
+  ∀ _ha : ¬ Collatz.CycleExclusion.orbit_eventually_periodic n,
+    Epochs.GapLongPhaseReturnsBoundaryPromotedSelectedSuccessorAdmissibilityOn
+      (aperiodic_orbit_has_cofinal_gap_long_phase_returns n t U _ha)
+      (hsplit _ha).eventAdmissible
+
+/-- Actual-skeleton fixed-index lower object below successor admissibility:
+produce the canonical successor event itself, without yet saying that it is
+admitted by the promotion-side event language. -/
+def canonical_aperiodic_phase_return_fill_boundary_promoted_selected_canonical_successor_source_semantics
+    (n t U : ℕ) : Sort _ :=
+  ∀ _ha : ¬ Collatz.CycleExclusion.orbit_eventually_periodic n,
+    Epochs.GapLongPhaseReturnsBoundaryPromotedSelectedCanonicalSuccessorSourceOn
+      (aperiodic_orbit_has_cofinal_gap_long_phase_returns n t U _ha)
+
+/-- The canonical aperiodic successor-room theorem also populates the still-lower
+canonical-successor seam directly. -/
+noncomputable def canonical_aperiodic_phase_return_fill_boundary_promoted_selected_canonical_successor_source_semantics_of_aperiodic_successor_room
+    (n t U : ℕ) :
+    canonical_aperiodic_phase_return_fill_boundary_promoted_selected_canonical_successor_source_semantics
+      n t U := by
+  intro _ha
+  exact
+    Epochs.gap_long_phase_returns_boundary_promoted_selected_canonical_successor_source_on_of_successor_room
+      (aperiodic_orbit_has_cofinal_gap_long_phase_returns_successor_room n t U _ha)
+
+/-- Actual-skeleton bridge from the fixed-index canonical successor object into
+successor admissibility for the promotion-side event language. This is now the
+lowest explicit admission seam exposed on the boundary branch. -/
+def canonical_aperiodic_phase_return_fill_boundary_promoted_selected_canonical_successor_admissibility_bridge_semantics
+    (n t U : ℕ)
+    (hsplit :
+      canonical_aperiodic_phase_return_fill_canonical_next_left_split_witness_semantics
+        n t U) :
+    Sort _ :=
+  ∀ _ha : ¬ Collatz.CycleExclusion.orbit_eventually_periodic n,
+    Epochs.GapLongPhaseReturnsBoundaryPromotedSelectedCanonicalSuccessorAdmissibilityBridgeOn
+      (aperiodic_orbit_has_cofinal_gap_long_phase_returns n t U _ha)
+      (hsplit _ha).eventAdmissible
+
+/-- Once the fixed-index canonical successor is admitted on the event side, the
+stronger successor-admissibility seam is only transparent packaging. -/
+noncomputable def canonical_aperiodic_phase_return_fill_boundary_promoted_selected_successor_admissibility_semantics_of_canonical_successor_source_and_bridge
+    {n t U : ℕ}
+    {hsplit :
+      canonical_aperiodic_phase_return_fill_canonical_next_left_split_witness_semantics
+        n t U}
+    (hsrc :
+      canonical_aperiodic_phase_return_fill_boundary_promoted_selected_canonical_successor_source_semantics
+        n t U)
+    (hbridge :
+      canonical_aperiodic_phase_return_fill_boundary_promoted_selected_canonical_successor_admissibility_bridge_semantics
+        n t U hsplit) :
+    canonical_aperiodic_phase_return_fill_boundary_promoted_selected_successor_admissibility_semantics
+      n t U hsplit := by
+  intro _ha
+  exact
+    Epochs.gap_long_phase_returns_boundary_promoted_selected_successor_admissibility_on_of_canonical_successor_source_and_bridge
+      (hsrc _ha) (hbridge _ha)
+
+/-- Once successor-index admissibility is available on the actual aperiodic
+skeleton, the stronger certificate-to-event-witness adapter again becomes
+transparent packaging. -/
+noncomputable def canonical_aperiodic_phase_return_fill_boundary_promoted_selected_certificate_event_witness_adapter_semantics_of_canonical_successor_index_admissible
+    {n t U : ℕ}
+    {hsplit :
+      canonical_aperiodic_phase_return_fill_canonical_next_left_split_witness_semantics
+        n t U}
+    (hadm :
+      canonical_aperiodic_phase_return_fill_boundary_canonical_successor_index_admissible_semantics
+        n t U hsplit) :
+    canonical_aperiodic_phase_return_fill_boundary_promoted_selected_certificate_event_witness_adapter_semantics
+      n t U hsplit := by
+  intro _ha
+  exact
+    Epochs.gap_long_phase_returns_boundary_promoted_selected_certificate_event_witness_adapter_on_of_canonical_successor_index_admissible
+      (hadm _ha)
+
+/-- Once successor-index admissibility is available on the actual aperiodic
+skeleton, the stronger certificate-to-event-witness adapter again becomes
+transparent packaging. -/
+noncomputable def canonical_aperiodic_phase_return_fill_boundary_promoted_selected_certificate_event_witness_adapter_semantics_of_successor_admissibility
+    {n t U : ℕ}
+    {hsplit :
+      canonical_aperiodic_phase_return_fill_canonical_next_left_split_witness_semantics
+        n t U}
+    (hadm :
+      canonical_aperiodic_phase_return_fill_boundary_promoted_selected_successor_admissibility_semantics
+        n t U hsplit) :
+    canonical_aperiodic_phase_return_fill_boundary_promoted_selected_certificate_event_witness_adapter_semantics
+      n t U hsplit := by
+  intro _ha
+  exact
+    Epochs.gap_long_phase_returns_boundary_promoted_selected_certificate_event_witness_adapter_on_of_successor_admissibility
+      (hadm _ha)
 
 /-- Actual-skeleton normalization seam for the split redesign: convert
 promotion-side event witnesses into next-left comparison witnesses. -/
@@ -1218,6 +1476,394 @@ theorem canonical_aperiodic_phase_return_fill_not_boundary_certificate_source_an
       hsimple
       (hsrc _ha)
       (hadapt _ha)
+      (hconf _ha)
+
+/-- Exact actual-skeleton no-go theorem for the new minimal target: once the
+boundary certificate already theorem-produces the missing `admissibleIdx` field
+for the promotion-side event language, the direct event-conflict contradiction
+follows by transparent packaging alone. This localizes the live residual
+strictly to the certificate-to-admissibility bridge itself. -/
+theorem canonical_aperiodic_phase_return_fill_not_boundary_certificate_source_and_certificate_admissibility_bridge_and_event_conflict
+    {n t U : ℕ}
+    {hsplit :
+      canonical_aperiodic_phase_return_fill_canonical_next_left_split_witness_semantics
+        n t U}
+    {_ha : ¬ Collatz.CycleExclusion.orbit_eventually_periodic n}
+    {j : ℕ}
+    (hsimple :
+      Collatz.is_simple_step
+        ((Collatz.Foundations.collatz_step^[
+          (aperiodic_orbit_has_cofinal_gap_long_phase_returns n t U _ha).rightIdx j]) n))
+    (hsrc :
+      canonical_aperiodic_phase_return_fill_boundary_promoted_selected_certificate_source_semantics
+        n t U)
+    (hbridge :
+      canonical_aperiodic_phase_return_fill_boundary_promoted_selected_certificate_admissibility_bridge_semantics
+        n t U hsplit)
+    (hconf :
+      canonical_aperiodic_phase_return_fill_canonical_next_left_split_event_conflict_semantics
+        n t U hsplit) :
+    False := by
+  exact
+    Epochs.not_gap_long_phase_returns_boundary_certificate_source_on_of_simple_step_and_certificate_admissibility_bridge_and_event_conflict
+      (j := j)
+      hsimple
+      (hsrc _ha)
+      (hbridge _ha)
+      (hconf _ha)
+
+/-- Exact actual-skeleton no-go theorem for the still-lower successor-admissible
+target: if the promotion-side event language already admits `rightIdx j + 1` on
+the canonical boundary simple-step branch, then the direct event-conflict
+contradiction follows by transparent certificate packaging alone. This pushes the
+live residual below the generic certificate-to-admissibility bridge. -/
+theorem canonical_aperiodic_phase_return_fill_not_boundary_certificate_source_and_successor_admissibility_and_event_conflict
+    {n t U : ℕ}
+    {hsplit :
+      canonical_aperiodic_phase_return_fill_canonical_next_left_split_witness_semantics
+        n t U}
+    {_ha : ¬ Collatz.CycleExclusion.orbit_eventually_periodic n}
+    {j : ℕ}
+    (hsimple :
+      Collatz.is_simple_step
+        ((Collatz.Foundations.collatz_step^[
+          (aperiodic_orbit_has_cofinal_gap_long_phase_returns n t U _ha).rightIdx j]) n))
+    (hsrc :
+      canonical_aperiodic_phase_return_fill_boundary_promoted_selected_certificate_source_semantics
+        n t U)
+    (hadm :
+      canonical_aperiodic_phase_return_fill_boundary_promoted_selected_successor_admissibility_semantics
+        n t U hsplit)
+    (hconf :
+      canonical_aperiodic_phase_return_fill_canonical_next_left_split_event_conflict_semantics
+        n t U hsplit) :
+    False := by
+  exact
+    Epochs.not_gap_long_phase_returns_boundary_certificate_source_on_of_simple_step_and_successor_admissibility_and_event_conflict
+      (j := j)
+      hsimple
+      (hsrc _ha)
+      (hadm _ha)
+      (hconf _ha)
+
+/-- Exact actual-skeleton no-go theorem for the fixed-index canonical successor
+seam: once that lower object already bridges into successor admissibility for the
+promotion-side event language, the direct event-conflict contradiction again
+follows by transparent packaging alone. -/
+theorem canonical_aperiodic_phase_return_fill_not_boundary_certificate_source_and_canonical_successor_index_admissible_and_event_conflict
+    {n t U : ℕ}
+    {hsplit :
+      canonical_aperiodic_phase_return_fill_canonical_next_left_split_witness_semantics
+        n t U}
+    {_ha : ¬ Collatz.CycleExclusion.orbit_eventually_periodic n}
+    {j : ℕ}
+    (hsimple :
+      Collatz.is_simple_step
+        ((Collatz.Foundations.collatz_step^[
+          (aperiodic_orbit_has_cofinal_gap_long_phase_returns n t U _ha).rightIdx j]) n))
+    (hsrc :
+      canonical_aperiodic_phase_return_fill_boundary_promoted_selected_certificate_source_semantics
+        n t U)
+    (hadm :
+      canonical_aperiodic_phase_return_fill_boundary_canonical_successor_index_admissible_semantics
+        n t U hsplit)
+    (hconf :
+      canonical_aperiodic_phase_return_fill_canonical_next_left_split_event_conflict_semantics
+        n t U hsplit) :
+    False := by
+  exact
+    Epochs.not_gap_long_phase_returns_boundary_certificate_source_on_of_simple_step_and_canonical_successor_index_admissible_and_event_conflict
+      (j := j)
+      hsimple
+      (hsrc _ha)
+      (hadm _ha)
+      (hconf _ha)
+
+/-- Once the admission-side batch is closed negatively, the canonical aperiodic
+successor-room theorem populates the replacement direct boundary consumer
+without any `eventAdmissible` bridge. -/
+theorem canonical_aperiodic_phase_return_fill_not_boundary_simple_step_and_canonical_successor_conflict
+    {n t U : ℕ}
+    {_ha : ¬ Collatz.CycleExclusion.orbit_eventually_periodic n}
+    {j : ℕ}
+    (hsimple :
+      Collatz.is_simple_step
+        ((Collatz.Foundations.collatz_step^[
+          (aperiodic_orbit_has_cofinal_gap_long_phase_returns n t U _ha).rightIdx j]) n))
+    (hconf :
+      canonical_aperiodic_phase_return_fill_boundary_canonical_successor_conflict_semantics
+        n t U) :
+    False := by
+  exact
+    @hconf _ha j hsimple
+      (Epochs.boundary_promoted_selected_canonical_successor_on_of_successor_room j
+        (aperiodic_orbit_has_cofinal_gap_long_phase_returns_successor_room n t U _ha j))
+
+/-- The previous canonical-successor conflict is only packaging over direct
+boundary simple-step exclusion on the actual aperiodic skeleton. -/
+def canonical_aperiodic_phase_return_fill_boundary_canonical_successor_conflict_semantics_of_simple_step_exclusion
+    {n t U : ℕ}
+    (hexcl :
+      canonical_aperiodic_phase_return_fill_boundary_simple_step_exclusion_semantics
+        n t U) :
+    canonical_aperiodic_phase_return_fill_boundary_canonical_successor_conflict_semantics
+      n t U := by
+  intro _ha j hsimple hsucc
+  exact
+    (hexcl _ha) j hsimple
+
+/-- On odd actual aperiodic orbits, direct boundary simple-step exclusion is
+packaging over the more positive residue-level complex-step target. -/
+theorem canonical_aperiodic_phase_return_fill_boundary_complex_step_semantics_of_simple_step_exclusion
+    {n t U : ℕ}
+    (hn : Odd n)
+    (hexcl :
+      canonical_aperiodic_phase_return_fill_boundary_simple_step_exclusion_semantics
+        n t U) :
+    canonical_aperiodic_phase_return_fill_boundary_complex_step_semantics
+      n t U := by
+  intro _ha
+  exact
+    Epochs.gap_long_phase_returns_boundary_complex_step_on_of_simple_step_exclusion
+      hn
+      (hexcl _ha)
+
+/-- The residue-level actual-skeleton boundary target is itself packaging over
+the lower arithmetic statement `step_type ≥ 2`. -/
+theorem canonical_aperiodic_phase_return_fill_boundary_step_type_two_semantics_of_complex_step
+    {n t U : ℕ}
+    (hn : Odd n)
+    (hcomplex :
+      canonical_aperiodic_phase_return_fill_boundary_complex_step_semantics
+        n t U) :
+    canonical_aperiodic_phase_return_fill_boundary_step_type_two_semantics
+      n t U := by
+  intro _ha
+  exact
+    Epochs.gap_long_phase_returns_boundary_step_type_two_on_of_complex_step
+      hn
+      (hcomplex _ha)
+
+/-- Conversely, on odd actual aperiodic orbits the lower arithmetic statement
+`step_type ≥ 2` already forces the residue-level boundary complex-step target. -/
+theorem canonical_aperiodic_phase_return_fill_boundary_complex_step_semantics_of_step_type_two
+    {n t U : ℕ}
+    (hn : Odd n)
+    (hstepTwo :
+      canonical_aperiodic_phase_return_fill_boundary_step_type_two_semantics
+        n t U) :
+    canonical_aperiodic_phase_return_fill_boundary_complex_step_semantics
+      n t U := by
+  intro _ha
+  exact
+    Epochs.gap_long_phase_returns_boundary_complex_step_on_of_step_type_two
+      hn
+      (hstepTwo _ha)
+
+/-- The lower arithmetic actual-skeleton boundary target `step_type ≥ 2` is
+itself packaging over direct one-step nonincrease at the same boundary
+iterate. -/
+theorem canonical_aperiodic_phase_return_fill_boundary_step_nonincrease_semantics_of_step_type_two
+    {n t U : ℕ}
+    (hn : Odd n)
+    (hstepTwo :
+      canonical_aperiodic_phase_return_fill_boundary_step_type_two_semantics
+        n t U) :
+    canonical_aperiodic_phase_return_fill_boundary_step_nonincrease_semantics
+      n t U := by
+  intro _ha
+  exact
+    Epochs.gap_long_phase_returns_boundary_step_nonincrease_on_of_step_type_two
+      hn
+      (hstepTwo _ha)
+
+/-- Conversely, on odd actual aperiodic orbits direct one-step nonincrease at
+the boundary iterate already forces `step_type ≥ 2`. -/
+theorem canonical_aperiodic_phase_return_fill_boundary_step_type_two_semantics_of_step_nonincrease
+    {n t U : ℕ}
+    (hn : Odd n)
+    (hnoninc :
+      canonical_aperiodic_phase_return_fill_boundary_step_nonincrease_semantics
+        n t U) :
+    canonical_aperiodic_phase_return_fill_boundary_step_type_two_semantics
+      n t U := by
+  intro _ha
+  exact
+    Epochs.gap_long_phase_returns_boundary_step_type_two_on_of_step_nonincrease
+      hn
+      (hnoninc _ha)
+
+/-- The direct boundary nonincrease target is itself only positive packaging
+over strict-growth exclusion at the same boundary step. -/
+theorem canonical_aperiodic_phase_return_fill_boundary_step_growth_exclusion_semantics_of_step_nonincrease
+    {n t U : ℕ}
+    (hnoninc :
+      canonical_aperiodic_phase_return_fill_boundary_step_nonincrease_semantics
+        n t U) :
+    canonical_aperiodic_phase_return_fill_boundary_step_growth_exclusion_semantics
+      n t U := by
+  intro _ha
+  exact
+    Epochs.gap_long_phase_returns_boundary_step_growth_exclusion_on_of_step_nonincrease
+      (hnoninc _ha)
+
+/-- Conversely, the contradiction-free strict-growth exclusion target already
+recovers direct nonincrease on the boundary iterate. -/
+theorem canonical_aperiodic_phase_return_fill_boundary_step_nonincrease_semantics_of_growth_exclusion
+    {n t U : ℕ}
+    (hexcl :
+      canonical_aperiodic_phase_return_fill_boundary_step_growth_exclusion_semantics
+        n t U) :
+    canonical_aperiodic_phase_return_fill_boundary_step_nonincrease_semantics
+      n t U := by
+  intro _ha
+  exact
+    Epochs.gap_long_phase_returns_boundary_step_nonincrease_on_of_growth_exclusion
+      (hexcl _ha)
+
+/-- On the actual aperiodic skeleton, direct boundary nonincrease and
+strict-growth exclusion are equivalent order formulations of the same local
+content. This marks the current boundary frontier as terminal up to tautology. -/
+theorem canonical_aperiodic_phase_return_fill_boundary_step_nonincrease_semantics_iff_growth_exclusion
+    {n t U : ℕ} :
+    canonical_aperiodic_phase_return_fill_boundary_step_nonincrease_semantics n t U ↔
+      canonical_aperiodic_phase_return_fill_boundary_step_growth_exclusion_semantics n t U := by
+  constructor
+  · exact
+      canonical_aperiodic_phase_return_fill_boundary_step_growth_exclusion_semantics_of_step_nonincrease
+  · exact
+      canonical_aperiodic_phase_return_fill_boundary_step_nonincrease_semantics_of_growth_exclusion
+
+/-- The terminal boundary order target still reproduces the earlier arithmetic
+frontier `step_type ≥ 2` on odd actual aperiodic orbits. -/
+theorem canonical_aperiodic_phase_return_fill_boundary_step_type_two_semantics_of_growth_exclusion
+    {n t U : ℕ}
+    (hn : Odd n)
+    (hexcl :
+      canonical_aperiodic_phase_return_fill_boundary_step_growth_exclusion_semantics
+        n t U) :
+    canonical_aperiodic_phase_return_fill_boundary_step_type_two_semantics
+      n t U := by
+  intro _ha
+  exact
+    Epochs.gap_long_phase_returns_boundary_step_type_two_on_of_growth_exclusion
+      hn
+      (hexcl _ha)
+
+/-- Conversely, the positive residue-level actual-skeleton boundary target
+already excludes simple steps directly. -/
+theorem canonical_aperiodic_phase_return_fill_boundary_simple_step_exclusion_semantics_of_complex_step
+    {n t U : ℕ}
+    (hcomplex :
+      canonical_aperiodic_phase_return_fill_boundary_complex_step_semantics
+        n t U) :
+    canonical_aperiodic_phase_return_fill_boundary_simple_step_exclusion_semantics
+      n t U := by
+  intro _ha
+  exact
+    Epochs.gap_long_phase_returns_boundary_simple_step_exclusion_on_of_complex_step
+      (hcomplex _ha)
+
+/-- On odd actual aperiodic orbits, direct boundary simple-step exclusion
+already produces the terminal boundary order target. This packages the full
+lowering chain into one producer theorem. -/
+theorem canonical_aperiodic_phase_return_fill_boundary_step_growth_exclusion_semantics_of_simple_step_exclusion
+    {n t U : ℕ}
+    (hn : Odd n)
+    (hexcl :
+      canonical_aperiodic_phase_return_fill_boundary_simple_step_exclusion_semantics
+        n t U) :
+    canonical_aperiodic_phase_return_fill_boundary_step_growth_exclusion_semantics
+      n t U := by
+  intro _ha
+  exact
+    Epochs.gap_long_phase_returns_boundary_step_growth_exclusion_on_of_simple_step_exclusion
+      hn
+      (hexcl _ha)
+
+/-- Conversely, once successor-room geometry is available on the actual
+aperiodic skeleton, the canonical-successor conflict semantics reduce to direct
+boundary simple-step exclusion. -/
+def canonical_aperiodic_phase_return_fill_boundary_simple_step_exclusion_semantics_of_canonical_successor_conflict
+    {n t U : ℕ}
+    (hconf :
+      canonical_aperiodic_phase_return_fill_boundary_canonical_successor_conflict_semantics
+        n t U) :
+    canonical_aperiodic_phase_return_fill_boundary_simple_step_exclusion_semantics
+      n t U := by
+  intro _ha j hsimple
+  exact
+    @hconf _ha j hsimple
+      (Epochs.boundary_promoted_selected_canonical_successor_on_of_successor_room j
+        (aperiodic_orbit_has_cofinal_gap_long_phase_returns_successor_room n t U _ha j))
+
+/-- Therefore, on odd actual aperiodic orbits the canonical-successor conflict
+semantics already produce the terminal boundary order target. -/
+def canonical_aperiodic_phase_return_fill_boundary_step_growth_exclusion_semantics_of_canonical_successor_conflict
+    {n t U : ℕ}
+    (hn : Odd n)
+    (hconf :
+      canonical_aperiodic_phase_return_fill_boundary_canonical_successor_conflict_semantics
+        n t U) :
+    canonical_aperiodic_phase_return_fill_boundary_step_growth_exclusion_semantics
+      n t U := by
+  exact
+    canonical_aperiodic_phase_return_fill_boundary_step_growth_exclusion_semantics_of_simple_step_exclusion
+      hn
+      (canonical_aperiodic_phase_return_fill_boundary_simple_step_exclusion_semantics_of_canonical_successor_conflict
+        hconf)
+
+/-- Source-level actual-skeleton form of the previous direct boundary consumer:
+once the canonical successor source is exposed explicitly, the contradiction is
+obtained directly from that source with no intervening admission bridge. -/
+theorem canonical_aperiodic_phase_return_fill_not_boundary_canonical_successor_source_and_canonical_successor_conflict
+    {n t U : ℕ}
+    {_ha : ¬ Collatz.CycleExclusion.orbit_eventually_periodic n}
+    {j : ℕ}
+    (hsimple :
+      Collatz.is_simple_step
+        ((Collatz.Foundations.collatz_step^[
+          (aperiodic_orbit_has_cofinal_gap_long_phase_returns n t U _ha).rightIdx j]) n))
+    (hsrc :
+      canonical_aperiodic_phase_return_fill_boundary_promoted_selected_canonical_successor_source_semantics
+        n t U)
+    (hconf :
+      canonical_aperiodic_phase_return_fill_boundary_canonical_successor_conflict_semantics
+        n t U) :
+    False := by
+  exact @hconf _ha j hsimple ((hsrc _ha) j hsimple)
+
+/-- Exact actual-skeleton no-go theorem for the fixed-index canonical successor
+seam: once that lower object already bridges into successor admissibility for the
+promotion-side event language, the direct event-conflict contradiction again
+follows by transparent packaging alone. -/
+theorem canonical_aperiodic_phase_return_fill_not_boundary_canonical_successor_source_and_canonical_successor_admissibility_bridge_and_event_conflict
+    {n t U : ℕ}
+    {hsplit :
+      canonical_aperiodic_phase_return_fill_canonical_next_left_split_witness_semantics
+        n t U}
+    {_ha : ¬ Collatz.CycleExclusion.orbit_eventually_periodic n}
+    {j : ℕ}
+    (hsimple :
+      Collatz.is_simple_step
+        ((Collatz.Foundations.collatz_step^[
+          (aperiodic_orbit_has_cofinal_gap_long_phase_returns n t U _ha).rightIdx j]) n))
+    (hsrc :
+      canonical_aperiodic_phase_return_fill_boundary_promoted_selected_canonical_successor_source_semantics
+        n t U)
+    (hbridge :
+      canonical_aperiodic_phase_return_fill_boundary_promoted_selected_canonical_successor_admissibility_bridge_semantics
+        n t U hsplit)
+    (hconf :
+      canonical_aperiodic_phase_return_fill_canonical_next_left_split_event_conflict_semantics
+        n t U hsplit) :
+    False := by
+  exact
+    Epochs.not_gap_long_phase_returns_boundary_canonical_successor_source_on_of_simple_step_and_canonical_successor_admissibility_bridge_and_event_conflict
+      (j := j)
+      hsimple
+      (hsrc _ha)
+      (hbridge _ha)
       (hconf _ha)
 
 /-- The previous actual-skeleton event-level source immediately populates the
@@ -1518,6 +2164,24 @@ theorem canonical_aperiodic_phase_return_fill_stepwise_bridge_of_step_type_two_b
       aperiodic_orbit_has_cofinal_gap_long_phase_returns n t U haper)
     (hstepTwo haper)
 
+/-- Consumer for the terminal boundary order seam on the actual canonical
+aperiodic skeleton: boundary strict-growth exclusion plus strict-interior
+filler-stepwise control already assemble the full filler-stepwise bridge. -/
+theorem canonical_aperiodic_phase_return_fill_stepwise_bridge_of_boundary_growth_exclusion_and_strict_interior
+    {n t U : ℕ}
+    (hboundary :
+      canonical_aperiodic_phase_return_fill_boundary_step_growth_exclusion_semantics
+        n t U)
+    (hinterior :
+      canonical_aperiodic_phase_return_fill_strict_interior_stepwise_bridge
+        n t U) :
+    canonical_aperiodic_phase_return_fill_stepwise_bridge n t U := by
+  intro haper
+  exact
+    Epochs.gap_long_phase_returns_filler_stepwise_on_of_boundary_growth_exclusion_and_strict_interior
+      (hboundary haper)
+      (hinterior haper)
+
 /-- The lower filler-stepwise bridge on the actual canonical aperiodic skeleton
 is definitionally exactly the stronger filler target consumed downstream. -/
 def canonical_aperiodic_phase_return_fill_stepwise_nonincrease_of_lower_bridge
@@ -1539,6 +2203,21 @@ def canonical_aperiodic_phase_return_fill_stepwise_nonincrease_of_step_type_two_
     (canonical_aperiodic_phase_return_fill_stepwise_bridge_of_step_type_two_bridge
       hn hstepTwo)
 
+/-- The terminal boundary order seam can be consumed directly downstream once
+strict-interior filler-stepwise control is available. -/
+def canonical_aperiodic_phase_return_fill_stepwise_nonincrease_of_boundary_growth_exclusion_and_strict_interior
+    {n t U : ℕ}
+    (hboundary :
+      canonical_aperiodic_phase_return_fill_boundary_step_growth_exclusion_semantics
+        n t U)
+    (hinterior :
+      canonical_aperiodic_phase_return_fill_strict_interior_stepwise_bridge
+        n t U) :
+    canonical_aperiodic_phase_return_fill_stepwise_nonincrease n t U :=
+  canonical_aperiodic_phase_return_fill_stepwise_nonincrease_of_lower_bridge
+    (canonical_aperiodic_phase_return_fill_stepwise_bridge_of_boundary_growth_exclusion_and_strict_interior
+      hboundary hinterior)
+
 /-- The arithmetic lower bridge `step_type ≥ 2` on every filler index also
 immediately yields the weaker filler endpoint-order theorem consumed by the
 existing downstream chain. -/
@@ -1552,6 +2231,22 @@ def canonical_aperiodic_phase_return_fill_endpoint_nonincrease_of_step_type_two_
   exact phase_return_fill_endpoint_nonincrease_on_of_stepwise_nonincrease
     ((canonical_aperiodic_phase_return_fill_stepwise_nonincrease_of_step_type_two_bridge
       hn hstepTwo) haper)
+
+/-- The same split consumer also yields the weaker filler endpoint-order theorem
+used by the existing downstream coercivity chain. -/
+def canonical_aperiodic_phase_return_fill_endpoint_nonincrease_of_boundary_growth_exclusion_and_strict_interior
+    {n t U : ℕ}
+    (hboundary :
+      canonical_aperiodic_phase_return_fill_boundary_step_growth_exclusion_semantics
+        n t U)
+    (hinterior :
+      canonical_aperiodic_phase_return_fill_strict_interior_stepwise_bridge
+        n t U) :
+    canonical_aperiodic_phase_return_fill_endpoint_nonincrease n t U := by
+  intro haper
+  exact phase_return_fill_endpoint_nonincrease_on_of_stepwise_nonincrease
+    ((canonical_aperiodic_phase_return_fill_stepwise_nonincrease_of_boundary_growth_exclusion_and_strict_interior
+      hboundary hinterior) haper)
 
 /-- Constructor for the canonical filler endpoint-order contract from
 witness-level theorems on the actual aperiodic phase-return witness. -/
@@ -3280,6 +3975,16 @@ def canonical_aperiodic_phase_return_endpoint_nonincrease_of_witness
     canonical_aperiodic_phase_return_endpoint_nonincrease n t U :=
   hcanon
 
+/-- Pair endpoint-order on the canonical aperiodic phase-return witness already
+forces the normalization correction to be nonpositive on every selected pair. -/
+theorem canonical_aperiodic_phase_return_correction_nonpositive_on_of_endpoint_nonincrease
+    {n t U : ℕ} (hn : Odd n)
+    (hendpoint : canonical_aperiodic_phase_return_endpoint_nonincrease n t U) :
+    canonical_aperiodic_phase_return_correction_nonpositive_on n t U := by
+  intro haper
+  exact phase_return_potential_correction_nonpositive_on_of_endpoint_nonincrease
+    hn (hendpoint haper)
+
 /-- Constructor for the canonical filler-drift bridge from witness-level theorems
 on the actual aperiodic phase-return witness. -/
 def canonical_aperiodic_phase_return_gap_fill_bridge_of_witness
@@ -3814,6 +4519,81 @@ theorem collatz_convergence_from_aperiodic_candidate_exclusion_theorem_sources
     haperiodicDepth haperiodicCorrection haperiodicFillCandidate (haperiodicGap β)
   haper)
 
+/-- Reassemble the upstream `OrbitLongEpochE2Witness` directly from the revised
+actual-skeleton theorem sources: selected long-epoch bookkeeping, pair
+endpoint-order, and filler drift on the canonical aperiodic witness. -/
+noncomputable def orbit_long_epoch_e2_witness_of_selected_long_epoch_endpoint_and_fill_sources
+    {n t U : ℕ} {β : ℝ} (hn : Odd n)
+    (haperiodicBridgeOn :
+      canonical_aperiodic_selected_long_epoch_bridge_on n t U)
+    (haperiodicEndpoint :
+      canonical_aperiodic_phase_return_endpoint_nonincrease n t U)
+    (haperiodicFill :
+      canonical_aperiodic_phase_return_gap_fill_bridge n t U β)
+    (hparams : sedt_dominant_parameters t U β)
+    (haper : ¬Collatz.CycleExclusion.orbit_eventually_periodic n) :
+    OrbitLongEpochE2Witness n t U β := by
+  let hgaps : Epochs.OrbitHasCofinalLongEpochGaps n t U :=
+    Epochs.orbit_has_cofinal_long_epoch_gaps_of_gap_long_phase_returns
+      (Epochs.canonical_gap_long_phase_returns_bridge n t U)
+      (aperiodic_orbit_has_cofinal_gap_long_phase_returns n t U haper)
+  let hsupply : Epochs.OrbitLongEpochSupply n t U :=
+    Epochs.orbit_long_epoch_supply_of_cofinal_long_epoch_gaps hgaps
+  have hcorr :
+      canonical_aperiodic_phase_return_correction_nonpositive_on n t U :=
+    canonical_aperiodic_phase_return_correction_nonpositive_on_of_endpoint_nonincrease
+      hn haperiodicEndpoint
+  have henv :
+      canonical_aperiodic_orbit_epoch_sedt_envelope n t U β :=
+    canonical_aperiodic_orbit_epoch_sedt_envelope_of_selected_long_epoch_bridge_on_correction_and_fill
+      haperiodicBridgeOn hcorr haperiodicFill hparams
+  have henvSupply :
+      orbit_epoch_sedt_envelope t U β
+        (Epochs.orbit_long_epoch_stream_of_supply n t U hsupply) := by
+    simpa [hsupply, hgaps, canonical_aperiodic_orbit_long_epoch_stream,
+      Epochs.orbit_long_epoch_stream_of_cofinal_long_epoch_gaps,
+      Epochs.orbit_long_epoch_stream_of_supply,
+      Epochs.orbit_long_epoch_supply_of_cofinal_long_epoch_gaps]
+      using henv haper
+  exact orbit_long_epoch_e2_witness_of_supply hsupply henvSupply
+
+/-- Revised aperiodic theorem-source entrypoint after the raw periodic-cycle
+repair: selected long-epoch bookkeeping on the actual aperiodic skeleton,
+pair endpoint-order, and filler drift already suffice to reconstruct the
+upstream `G.5 + E.2` witness package used by convergence. -/
+theorem collatz_convergence_from_aperiodic_selected_long_epoch_endpoint_and_fill_sources
+    (n t U : ℕ) (hn : Odd n)
+    (ht : t ≥ 3) (hU : U ≥ 1)
+    (hperiodicContracts : periodic_orbit_bridge_contract n)
+    (haperiodicBridgeOn :
+      canonical_aperiodic_selected_long_epoch_bridge_on n t U)
+    (haperiodicEndpoint :
+      canonical_aperiodic_phase_return_endpoint_nonincrease n t U)
+    (haperiodicFill :
+      ∀ β : ℝ, canonical_aperiodic_phase_return_gap_fill_bridge n t U β) :
+    ∃ k : ℕ, (Collatz.Foundations.collatz_step^[k]) n = 1 := by
+  refine collatz_convergence_from_upstream_contracts n t U hn ht hU
+    hperiodicContracts ?_ ?_
+  · intro β _hparams haper
+    exact Epochs.orbit_long_epoch_supply_of_cofinal_long_epoch_gaps
+      (Epochs.orbit_has_cofinal_long_epoch_gaps_of_gap_long_phase_returns
+        (Epochs.canonical_gap_long_phase_returns_bridge n t U)
+        (aperiodic_orbit_has_cofinal_gap_long_phase_returns n t U haper))
+  · intro β hparams haper
+    have hcorr :
+        canonical_aperiodic_phase_return_correction_nonpositive_on n t U :=
+      canonical_aperiodic_phase_return_correction_nonpositive_on_of_endpoint_nonincrease
+        hn haperiodicEndpoint
+    have henv :
+        canonical_aperiodic_orbit_epoch_sedt_envelope n t U β :=
+      canonical_aperiodic_orbit_epoch_sedt_envelope_of_selected_long_epoch_bridge_on_correction_and_fill
+        haperiodicBridgeOn hcorr (haperiodicFill β) hparams
+    simpa [canonical_aperiodic_orbit_long_epoch_stream,
+      Epochs.orbit_long_epoch_stream_of_cofinal_long_epoch_gaps,
+      Epochs.orbit_long_epoch_stream_of_supply,
+      Epochs.orbit_long_epoch_supply_of_cofinal_long_epoch_gaps]
+      using henv haper
+
 /-- More orbit/epoch-semantic convergence entrypoint: the residual aperiodic
 content is stated as an actual selected-long-epoch bridge on the concrete
 aperiodic skeleton together with correction control and the orbitwise `E.2`
@@ -3826,6 +4606,41 @@ theorem collatz_convergence_from_aperiodic_selected_long_epoch_and_orbit_epoch_s
       canonical_aperiodic_selected_long_epoch_bridge_on n t U)
     (_haperiodicCorrection :
       canonical_aperiodic_phase_return_correction_nonpositive_on n t U)
+    (haperiodicEnvelope :
+      ∀ β : ℝ, canonical_aperiodic_orbit_epoch_sedt_envelope n t U β) :
+    ∃ k : ℕ, (Collatz.Foundations.collatz_step^[k]) n = 1 := by
+  refine collatz_convergence_from_gap_semantics n t U hn ht hU hperiodicContracts ?_ ?_
+  · intro β hparams haper
+    exact Epochs.orbit_has_cofinal_long_epoch_gaps_of_gap_long_phase_returns
+      (Epochs.canonical_gap_long_phase_returns_bridge n t U)
+      (aperiodic_orbit_has_cofinal_gap_long_phase_returns n t U haper)
+  · intro β hparams haper
+    simpa [canonical_aperiodic_orbit_long_epoch_stream] using haperiodicEnvelope β haper
+
+/-- **S6.1 retargeting (paper E.2 faithful, no vestigial inputs).**
+
+Direct convergence entrypoint from the bulk per-long-epoch SEDT envelope on the
+canonical aperiodic skeleton. This drops the vestigial
+`canonical_aperiodic_selected_long_epoch_bridge_on` and
+`canonical_aperiodic_phase_return_correction_nonpositive_on` parameters that
+appear (but are unused) in
+`collatz_convergence_from_aperiodic_selected_long_epoch_and_orbit_epoch_semantics`.
+
+The aperiodic theorem-source residual reduces to exactly one quantity:
+
+  `∀ β, canonical_aperiodic_orbit_epoch_sedt_envelope n t U β`
+
+which is the orbitwise bulk per-long-epoch envelope on the canonical long-gap
+stream. Paper-correspondence: Appendix E, Theorem E.2 (bulk envelope per long
+epoch), without any per-step or pair-endpoint refinement. The previous M4
+public split (pair endpoint + per-step filler drift) is retargeted out by S6.1
+because `phase_return_gap_fill_step_drift` was an over-strong target relative
+to E.2 (see `unconditional-discipline.mdc` and the strategic audit in
+`docs/plans/20260418_unconditional-collatz-strategic-path.md`). -/
+theorem collatz_convergence_from_aperiodic_orbit_epoch_envelope
+    (n t U : ℕ) (hn : Odd n)
+    (ht : t ≥ 3) (hU : U ≥ 1)
+    (hperiodicContracts : periodic_orbit_bridge_contract n)
     (haperiodicEnvelope :
       ∀ β : ℝ, canonical_aperiodic_orbit_epoch_sedt_envelope n t U β) :
     ∃ k : ℕ, (Collatz.Foundations.collatz_step^[k]) n = 1 := by
@@ -3982,5 +4797,87 @@ theorem strict_i1_from_canonical_aperiodic_bridges
     : ∃ k : ℕ, (Collatz.Foundations.collatz_step^[k]) n = 1 := by
   exact collatz_convergence_from_canonical_aperiodic_bridges n t U hn ht hU
     hperiodicContracts haperiodicE2Bridge
+
+/-- Refined periodic theorem-source residual after the raw-cycle repair: every
+period-`> 1` periodic tail must supply the H-level exclusion premises on its
+canonical orbit-derived cycle. -/
+abbrev PeriodicCyclePremisesResidual (n : ℕ) : Prop :=
+  Collatz.CycleExclusion.PeriodicTailCycleExclusionPremisesSource n
+
+/-- Refined selected-segment theorem-source residual on the canonical aperiodic
+skeleton at the production parameter choice `t = 3`, `U = 1`. -/
+abbrev AperiodicSelectedLongEpochResidual (n : ℕ) :=
+  canonical_aperiodic_selected_long_epoch_bridge_on n 3 1
+
+/-- Refined pair-endpoint theorem-source residual on the canonical aperiodic
+skeleton at the production parameter choice `t = 3`, `U = 1`. -/
+abbrev AperiodicPairEndpointResidual (n : ℕ) : Prop :=
+  canonical_aperiodic_phase_return_endpoint_nonincrease n 3 1
+
+/-- Refined filler-drift theorem-source residual on the canonical aperiodic
+skeleton at the production parameter choice `t = 3`, `U = 1`. -/
+abbrev AperiodicFillDriftResidual (n : ℕ) : Prop :=
+  ∀ β : ℝ, canonical_aperiodic_phase_return_gap_fill_bridge n 3 1 β
+
+/-- Revised odd-start convergence endpoint modulo the finer theorem sources made
+explicit by the cycle-layer repair and the actual-skeleton aperiodic audit. -/
+theorem collatz_convergence_modulo_revised_theorem_sources
+    (n : ℕ) (hn : Odd n)
+    (hperiodic : PeriodicCyclePremisesResidual n)
+    (hselected : AperiodicSelectedLongEpochResidual n)
+    (hendpoint : AperiodicPairEndpointResidual n)
+    (hfill : AperiodicFillDriftResidual n) :
+    ∃ k : ℕ, (Collatz.Foundations.collatz_step^[k]) n = 1 := by
+  exact collatz_convergence_from_aperiodic_selected_long_epoch_endpoint_and_fill_sources
+    n 3 1 hn (by decide) (by decide)
+    (periodic_orbit_bridge_contract_of_cycle_premises_source n hperiodic)
+    hselected hendpoint hfill
+
+/-- The repaired periodic theorem-source residual on the orbit-derived raw cycle
+is equivalent to the explicit no-tail residual already used by the honest
+top-level endpoint `collatz_convergence_modulo_explicit_residuals`. -/
+theorem periodic_cycle_premises_residual_iff_no_nontrivial_periodic_tail
+    (n : ℕ) :
+    PeriodicCyclePremisesResidual n ↔ PeriodicConvergenceResidual n := by
+  simpa [PeriodicCyclePremisesResidual, PeriodicConvergenceResidual] using
+    Collatz.CycleExclusion.periodic_tail_cycle_premises_source_iff_no_nontrivial_periodic_tail n
+
+/-- Compatibility constructor reducing the repaired periodic theorem-source
+residual to the already exposed explicit no-tail residual. -/
+theorem periodic_cycle_premises_residual_of_no_nontrivial_periodic_tail
+    (n : ℕ) (hperiodic : PeriodicConvergenceResidual n) :
+    PeriodicCyclePremisesResidual n := by
+  exact
+    (periodic_cycle_premises_residual_iff_no_nontrivial_periodic_tail n).2
+      hperiodic
+
+/-- Honest top-level odd-start convergence theorem modulo the two explicit
+residual packages that still remain in the current Lean development:
+
+1. no nontrivial periodic tail on the odd orbit of `n`;
+2. a uniform `OrbitLongEpochE2Witness` on the aperiodic branch at the
+   canonical parameter choice.
+
+This is the strongest theorem currently supportable without introducing
+artificial axioms or hiding unresolved mathematical content behind stronger
+wrappers. -/
+theorem collatz_convergence_modulo_explicit_residuals
+    (n : ℕ) (hn : Odd n)
+    (hperiodic : PeriodicConvergenceResidual n)
+    (haperiodic : AperiodicConvergenceResidual n) :
+    ∃ k : ℕ, (Collatz.Foundations.collatz_step^[k]) n = 1 := by
+  exact collatz_convergence_with_parameter_choice n 3 1 hn (by decide) (by decide)
+    (periodic_orbit_bridge_contract_of_no_nontrivial_periodic_tail n hperiodic)
+    haperiodic
+
+/-- Compatibility name matching the closure-plan contingency: the result is not
+fully unconditional, but it is the honest strongest currently available
+replacement for the intended unconditional theorem. -/
+theorem collatz_convergence_unconditional_modulo_explicit_residuals
+    (n : ℕ) (hn : Odd n)
+    (hperiodic : PeriodicConvergenceResidual n)
+    (haperiodic : AperiodicConvergenceResidual n) :
+    ∃ k : ℕ, (Collatz.Foundations.collatz_step^[k]) n = 1 := by
+  exact collatz_convergence_modulo_explicit_residuals n hn hperiodic haperiodic
 
 end Collatz.Convergence

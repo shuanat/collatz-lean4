@@ -77,6 +77,53 @@ lemma complex_step_implies_step_type_ge_two {m : ℕ}
     simpa [hone] using hdvd4
   exact hnot hpow4
 
+/-- For odd inputs, the mod-4 simple-step classification is equivalent to having
+local Collatz exponent exactly `1`. This is the sharp arithmetic reason why a
+simple step cannot belong to the `step_type ≥ 2` branch. -/
+lemma simple_step_implies_step_type_eq_one {m : ℕ}
+    (hodd : Odd m) (hs : is_simple_step m) :
+    step_type m = 1 := by
+  have hbase : 1 ≤ step_type m := simple_step_implies_step_type_pos hodd hs
+  have hnotTwo : ¬ 2 ≤ step_type m := by
+    intro htwo
+    have hpow :
+        2 ^ step_type m ∣ (3 * m + 1) := by
+      simpa [step_type, Collatz.Arithmetic.e] using
+        (Nat.ordProj_dvd (3 * m + 1) 2)
+    have hpow4 : 4 ∣ (3 * m + 1) := by
+      have hfourdvdpow : 4 ∣ 2 ^ step_type m := by
+        rcases Nat.exists_eq_add_of_le htwo with ⟨d, hd⟩
+        rw [hd]
+        refine ⟨2 ^ d, ?_⟩
+        simp [pow_add, Nat.mul_comm]
+      exact dvd_trans hfourdvdpow hpow
+    have hmod0 : (3 * m + 1) % 4 = 0 := Nat.modEq_zero_iff_dvd.mpr hpow4
+    have hmod2 : (3 * m + 1) % 4 = 2 := by
+      simpa [is_simple_step] using hs
+    omega
+  omega
+
+/-- On odd inputs, a simple step is a strict growth step for the normalized odd
+Collatz map. This is the value-level obstruction that lets nonincrease recover
+the lower arithmetic target `step_type ≥ 2`. -/
+lemma collatz_step_gt_self_of_simple_step {m : ℕ}
+    (hodd : Odd m) (hs : is_simple_step m) :
+    Collatz.Foundations.collatz_step m > m := by
+  have hone : step_type m = 1 := simple_step_implies_step_type_eq_one hodd hs
+  obtain ⟨k, hk⟩ := hodd
+  rw [hk]
+  have hone' : step_type (2 * k + 1) = 1 := by
+    simpa [hk] using hone
+  have hstep :
+      Collatz.Foundations.collatz_step (2 * k + 1) = 3 * k + 2 := by
+    rw [Collatz.Foundations.collatz_step, hone']
+    have hnum : 3 * (2 * k + 1) + 1 = 2 * (3 * k + 2) := by
+      ring
+    rw [hnum]
+    simp
+  rw [hstep]
+  omega
+
 /-- For an odd input, the normalized odd step is necessarily either simple or
 complex in the mod-4 sense; there is no third residue possibility. -/
 lemma odd_is_simple_or_complex {m : ℕ} (hodd : Odd m) :
@@ -103,5 +150,18 @@ lemma complex_step_of_not_simple {m : ℕ}
   rcases odd_is_simple_or_complex hodd with hs | hc
   · exact False.elim (hns hs)
   · exact hc
+
+/-- Conversely to the descent lemma in foundations: on odd inputs, if the
+normalized odd Collatz step is already nonincreasing, then the local two-adic
+exponent cannot be `1`; hence it is at least `2`. -/
+lemma step_type_ge_two_of_collatz_step_le_self {m : ℕ}
+    (hodd : Odd m)
+    (hle : Collatz.Foundations.collatz_step m ≤ m) :
+    2 ≤ step_type m := by
+  rcases odd_is_simple_or_complex hodd with hs | hc
+  · have hgt : Collatz.Foundations.collatz_step m > m :=
+      collatz_step_gt_self_of_simple_step hodd hs
+    omega
+  · exact complex_step_implies_step_type_ge_two hodd hc
 
 end Collatz

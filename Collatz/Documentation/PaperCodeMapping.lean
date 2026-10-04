@@ -38,6 +38,11 @@ namespace Collatz.Documentation
     period-repeat exclusion layer (no `False`-based proxies)
 - I.1 support:
   - `Collatz/Convergence/MainTheorem.lean`
+  - current honest public endpoint:
+    `Convergence.collatz_convergence_unconditional_modulo_explicit_residuals`
+    with explicit residual packages
+    `Convergence.PeriodicConvergenceResidual` and
+    `Convergence.AperiodicConvergenceResidual`
   - W6 unconditional-closure pass (in progress): orbitwise stream/cofinal
     coercivity interfaces are strengthened and wired into the periodic/aperiodic
     split; the epoch-side `A.REC/A.LONG` phase-return-to-long-gap bridge is now

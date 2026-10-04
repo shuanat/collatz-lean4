@@ -7,9 +7,14 @@ This module aggregates all mixing theory components from Appendix A.MIX:
 - Touch frequency analysis
 - Semigroup theory
 -/
+import Collatz.Mixing.AdmissibleTail
 import Collatz.Mixing.Semigroup
 import Collatz.Mixing.PhaseMixing
 import Collatz.Mixing.TouchFrequency
+import Collatz.Mixing.TouchFrequencyLocal
+import Collatz.Mixing.TouchFrequencyHomogenization
+import Collatz.Mixing.TouchFrequencyBridge
+import Collatz.Mixing.AggregateTouchRate
 
 -- This module aggregates all mixing theory definitions and properties from Appendix A.MIX
 -- All definitions are available through their respective modules:

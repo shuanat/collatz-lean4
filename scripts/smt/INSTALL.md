@@ -1,5 +1,8 @@
 # Installing Z3 and CVC5 SMT Solvers
 
+Optional support note: this directory contains historical/experimental SMT
+cross-check tooling. These solvers are not required for `lake build Collatz`.
+
 ## Windows
 
 ### Option 1: Chocolatey (Recommended)
@@ -94,11 +97,13 @@ cvc5 --version
 ### Z3 not found in PATH
 
 **Windows:**
+
 ```powershell
 $env:Path += ";C:\Program Files\z3\bin"
 ```
 
 **Linux/macOS:**
+
 ```bash
 export PATH=$PATH:/usr/local/bin
 ```
@@ -115,8 +120,10 @@ pip install --upgrade z3-solver pysmt
 
 After installation:
 
-```bash
+```````bash
 cd scripts/smt
 python verify_z3.py
-```
-
+``````bash
+cd scripts/smt
+python verify_z3.py
+```````

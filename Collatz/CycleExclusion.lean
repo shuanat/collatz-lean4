@@ -15,6 +15,7 @@ import Collatz.CycleExclusion.PeriodSum
 import Collatz.CycleExclusion.PureE1Cycles
 import Collatz.CycleExclusion.MixedCycles
 import Collatz.CycleExclusion.RepeatTrick
+import Collatz.CycleExclusion.PeriodicTailBridge
 
 -- This module aggregates all cycle exclusion definitions and properties from Appendix B
 -- All definitions are available through their respective modules:
@@ -23,3 +24,4 @@ import Collatz.CycleExclusion.RepeatTrick
 -- - Collatz.CycleExclusion.PureE1Cycles
 -- - Collatz.CycleExclusion.MixedCycles
 -- - Collatz.CycleExclusion.RepeatTrick
+-- - Collatz.CycleExclusion.PeriodicTailBridge

@@ -493,6 +493,35 @@ def GapLongPhaseReturnsFillerStepwiseBridge
   ∀ hphase : OrbitHasCofinalGapLongPhaseReturns m t U,
     GapLongPhaseReturnsFillerStepwiseBridgeOn hphase
 
+/-- Strict-interior fragment of the previous filler-stepwise bridge: this keeps
+only the steps after the boundary step `rightIdx j → rightIdx j + 1`, leaving
+that first step to be supplied separately by a dedicated boundary theorem
+source. -/
+def GapLongPhaseReturnsFillerStrictInteriorStepwiseBridgeOn
+    {m t U : ℕ}
+    (hphase : OrbitHasCofinalGapLongPhaseReturns m t U) : Prop :=
+  ∀ j k : ℕ,
+    hphase.rightIdx j + 1 ≤ k →
+    k < hphase.leftIdx (j + 1) →
+      ((Collatz.Foundations.collatz_step^[k + 1]) m) ≤
+        ((Collatz.Foundations.collatz_step^[k]) m)
+
+/-- Global theorem-form of the previous strict-interior filler bridge. -/
+def GapLongPhaseReturnsFillerStrictInteriorStepwiseBridge
+    (m t U : ℕ) : Sort _ :=
+  ∀ hphase : OrbitHasCofinalGapLongPhaseReturns m t U,
+    GapLongPhaseReturnsFillerStrictInteriorStepwiseBridgeOn hphase
+
+/-- The full filler-stepwise bridge trivially restricts to the strict-interior
+fragment used by the previous split consumer. -/
+theorem gap_long_phase_returns_filler_strict_interior_stepwise_on_of_stepwise
+    {m t U : ℕ}
+    {hphase : OrbitHasCofinalGapLongPhaseReturns m t U}
+    (hstep : GapLongPhaseReturnsFillerStepwiseBridgeOn hphase) :
+    GapLongPhaseReturnsFillerStrictInteriorStepwiseBridgeOn hphase := by
+  intro j k hright hleft
+  exact hstep j k (by omega) hleft
+
 /-- Even more primitive filler-side arithmetic semantics on one fixed
 structured phase-return witness: every orbit point inside the filler interval
 is a complex step in the mod-4 sense. This is a convenient precursor to the
@@ -1275,6 +1304,509 @@ def boundary_promoted_selected_certificate_on_of_successor_room
     (boundary_promoted_selected_event_on_of_successor_room j hroom)
     rfl
 
+/-- Even lower boundary object than the certificate: fix the boundary event to the
+canonical successor index `rightIdx j + 1` itself, retaining only its value-level
+realization and the fact that it lies strictly before `leftIdx (j + 1)`. This
+avoids quantifying over any arbitrary event index while still carrying no
+admissibility or contradiction data. -/
+structure BoundaryPromotedSelectedCanonicalSuccessorOn
+    {m t U : ℕ}
+    (hphase : OrbitHasCofinalGapLongPhaseReturns m t U)
+    (j : ℕ) where
+  beforeNextLeft : hphase.rightIdx j + 1 < hphase.leftIdx (j + 1)
+  value : ℕ
+  realized : value = (Collatz.Foundations.collatz_step^[hphase.rightIdx j + 1]) m
+
+/-- The canonical successor object is immediately available from the same
+successor-room geometry that produced the certificate seam. -/
+def boundary_promoted_selected_canonical_successor_on_of_successor_room
+    {m t U : ℕ}
+    {hphase : OrbitHasCofinalGapLongPhaseReturns m t U}
+    (j : ℕ)
+    (hroom : hphase.rightIdx j + 1 < hphase.leftIdx (j + 1)) :
+    BoundaryPromotedSelectedCanonicalSuccessorOn hphase j :=
+  { beforeNextLeft := hroom
+    value := (Collatz.Foundations.collatz_step^[hphase.rightIdx j + 1]) m
+    realized := rfl }
+
+/-- The canonical successor object repackages canonically into the stronger
+certificate object. -/
+def boundary_promoted_selected_certificate_on_of_canonical_successor
+    {m t U : ℕ}
+    {hphase : OrbitHasCofinalGapLongPhaseReturns m t U}
+    {j : ℕ}
+    (hsucc : BoundaryPromotedSelectedCanonicalSuccessorOn hphase j) :
+    BoundaryPromotedSelectedCertificateOn hphase j :=
+  { event :=
+      { idx := hphase.rightIdx j + 1
+        afterRight := Nat.lt_succ_self _
+        beforeNextLeft := hsucc.beforeNextLeft
+        value := hsucc.value
+        realized := hsucc.realized }
+    atSuccessor := rfl }
+
+/-- Conversely, every certificate determines the lower canonical-successor
+object by rewriting its index to `rightIdx j + 1`. -/
+def boundary_promoted_selected_canonical_successor_on_of_certificate
+    {m t U : ℕ}
+    {hphase : OrbitHasCofinalGapLongPhaseReturns m t U}
+    {j : ℕ}
+    (hcert : BoundaryPromotedSelectedCertificateOn hphase j) :
+    BoundaryPromotedSelectedCanonicalSuccessorOn hphase j := by
+  refine
+    { beforeNextLeft := ?_
+      value := hcert.event.value
+      realized := ?_ }
+  simpa [hcert.atSuccessor] using hcert.event.beforeNextLeft
+  simpa [hcert.atSuccessor] using hcert.event.realized
+
+/-- Local theorem-source for the canonical successor object itself on the
+boundary simple-step branch. This is the fixed-index lower object sitting below
+both the certificate seam and successor-admissibility. -/
+def GapLongPhaseReturnsBoundaryPromotedSelectedCanonicalSuccessorSourceOn
+    {m t U : ℕ}
+    (hphase : OrbitHasCofinalGapLongPhaseReturns m t U) : Sort _ :=
+  ∀ j : ℕ,
+    ∀ _hsimple :
+      Collatz.is_simple_step
+        ((Collatz.Foundations.collatz_step^[hphase.rightIdx j]) m),
+      BoundaryPromotedSelectedCanonicalSuccessorOn hphase j
+
+/-- Global theorem-source form of the previous canonical-successor source. -/
+def GapLongPhaseReturnsBoundaryPromotedSelectedCanonicalSuccessorSource
+    (m t U : ℕ) : Sort _ :=
+  ∀ hphase : OrbitHasCofinalGapLongPhaseReturns m t U,
+    GapLongPhaseReturnsBoundaryPromotedSelectedCanonicalSuccessorSourceOn hphase
+
+/-- Therefore the same one-step room theorem also populates the still-lower
+canonical-successor seam. -/
+def gap_long_phase_returns_boundary_promoted_selected_canonical_successor_source_on_of_successor_room
+    {m t U : ℕ}
+    {hphase : OrbitHasCofinalGapLongPhaseReturns m t U}
+    (hroom : ∀ j : ℕ, hphase.rightIdx j + 1 < hphase.leftIdx (j + 1)) :
+    GapLongPhaseReturnsBoundaryPromotedSelectedCanonicalSuccessorSourceOn hphase := by
+  intro j _hsimple
+  exact boundary_promoted_selected_canonical_successor_on_of_successor_room j (hroom j)
+
+/-- Global theorem-source form of the previous canonical-successor constructor. -/
+def gap_long_phase_returns_boundary_promoted_selected_canonical_successor_source_of_successor_room
+    {m t U : ℕ}
+    (hroom :
+      ∀ hphase : OrbitHasCofinalGapLongPhaseReturns m t U,
+        ∀ j : ℕ, hphase.rightIdx j + 1 < hphase.leftIdx (j + 1)) :
+    GapLongPhaseReturnsBoundaryPromotedSelectedCanonicalSuccessorSource m t U := by
+  intro hphase
+  exact
+    gap_long_phase_returns_boundary_promoted_selected_canonical_successor_source_on_of_successor_room
+      (hroom hphase)
+
+/-- Primary boundary consumer after closing the admission-side batch negatively:
+if the canonical successor object itself already contradicts the downstream
+boundary branch, there is no need to route that branch through a shared
+`eventAdmissible` language first. -/
+def GapLongPhaseReturnsBoundaryCanonicalSuccessorConflictOn
+    {m t U : ℕ}
+    (hphase : OrbitHasCofinalGapLongPhaseReturns m t U) : Sort _ :=
+  ∀ {j : ℕ},
+    ∀ {_hsimple :
+      Collatz.is_simple_step
+        ((Collatz.Foundations.collatz_step^[hphase.rightIdx j]) m)},
+      BoundaryPromotedSelectedCanonicalSuccessorOn hphase j → False
+
+/-- Global theorem-source form of the previous direct canonical-successor
+consumer. -/
+def GapLongPhaseReturnsBoundaryCanonicalSuccessorConflict
+    (m t U : ℕ) : Sort _ :=
+  ∀ hphase : OrbitHasCofinalGapLongPhaseReturns m t U,
+    GapLongPhaseReturnsBoundaryCanonicalSuccessorConflictOn hphase
+
+/-- Even lower boundary target than the canonical-successor conflict object: on
+the right boundary branch itself, the iterate at `rightIdx j` is simply not a
+simple step. This removes even the fixed-index successor object wrapper and
+states directly the local exclusion content needed on that branch. -/
+def GapLongPhaseReturnsBoundarySimpleStepExclusionOn
+    {m t U : ℕ}
+    (hphase : OrbitHasCofinalGapLongPhaseReturns m t U) : Sort _ :=
+  ∀ j : ℕ,
+    ∀ _hsimple :
+      Collatz.is_simple_step
+        ((Collatz.Foundations.collatz_step^[hphase.rightIdx j]) m),
+      False
+
+/-- Global theorem-source form of the previous direct boundary exclusion
+target. -/
+def GapLongPhaseReturnsBoundarySimpleStepExclusion
+    (m t U : ℕ) : Sort _ :=
+  ∀ hphase : OrbitHasCofinalGapLongPhaseReturns m t U,
+    GapLongPhaseReturnsBoundarySimpleStepExclusionOn hphase
+
+/-- Lower arithmetic boundary target beneath direct simple-step exclusion: on the
+right boundary branch itself, the iterate at `rightIdx j` is already a complex
+step in the mod-4 sense. This is a positive residue-level statement, rather than
+the negative exclusion wording `¬ is_simple_step`. -/
+def GapLongPhaseReturnsBoundaryComplexStepOn
+    {m t U : ℕ}
+    (hphase : OrbitHasCofinalGapLongPhaseReturns m t U) : Prop :=
+  ∀ j : ℕ,
+    Collatz.is_complex_step
+      ((Collatz.Foundations.collatz_step^[hphase.rightIdx j]) m)
+
+/-- Global theorem-source form of the previous positive boundary arithmetic
+target. -/
+def GapLongPhaseReturnsBoundaryComplexStep
+    (m t U : ℕ) : Prop :=
+  ∀ hphase : OrbitHasCofinalGapLongPhaseReturns m t U,
+    GapLongPhaseReturnsBoundaryComplexStepOn hphase
+
+/-- Still lower positive arithmetic boundary target: on the right boundary
+branch, the iterate at `rightIdx j` has local two-adic exponent at least `2`.
+This is more primitive than the residue-level `complex_step` formulation and is
+the exact arithmetic input used downstream for stepwise monotonicity bridges. -/
+def GapLongPhaseReturnsBoundaryStepTypeTwoOn
+    {m t U : ℕ}
+    (hphase : OrbitHasCofinalGapLongPhaseReturns m t U) : Prop :=
+  ∀ j : ℕ,
+    2 ≤ Collatz.Foundations.step_type
+      ((Collatz.Foundations.collatz_step^[hphase.rightIdx j]) m)
+
+/-- Global theorem-source form of the previous boundary step-type target. -/
+def GapLongPhaseReturnsBoundaryStepTypeTwo
+    (m t U : ℕ) : Prop :=
+  ∀ hphase : OrbitHasCofinalGapLongPhaseReturns m t U,
+    GapLongPhaseReturnsBoundaryStepTypeTwoOn hphase
+
+/-- Still lower value-level boundary target: at the right boundary iterate
+itself, the next odd Collatz step is already nonincreasing. This removes even
+the residue/exponent phrasing and states the exact local order fact directly. -/
+def GapLongPhaseReturnsBoundaryStepNonincreaseOn
+    {m t U : ℕ}
+    (hphase : OrbitHasCofinalGapLongPhaseReturns m t U) : Prop :=
+  ∀ j : ℕ,
+    ((Collatz.Foundations.collatz_step^[hphase.rightIdx j + 1]) m) ≤
+      ((Collatz.Foundations.collatz_step^[hphase.rightIdx j]) m)
+
+/-- Global theorem-source form of the previous boundary value-level target. -/
+def GapLongPhaseReturnsBoundaryStepNonincrease
+    (m t U : ℕ) : Prop :=
+  ∀ hphase : OrbitHasCofinalGapLongPhaseReturns m t U,
+    GapLongPhaseReturnsBoundaryStepNonincreaseOn hphase
+
+/-- Lowest contradiction-free boundary order target presently exposed: at the
+right boundary iterate, the next odd Collatz step is not a strict growth step.
+This forgets the positive `≤` packaging and keeps only the raw exclusion of
+value increase. -/
+def GapLongPhaseReturnsBoundaryStepGrowthExclusionOn
+    {m t U : ℕ}
+    (hphase : OrbitHasCofinalGapLongPhaseReturns m t U) : Prop :=
+  ∀ j : ℕ,
+    ¬ ((Collatz.Foundations.collatz_step^[hphase.rightIdx j + 1]) m) >
+        ((Collatz.Foundations.collatz_step^[hphase.rightIdx j]) m)
+
+/-- Global theorem-source form of the previous contradiction-free boundary
+order target. -/
+def GapLongPhaseReturnsBoundaryStepGrowthExclusion
+    (m t U : ℕ) : Prop :=
+  ∀ hphase : OrbitHasCofinalGapLongPhaseReturns m t U,
+    GapLongPhaseReturnsBoundaryStepGrowthExclusionOn hphase
+
+/-- On odd orbits, direct exclusion of simple steps on the boundary branch is
+only packaging over the more positive residue-level statement that the same
+boundary iterate is a complex step. -/
+theorem gap_long_phase_returns_boundary_complex_step_on_of_simple_step_exclusion
+    {m t U : ℕ}
+    (hm : Odd m)
+    {hphase : OrbitHasCofinalGapLongPhaseReturns m t U}
+    (hexcl : GapLongPhaseReturnsBoundarySimpleStepExclusionOn hphase) :
+    GapLongPhaseReturnsBoundaryComplexStepOn hphase := by
+  intro j
+  exact
+    Collatz.complex_step_of_not_simple
+      (Collatz.Foundations.odd_iterates_of_odd hm (hphase.rightIdx j))
+      (by
+        intro hsimple
+        exact hexcl j hsimple)
+
+/-- The residue-level boundary complex-step target is itself packaging over the
+more primitive arithmetic statement `step_type ≥ 2` on the same boundary
+iterate. -/
+theorem gap_long_phase_returns_boundary_step_type_two_on_of_complex_step
+    {m t U : ℕ}
+    (hm : Odd m)
+    {hphase : OrbitHasCofinalGapLongPhaseReturns m t U}
+    (hcomplex : GapLongPhaseReturnsBoundaryComplexStepOn hphase) :
+    GapLongPhaseReturnsBoundaryStepTypeTwoOn hphase := by
+  intro j
+  exact
+    Collatz.complex_step_implies_step_type_ge_two
+      (Collatz.Foundations.odd_iterates_of_odd hm (hphase.rightIdx j))
+      (hcomplex j)
+
+/-- Conversely, on odd orbits the arithmetic target `step_type ≥ 2` already
+forces the residue-level boundary complex-step statement. Thus the complex-step
+layer carries no additional local content beyond this lower step-type target. -/
+theorem gap_long_phase_returns_boundary_complex_step_on_of_step_type_two
+    {m t U : ℕ}
+    (hm : Odd m)
+    {hphase : OrbitHasCofinalGapLongPhaseReturns m t U}
+    (hstepTwo : GapLongPhaseReturnsBoundaryStepTypeTwoOn hphase) :
+    GapLongPhaseReturnsBoundaryComplexStepOn hphase := by
+  intro j
+  let r := ((Collatz.Foundations.collatz_step^[hphase.rightIdx j]) m)
+  have hodd : Odd r := Collatz.Foundations.odd_iterates_of_odd hm (hphase.rightIdx j)
+  have hstep : 2 ≤ Collatz.Foundations.step_type r := by
+    simpa [r] using hstepTwo j
+  rcases Nat.exists_eq_add_of_le hstep with ⟨d, hd⟩
+  have hpow :
+      2 ^ Collatz.Foundations.step_type r ∣ 3 * r + 1 := by
+    simpa [Collatz.Foundations.step_type, Collatz.Arithmetic.e] using
+      (Nat.ordProj_dvd (3 * r + 1) 2)
+  have hpow4 : 4 ∣ 3 * r + 1 := by
+    rw [hd] at hpow
+    exact dvd_trans
+      ⟨2 ^ d, by
+        simp [pow_add, Nat.mul_comm]⟩
+      hpow
+  have hmod0 : (3 * r + 1) % 4 = 0 := Nat.modEq_zero_iff_dvd.mpr hpow4
+  simpa [r, Collatz.is_complex_step] using hmod0
+
+/-- The boundary arithmetic target `step_type ≥ 2` is itself packaging over the
+direct value-level statement that the next odd Collatz step at `rightIdx j` is
+already nonincreasing. -/
+theorem gap_long_phase_returns_boundary_step_nonincrease_on_of_step_type_two
+    {m t U : ℕ}
+    (hm : Odd m)
+    {hphase : OrbitHasCofinalGapLongPhaseReturns m t U}
+    (hstepTwo : GapLongPhaseReturnsBoundaryStepTypeTwoOn hphase) :
+    GapLongPhaseReturnsBoundaryStepNonincreaseOn hphase := by
+  intro j
+  have hoddr : Odd ((Collatz.Foundations.collatz_step^[hphase.rightIdx j]) m) :=
+    Collatz.Foundations.odd_iterates_of_odd hm (hphase.rightIdx j)
+  simpa [Function.iterate_succ_apply'] using
+    Collatz.Foundations.collatz_step_le_self_of_step_type_ge_two hoddr
+      (hstepTwo j)
+
+/-- Conversely, on odd orbits direct one-step nonincrease at the boundary
+iterate already forces `step_type ≥ 2`. Thus the step-type formulation carries
+no extra local boundary content beyond this value-level target. -/
+theorem gap_long_phase_returns_boundary_step_type_two_on_of_step_nonincrease
+    {m t U : ℕ}
+    (hm : Odd m)
+    {hphase : OrbitHasCofinalGapLongPhaseReturns m t U}
+    (hnoninc : GapLongPhaseReturnsBoundaryStepNonincreaseOn hphase) :
+    GapLongPhaseReturnsBoundaryStepTypeTwoOn hphase := by
+  intro j
+  have hoddr : Odd ((Collatz.Foundations.collatz_step^[hphase.rightIdx j]) m) :=
+    Collatz.Foundations.odd_iterates_of_odd hm (hphase.rightIdx j)
+  have hle :
+      Collatz.Foundations.collatz_step
+          ((Collatz.Foundations.collatz_step^[hphase.rightIdx j]) m) ≤
+        ((Collatz.Foundations.collatz_step^[hphase.rightIdx j]) m) := by
+    simpa [Function.iterate_succ_apply'] using hnoninc j
+  exact Collatz.step_type_ge_two_of_collatz_step_le_self hoddr hle
+
+/-- Direct one-step nonincrease on the boundary iterate is itself only positive
+packaging over the more primitive order-theoretic statement that the same step
+does not strictly grow the orbit value. -/
+theorem gap_long_phase_returns_boundary_step_growth_exclusion_on_of_step_nonincrease
+    {m t U : ℕ}
+    {hphase : OrbitHasCofinalGapLongPhaseReturns m t U}
+    (hnoninc : GapLongPhaseReturnsBoundaryStepNonincreaseOn hphase) :
+    GapLongPhaseReturnsBoundaryStepGrowthExclusionOn hphase := by
+  intro j hgt
+  exact Nat.not_lt_of_ge (hnoninc j) hgt
+
+/-- Conversely, on naturals the contradiction-free boundary order target already
+recovers direct nonincrease, since excluding strict growth is equivalent to
+`≤`. Thus the current boundary frontier is now reduced to pure order content. -/
+theorem gap_long_phase_returns_boundary_step_nonincrease_on_of_growth_exclusion
+    {m t U : ℕ}
+    {hphase : OrbitHasCofinalGapLongPhaseReturns m t U}
+    (hexcl : GapLongPhaseReturnsBoundaryStepGrowthExclusionOn hphase) :
+    GapLongPhaseReturnsBoundaryStepNonincreaseOn hphase := by
+  intro j
+  exact le_of_not_gt (hexcl j)
+
+/-- If the boundary step itself is known not to be a strict growth step and all
+later strict-interior filler steps are nonincreasing, then the full filler
+stepwise bridge follows. This is the clean consumer for the terminal boundary
+order seam. -/
+theorem gap_long_phase_returns_filler_stepwise_on_of_boundary_growth_exclusion_and_strict_interior
+    {m t U : ℕ}
+    {hphase : OrbitHasCofinalGapLongPhaseReturns m t U}
+    (hboundary : GapLongPhaseReturnsBoundaryStepGrowthExclusionOn hphase)
+    (hinterior : GapLongPhaseReturnsFillerStrictInteriorStepwiseBridgeOn hphase) :
+    GapLongPhaseReturnsFillerStepwiseBridgeOn hphase := by
+  intro j k hright hleft
+  by_cases hk : k = hphase.rightIdx j
+  · subst hk
+    exact le_of_not_gt (hboundary j)
+  · have hstrict : hphase.rightIdx j + 1 ≤ k := by omega
+    exact hinterior j k hstrict hleft
+
+/-- On the natural-number order, the current lowest exposed boundary target and
+the previous direct nonincrease target are definitionally equivalent in local
+mathematical content: one is only the positive packaging of the other. -/
+theorem gap_long_phase_returns_boundary_step_nonincrease_on_iff_growth_exclusion
+    {m t U : ℕ}
+    {hphase : OrbitHasCofinalGapLongPhaseReturns m t U} :
+    GapLongPhaseReturnsBoundaryStepNonincreaseOn hphase ↔
+      GapLongPhaseReturnsBoundaryStepGrowthExclusionOn hphase := by
+  constructor
+  · exact gap_long_phase_returns_boundary_step_growth_exclusion_on_of_step_nonincrease
+  · exact gap_long_phase_returns_boundary_step_nonincrease_on_of_growth_exclusion
+
+/-- The terminal boundary order target still reproduces the older arithmetic
+frontier `step_type ≥ 2` after reintroducing only the tautological `≤`
+packaging. -/
+theorem gap_long_phase_returns_boundary_step_type_two_on_of_growth_exclusion
+    {m t U : ℕ}
+    (hm : Odd m)
+    {hphase : OrbitHasCofinalGapLongPhaseReturns m t U}
+    (hexcl : GapLongPhaseReturnsBoundaryStepGrowthExclusionOn hphase) :
+    GapLongPhaseReturnsBoundaryStepTypeTwoOn hphase := by
+  exact
+    gap_long_phase_returns_boundary_step_type_two_on_of_step_nonincrease hm
+      (gap_long_phase_returns_boundary_step_nonincrease_on_of_growth_exclusion
+        hexcl)
+
+/-- Conversely, the positive residue-level boundary target already excludes
+simple steps directly: the same orbit value cannot satisfy both mod-4
+classifications at once. -/
+theorem gap_long_phase_returns_boundary_simple_step_exclusion_on_of_complex_step
+    {m t U : ℕ}
+    {hphase : OrbitHasCofinalGapLongPhaseReturns m t U}
+    (hcomplex : GapLongPhaseReturnsBoundaryComplexStepOn hphase) :
+    GapLongPhaseReturnsBoundarySimpleStepExclusionOn hphase := by
+  intro j hsimple
+  have hmod2 :
+      (3 * ((Collatz.Foundations.collatz_step^[hphase.rightIdx j]) m) + 1) % 4 = 2 := by
+    simpa [Collatz.is_simple_step] using hsimple
+  have hmod0 :
+      (3 * ((Collatz.Foundations.collatz_step^[hphase.rightIdx j]) m) + 1) % 4 = 0 := by
+    simpa [Collatz.is_complex_step] using hcomplex j
+  omega
+
+/-- On odd orbits, direct boundary simple-step exclusion already produces the
+terminal boundary order target. This records the whole lowering chain as a
+single producer theorem so downstream users need not rebuild the intermediate
+residue and step-type wrappers. -/
+theorem gap_long_phase_returns_boundary_step_growth_exclusion_on_of_simple_step_exclusion
+    {m t U : ℕ}
+    (hm : Odd m)
+    {hphase : OrbitHasCofinalGapLongPhaseReturns m t U}
+    (hexcl : GapLongPhaseReturnsBoundarySimpleStepExclusionOn hphase) :
+    GapLongPhaseReturnsBoundaryStepGrowthExclusionOn hphase := by
+  exact
+    gap_long_phase_returns_boundary_step_growth_exclusion_on_of_step_nonincrease
+      (gap_long_phase_returns_boundary_step_nonincrease_on_of_step_type_two hm
+        (gap_long_phase_returns_boundary_step_type_two_on_of_complex_step hm
+          (gap_long_phase_returns_boundary_complex_step_on_of_simple_step_exclusion hm
+            hexcl)))
+
+/-- The previous canonical-successor conflict is packaging over direct boundary
+simple-step exclusion: if the right-boundary simple step is already impossible,
+the canonical successor object contributes no additional mathematical burden. -/
+def gap_long_phase_returns_boundary_canonical_successor_conflict_on_of_simple_step_exclusion
+    {m t U : ℕ}
+    {hphase : OrbitHasCofinalGapLongPhaseReturns m t U}
+    (hexcl : GapLongPhaseReturnsBoundarySimpleStepExclusionOn hphase) :
+    GapLongPhaseReturnsBoundaryCanonicalSuccessorConflictOn hphase := by
+  intro j hsimple _hsucc
+  exact hexcl j hsimple
+
+/-- Once the direct boundary consumer is formulated on the canonical successor
+object itself, the existing successor-room geometry already populates it without
+any appeal to `eventAdmissible`. -/
+theorem not_gap_long_phase_returns_boundary_successor_room_simple_step_and_canonical_successor_conflict
+    {m t U : ℕ}
+    {hphase : OrbitHasCofinalGapLongPhaseReturns m t U}
+    {j : ℕ}
+    (hsimple :
+      Collatz.is_simple_step
+        ((Collatz.Foundations.collatz_step^[hphase.rightIdx j]) m))
+    (hroom : hphase.rightIdx j + 1 < hphase.leftIdx (j + 1))
+    (hconf : GapLongPhaseReturnsBoundaryCanonicalSuccessorConflictOn hphase) :
+    False := by
+  exact
+    hconf (j := j) (_hsimple := hsimple)
+      (boundary_promoted_selected_canonical_successor_on_of_successor_room j hroom)
+
+/-- Conversely, once the canonical-successor conflict is known and the
+successor-room geometry supplies the fixed boundary object, the remaining local
+content is exactly direct exclusion of the boundary simple-step branch. -/
+def gap_long_phase_returns_boundary_simple_step_exclusion_on_of_successor_room_and_canonical_successor_conflict
+    {m t U : ℕ}
+    {hphase : OrbitHasCofinalGapLongPhaseReturns m t U}
+    (hroom : ∀ j : ℕ, hphase.rightIdx j + 1 < hphase.leftIdx (j + 1))
+    (hconf : GapLongPhaseReturnsBoundaryCanonicalSuccessorConflictOn hphase) :
+    GapLongPhaseReturnsBoundarySimpleStepExclusionOn hphase := by
+  intro j hsimple
+  exact
+    hconf (j := j) (_hsimple := hsimple)
+      (boundary_promoted_selected_canonical_successor_on_of_successor_room j (hroom j))
+
+/-- Therefore, once successor-room geometry supplies the fixed boundary
+canonical successor, conflict already produces the terminal boundary order
+target. -/
+def gap_long_phase_returns_boundary_step_growth_exclusion_on_of_successor_room_and_canonical_successor_conflict
+    {m t U : ℕ}
+    (hm : Odd m)
+    {hphase : OrbitHasCofinalGapLongPhaseReturns m t U}
+    (hroom : ∀ j : ℕ, hphase.rightIdx j + 1 < hphase.leftIdx (j + 1))
+    (hconf : GapLongPhaseReturnsBoundaryCanonicalSuccessorConflictOn hphase) :
+    GapLongPhaseReturnsBoundaryStepGrowthExclusionOn hphase := by
+  have hexcl : GapLongPhaseReturnsBoundarySimpleStepExclusionOn hphase := by
+    intro j hsimple
+    exact
+      hconf (j := j) (_hsimple := hsimple)
+        (boundary_promoted_selected_canonical_successor_on_of_successor_room j (hroom j))
+  exact
+    gap_long_phase_returns_boundary_step_growth_exclusion_on_of_simple_step_exclusion
+      hm hexcl
+
+/-- Equivalent source-level form of the previous direct boundary consumer: once
+the canonical successor source exists, the contradiction is obtained directly
+from that source with no intervening admission bridge. -/
+theorem not_gap_long_phase_returns_boundary_canonical_successor_source_on_of_simple_step_and_canonical_successor_conflict
+    {m t U : ℕ}
+    {hphase : OrbitHasCofinalGapLongPhaseReturns m t U}
+    {j : ℕ}
+    (hsimple :
+      Collatz.is_simple_step
+        ((Collatz.Foundations.collatz_step^[hphase.rightIdx j]) m))
+    (hsrc : GapLongPhaseReturnsBoundaryPromotedSelectedCanonicalSuccessorSourceOn hphase)
+    (hconf : GapLongPhaseReturnsBoundaryCanonicalSuccessorConflictOn hphase) :
+    False := by
+  exact hconf (j := j) (_hsimple := hsimple) (hsrc j hsimple)
+
+/-- Source-level form of the same reduction: once the canonical-successor source
+is exposed explicitly, the direct boundary simple-step exclusion target follows
+with no remaining object-level packaging. -/
+def gap_long_phase_returns_boundary_simple_step_exclusion_on_of_canonical_successor_source_and_conflict
+    {m t U : ℕ}
+    {hphase : OrbitHasCofinalGapLongPhaseReturns m t U}
+    (hsrc : GapLongPhaseReturnsBoundaryPromotedSelectedCanonicalSuccessorSourceOn hphase)
+    (hconf : GapLongPhaseReturnsBoundaryCanonicalSuccessorConflictOn hphase) :
+    GapLongPhaseReturnsBoundarySimpleStepExclusionOn hphase := by
+  intro j hsimple
+  exact hconf (j := j) (_hsimple := hsimple) (hsrc j hsimple)
+
+/-- Source-level form of the same producer: once the canonical successor source
+is explicit, conflict already yields the terminal boundary order target. -/
+def gap_long_phase_returns_boundary_step_growth_exclusion_on_of_canonical_successor_source_and_conflict
+    {m t U : ℕ}
+    (hm : Odd m)
+    {hphase : OrbitHasCofinalGapLongPhaseReturns m t U}
+    (hsrc : GapLongPhaseReturnsBoundaryPromotedSelectedCanonicalSuccessorSourceOn hphase)
+    (hconf : GapLongPhaseReturnsBoundaryCanonicalSuccessorConflictOn hphase) :
+    GapLongPhaseReturnsBoundaryStepGrowthExclusionOn hphase := by
+  have hexcl : GapLongPhaseReturnsBoundarySimpleStepExclusionOn hphase := by
+    intro j hsimple
+    exact hconf (j := j) (_hsimple := hsimple) (hsrc j hsimple)
+  exact
+    gap_long_phase_returns_boundary_step_growth_exclusion_on_of_simple_step_exclusion
+      hm hexcl
+
 /-- Local theorem-source for the new boundary certificate seam: for every
 boundary simple-step branch, produce the stronger certificate rather than
 immediately forcing the event into some downstream admissibility language. -/
@@ -1354,6 +1886,30 @@ def GapLongPhaseReturnsBoundaryPromotedSelectedCertificateEventWitnessAdapterOn
       PromotedFillerSelectedEventWitnessForOn hphase hsplit.eventAdmissible
         (right_boundary_simple_step_candidate hphase j hsimple)
 
+/-- Minimal theorem-source still missing below the boundary certificate seam:
+from the stronger certificate alone, produce only the `admissibleIdx` field
+needed by the promotion-side event language. This is strictly weaker than the
+full event-witness adapter because it adds no geometry, value data, or
+packaging. -/
+def GapLongPhaseReturnsBoundaryPromotedSelectedCertificateAdmissibilityBridgeOn
+    {m t U : ℕ}
+    (hphase : OrbitHasCofinalGapLongPhaseReturns m t U)
+    (admissible : ℕ → ℕ → Prop) : Sort _ :=
+  ∀ {j : ℕ},
+    (hcert : BoundaryPromotedSelectedCertificateOn hphase j) →
+      admissible j hcert.event.idx
+
+/-- Global theorem-source form of the previous certificate-to-admissibility
+bridge. -/
+def GapLongPhaseReturnsBoundaryPromotedSelectedCertificateAdmissibilityBridge
+    (m t U : ℕ)
+    (admissible :
+      ∀ _ : OrbitHasCofinalGapLongPhaseReturns m t U, ℕ → ℕ → Prop) :
+    Sort _ :=
+  ∀ hphase : OrbitHasCofinalGapLongPhaseReturns m t U,
+    GapLongPhaseReturnsBoundaryPromotedSelectedCertificateAdmissibilityBridgeOn
+      hphase (admissible hphase)
+
 /-- Separate admissibility bridge from the concrete boundary event language into
 one chosen witness-relative admissibility notion. This is where the comparison
 with a particular `CanonicalNextLeftSelectionWitnessOn` should happen, rather
@@ -1420,6 +1976,176 @@ def right_boundary_simple_step_promoted_filler_selected_event_witness_for_on_of_
     realized := hevent.realized
     admissibleIdx := hadm }
 
+/-- The full certificate-to-event-witness adapter is only packaging once the
+missing certificate-to-admissibility bridge has been supplied: reuse the stored
+boundary event, derive its event-language admission, and then invoke the
+existing helper that packages these fields into the exact promotion-side event
+witness expected by direct event-conflict consumers. -/
+def gap_long_phase_returns_boundary_promoted_selected_certificate_event_witness_adapter_on_of_admissibility
+    {m t U : ℕ}
+    {hphase : OrbitHasCofinalGapLongPhaseReturns m t U}
+    {hsplit : CanonicalNextLeftSplitWitnessOn hphase}
+    (hbridge :
+      GapLongPhaseReturnsBoundaryPromotedSelectedCertificateAdmissibilityBridgeOn
+        hphase hsplit.eventAdmissible) :
+    GapLongPhaseReturnsBoundaryPromotedSelectedCertificateEventWitnessAdapterOn
+      hphase hsplit := by
+  intro j hsimple hcert
+  exact
+    right_boundary_simple_step_promoted_filler_selected_event_witness_for_on_of_boundary_event
+      (hevent := hcert.event)
+      (hadm := hbridge hcert)
+
+/-- Even lower boundary theorem-source than the certificate-to-admissibility
+bridge: on the canonical successor route, the promotion-side event language
+admits the single successor index `rightIdx j + 1` for each right-boundary
+simple-step branch. This focuses only on the unique boundary event produced by
+the current geometry, rather than quantifying over arbitrary certificate values.
+-/
+def GapLongPhaseReturnsBoundaryPromotedSelectedSuccessorAdmissibilityOn
+    {m t U : ℕ}
+    (hphase : OrbitHasCofinalGapLongPhaseReturns m t U)
+    (admissible : ℕ → ℕ → Prop) : Sort _ :=
+  ∀ j : ℕ,
+    ∀ _hsimple :
+      Collatz.is_simple_step
+        ((Collatz.Foundations.collatz_step^[hphase.rightIdx j]) m),
+      admissible j (hphase.rightIdx j + 1)
+
+/-- Global theorem-source form of the previous successor-admissibility seam. -/
+def GapLongPhaseReturnsBoundaryPromotedSelectedSuccessorAdmissibility
+    (m t U : ℕ)
+    (admissible :
+      ∀ _ : OrbitHasCofinalGapLongPhaseReturns m t U, ℕ → ℕ → Prop) :
+    Sort _ :=
+  ∀ hphase : OrbitHasCofinalGapLongPhaseReturns m t U,
+    GapLongPhaseReturnsBoundaryPromotedSelectedSuccessorAdmissibilityOn
+      hphase (admissible hphase)
+
+/-- Explicit name for the current lowest honest boundary target under a split
+witness: on each right-boundary simple-step branch, the event side admits the
+single fixed canonical successor index `rightIdx j + 1`. This is just the
+successor-admissibility seam specialized to the active split witness, making the
+live frontier visible without reintroducing any object wrapper. -/
+abbrev GapLongPhaseReturnsBoundaryCanonicalSuccessorIndexAdmissibleOn
+    {m t U : ℕ}
+    (hphase : OrbitHasCofinalGapLongPhaseReturns m t U)
+    (hsplit : CanonicalNextLeftSplitWitnessOn hphase) : Sort _ :=
+  GapLongPhaseReturnsBoundaryPromotedSelectedSuccessorAdmissibilityOn
+    hphase hsplit.eventAdmissible
+
+/-- Global theorem-source form of the previous direct fixed-index boundary
+target. -/
+abbrev GapLongPhaseReturnsBoundaryCanonicalSuccessorIndexAdmissible
+    (m t U : ℕ)
+    (hsplit : CanonicalNextLeftSplitWitness m t U) : Sort _ :=
+  ∀ hphase : OrbitHasCofinalGapLongPhaseReturns m t U,
+    GapLongPhaseReturnsBoundaryCanonicalSuccessorIndexAdmissibleOn
+      hphase (hsplit hphase)
+
+/-- Honest source-route specialization for the fixed-index frontier: if the
+concrete boundary event produced by successor-room geometry is admitted on the
+event side, then the split witness already admits the single canonical
+successor index `rightIdx j + 1` on every boundary simple-step branch. This
+does not add any new packaging data; it only specializes the generic
+boundary-event bridge down to the fixed index carried by the canonical boundary
+event. -/
+def gap_long_phase_returns_boundary_canonical_successor_index_admissible_on_of_event_admissibility_bridge_and_successor_room
+    {m t U : ℕ}
+    {hphase : OrbitHasCofinalGapLongPhaseReturns m t U}
+    {hsplit : CanonicalNextLeftSplitWitnessOn hphase}
+    (hroom : ∀ j : ℕ, hphase.rightIdx j + 1 < hphase.leftIdx (j + 1))
+    (hbridge :
+      GapLongPhaseReturnsBoundaryPromotedSelectedEventAdmissibilityBridgeOn
+        hphase hsplit.eventAdmissible) :
+    GapLongPhaseReturnsBoundaryCanonicalSuccessorIndexAdmissibleOn
+      hphase hsplit := by
+  intro j _hsimple
+  let hevent : BoundaryPromotedSelectedEventOn hphase j :=
+    boundary_promoted_selected_event_on_of_successor_room j (hroom j)
+  simpa
+    [GapLongPhaseReturnsBoundaryCanonicalSuccessorIndexAdmissibleOn,
+      GapLongPhaseReturnsBoundaryPromotedSelectedSuccessorAdmissibilityOn,
+      hevent, boundary_promoted_selected_event_on_of_successor_room]
+    using hbridge hevent
+
+/-- Bridge from the fixed-index canonical successor object into successor
+admissibility for the promotion-side event language. This is strictly lower than
+the current successor-admissibility seam because the lower object no longer
+mentions either certificates or arbitrary event indices. -/
+def GapLongPhaseReturnsBoundaryPromotedSelectedCanonicalSuccessorAdmissibilityBridgeOn
+    {m t U : ℕ}
+    (hphase : OrbitHasCofinalGapLongPhaseReturns m t U)
+    (admissible : ℕ → ℕ → Prop) : Sort _ :=
+  ∀ {j : ℕ},
+    BoundaryPromotedSelectedCanonicalSuccessorOn hphase j →
+      admissible j (hphase.rightIdx j + 1)
+
+/-- Global theorem-source form of the previous canonical-successor admissibility
+bridge. -/
+def GapLongPhaseReturnsBoundaryPromotedSelectedCanonicalSuccessorAdmissibilityBridge
+    (m t U : ℕ)
+    (admissible :
+      ∀ _ : OrbitHasCofinalGapLongPhaseReturns m t U, ℕ → ℕ → Prop) :
+    Sort _ :=
+  ∀ hphase : OrbitHasCofinalGapLongPhaseReturns m t U,
+    GapLongPhaseReturnsBoundaryPromotedSelectedCanonicalSuccessorAdmissibilityBridgeOn
+      hphase (admissible hphase)
+
+/-- Once the canonical successor itself is admitted on the event side, the
+stronger successor-admissibility seam is only transparent packaging over the
+fixed index `rightIdx j + 1`. -/
+def gap_long_phase_returns_boundary_promoted_selected_successor_admissibility_on_of_canonical_successor_source_and_bridge
+    {m t U : ℕ}
+    {hphase : OrbitHasCofinalGapLongPhaseReturns m t U}
+    {admissible : ℕ → ℕ → Prop}
+    (hsrc : GapLongPhaseReturnsBoundaryPromotedSelectedCanonicalSuccessorSourceOn hphase)
+    (hbridge :
+      GapLongPhaseReturnsBoundaryPromotedSelectedCanonicalSuccessorAdmissibilityBridgeOn
+        hphase admissible) :
+    GapLongPhaseReturnsBoundaryPromotedSelectedSuccessorAdmissibilityOn hphase admissible := by
+  intro j hsimple
+  exact hbridge (hsrc j hsimple)
+
+/-- Once successor-index admissibility is known on the canonical boundary
+simple-step branch, the stronger certificate-to-event-witness adapter is again
+just transparent packaging: rewrite the certificate index to `rightIdx j + 1`
+and invoke the existing helper. -/
+def gap_long_phase_returns_boundary_promoted_selected_certificate_event_witness_adapter_on_of_successor_admissibility
+    {m t U : ℕ}
+    {hphase : OrbitHasCofinalGapLongPhaseReturns m t U}
+    {hsplit : CanonicalNextLeftSplitWitnessOn hphase}
+    (hadm :
+      GapLongPhaseReturnsBoundaryPromotedSelectedSuccessorAdmissibilityOn
+        hphase hsplit.eventAdmissible) :
+    GapLongPhaseReturnsBoundaryPromotedSelectedCertificateEventWitnessAdapterOn
+      hphase hsplit := by
+  intro j hsimple hcert
+  have hadm' : hsplit.eventAdmissible j hcert.event.idx := by
+    rw [hcert.atSuccessor]
+    exact hadm j hsimple
+  exact
+    right_boundary_simple_step_promoted_filler_selected_event_witness_for_on_of_boundary_event
+      (hevent := hcert.event)
+      (hadm := hadm')
+
+/-- The same certificate-to-event-witness packaging can be stated directly over
+the explicit fixed-index frontier: once the split witness admits the canonical
+successor index on each boundary simple-step branch, the remaining certificate
+layer contributes only stored boundary geometry. -/
+def gap_long_phase_returns_boundary_promoted_selected_certificate_event_witness_adapter_on_of_canonical_successor_index_admissible
+    {m t U : ℕ}
+    {hphase : OrbitHasCofinalGapLongPhaseReturns m t U}
+    {hsplit : CanonicalNextLeftSplitWitnessOn hphase}
+    (hadm :
+      GapLongPhaseReturnsBoundaryCanonicalSuccessorIndexAdmissibleOn
+        hphase hsplit) :
+    GapLongPhaseReturnsBoundaryPromotedSelectedCertificateEventWitnessAdapterOn
+      hphase hsplit := by
+  exact
+    gap_long_phase_returns_boundary_promoted_selected_certificate_event_witness_adapter_on_of_successor_admissibility
+      hadm
+
 /-- Guard theorem for the new contract: once a boundary certificate source is
 available, forgetting that certificate down to index/order-only comparison data
 already suffices to contradict any structured minimality theorem. So any viable
@@ -1480,6 +2206,122 @@ theorem not_gap_long_phase_returns_boundary_certificate_source_on_of_simple_step
   exact
     hconf (right_boundary_simple_step_candidate hphase j hsimple)
       (hadapt (j := j) (hsimple := hsimple) (hsrc j hsimple))
+
+/-- Exact no-go theorem for the new minimal target: if the stronger boundary
+certificate already theorem-produces the missing `admissibleIdx` field for the
+promotion-side event language, then the direct event-conflict contradiction
+follows by transparent packaging alone. Thus any remaining positive progress
+must come from honest lower semantics for this bridge, not from a stronger
+adapter wrapper. -/
+theorem not_gap_long_phase_returns_boundary_certificate_source_on_of_simple_step_and_certificate_admissibility_bridge_and_event_conflict
+    {m t U : ℕ}
+    {hphase : OrbitHasCofinalGapLongPhaseReturns m t U}
+    {hsplit : CanonicalNextLeftSplitWitnessOn hphase}
+    {j : ℕ}
+    (hsimple :
+      Collatz.is_simple_step
+        ((Collatz.Foundations.collatz_step^[hphase.rightIdx j]) m))
+    (hsrc : GapLongPhaseReturnsBoundaryPromotedSelectedCertificateSourceOn hphase)
+    (hbridge :
+      GapLongPhaseReturnsBoundaryPromotedSelectedCertificateAdmissibilityBridgeOn
+        hphase hsplit.eventAdmissible)
+    (hconf :
+      GapLongPhaseReturnsFillerCanonicalNextLeftSplitEventConflictOn hphase hsplit) :
+    False := by
+  exact
+    not_gap_long_phase_returns_boundary_certificate_source_on_of_simple_step_and_event_witness_adapter_and_event_conflict
+      (j := j)
+      hsimple
+      hsrc
+      (gap_long_phase_returns_boundary_promoted_selected_certificate_event_witness_adapter_on_of_admissibility
+        hbridge)
+      hconf
+
+/-- Exact no-go theorem for the still-lower successor-admissibility seam: if the
+promotion-side event language already admits the canonical successor index
+`rightIdx j + 1` on the boundary simple-step branch, then the direct
+event-conflict contradiction follows by transparent certificate packaging alone.
+This shows that the new live residual lies even below the generic
+certificate-to-admissibility bridge. -/
+theorem not_gap_long_phase_returns_boundary_certificate_source_on_of_simple_step_and_successor_admissibility_and_event_conflict
+    {m t U : ℕ}
+    {hphase : OrbitHasCofinalGapLongPhaseReturns m t U}
+    {hsplit : CanonicalNextLeftSplitWitnessOn hphase}
+    {j : ℕ}
+    (hsimple :
+      Collatz.is_simple_step
+        ((Collatz.Foundations.collatz_step^[hphase.rightIdx j]) m))
+    (hsrc : GapLongPhaseReturnsBoundaryPromotedSelectedCertificateSourceOn hphase)
+    (hadm :
+      GapLongPhaseReturnsBoundaryPromotedSelectedSuccessorAdmissibilityOn
+        hphase hsplit.eventAdmissible)
+    (hconf :
+      GapLongPhaseReturnsFillerCanonicalNextLeftSplitEventConflictOn hphase hsplit) :
+    False := by
+  exact
+    not_gap_long_phase_returns_boundary_certificate_source_on_of_simple_step_and_event_witness_adapter_and_event_conflict
+      (j := j)
+      hsimple
+      hsrc
+      (gap_long_phase_returns_boundary_promoted_selected_certificate_event_witness_adapter_on_of_successor_admissibility
+        hadm)
+      hconf
+
+/-- The previous exact no-go theorem can be read directly as landing on the
+explicit fixed-index frontier: once the split witness already admits
+`rightIdx j + 1` on the boundary simple-step branch, the direct event-conflict
+consumer closes immediately by transparent packaging alone. -/
+theorem not_gap_long_phase_returns_boundary_certificate_source_on_of_simple_step_and_canonical_successor_index_admissible_and_event_conflict
+    {m t U : ℕ}
+    {hphase : OrbitHasCofinalGapLongPhaseReturns m t U}
+    {hsplit : CanonicalNextLeftSplitWitnessOn hphase}
+    {j : ℕ}
+    (hsimple :
+      Collatz.is_simple_step
+        ((Collatz.Foundations.collatz_step^[hphase.rightIdx j]) m))
+    (hsrc : GapLongPhaseReturnsBoundaryPromotedSelectedCertificateSourceOn hphase)
+    (hadm :
+      GapLongPhaseReturnsBoundaryCanonicalSuccessorIndexAdmissibleOn
+        hphase hsplit)
+    (hconf :
+      GapLongPhaseReturnsFillerCanonicalNextLeftSplitEventConflictOn hphase hsplit) :
+    False := by
+  exact
+    not_gap_long_phase_returns_boundary_certificate_source_on_of_simple_step_and_successor_admissibility_and_event_conflict
+      (j := j)
+      hsimple
+      hsrc
+      hadm
+      hconf
+
+/-- Exact no-go theorem for the fixed-index canonical successor seam: if that
+lower object already bridges into successor admissibility for the promotion-side
+event language, the same direct event-conflict contradiction follows. Thus the
+live residual now lies below even the current successor-admissibility seam. -/
+theorem not_gap_long_phase_returns_boundary_canonical_successor_source_on_of_simple_step_and_canonical_successor_admissibility_bridge_and_event_conflict
+    {m t U : ℕ}
+    {hphase : OrbitHasCofinalGapLongPhaseReturns m t U}
+    {hsplit : CanonicalNextLeftSplitWitnessOn hphase}
+    {j : ℕ}
+    (hsimple :
+      Collatz.is_simple_step
+        ((Collatz.Foundations.collatz_step^[hphase.rightIdx j]) m))
+    (hsrc : GapLongPhaseReturnsBoundaryPromotedSelectedCanonicalSuccessorSourceOn hphase)
+    (hbridge :
+      GapLongPhaseReturnsBoundaryPromotedSelectedCanonicalSuccessorAdmissibilityBridgeOn
+        hphase hsplit.eventAdmissible)
+    (hconf :
+      GapLongPhaseReturnsFillerCanonicalNextLeftSplitEventConflictOn hphase hsplit) :
+    False := by
+  exact
+    not_gap_long_phase_returns_boundary_certificate_source_on_of_simple_step_and_successor_admissibility_and_event_conflict
+      (j := j)
+      hsimple
+      (fun j hsimple =>
+        boundary_promoted_selected_certificate_on_of_canonical_successor (hsrc j hsimple))
+      (gap_long_phase_returns_boundary_promoted_selected_successor_admissibility_on_of_canonical_successor_source_and_bridge
+        hsrc hbridge)
+      hconf
 
 /-- No-go theorem for all comparison outputs that remember only index/order
 content: once a concrete boundary event is admitted on the event side, the
@@ -1544,6 +2386,36 @@ theorem not_gap_long_phase_returns_boundary_event_admissibility_bridge_on_of_suc
     right_boundary_simple_step_promoted_filler_selected_event_witness_for_on_of_boundary_event
       (hevent := hevent) (hadm := hadm)
   exact hconf _ hpromoted
+
+/-- The honest route from a concrete boundary-event admissibility bridge to the
+fixed-index frontier closes negatively as well: once successor-room geometry
+specializes that bridge to admission of `rightIdx j + 1`, the existing
+fixed-index no-go theorem applies immediately. Hence the direct
+`canonical_successor_index_admissible` probe also has no honest source through
+the current concrete boundary-event language. -/
+theorem not_gap_long_phase_returns_boundary_event_admissibility_bridge_on_of_successor_room_and_canonical_successor_index_admissible_and_event_conflict
+    {m t U : ℕ}
+    {hphase : OrbitHasCofinalGapLongPhaseReturns m t U}
+    {hsplit : CanonicalNextLeftSplitWitnessOn hphase}
+    {j : ℕ}
+    (hsimple :
+      Collatz.is_simple_step
+        ((Collatz.Foundations.collatz_step^[hphase.rightIdx j]) m))
+    (hroom : ∀ j : ℕ, hphase.rightIdx j + 1 < hphase.leftIdx (j + 1))
+    (hbridge :
+      GapLongPhaseReturnsBoundaryPromotedSelectedEventAdmissibilityBridgeOn
+        hphase hsplit.eventAdmissible)
+    (hconf :
+      GapLongPhaseReturnsFillerCanonicalNextLeftSplitEventConflictOn hphase hsplit) :
+    False := by
+  exact
+    not_gap_long_phase_returns_boundary_certificate_source_on_of_simple_step_and_canonical_successor_index_admissible_and_event_conflict
+      (j := j)
+      hsimple
+      (gap_long_phase_returns_boundary_promoted_selected_certificate_source_on_of_successor_room hroom)
+      (gap_long_phase_returns_boundary_canonical_successor_index_admissible_on_of_event_admissibility_bridge_and_successor_room
+        hroom hbridge)
+      hconf
 
 /-- Sharpened local residual for the boundary case: if the orbit value at
 `rightIdx j` is a simple step, produce a promoted interior event witness for
@@ -1799,6 +2671,19 @@ def canonical_next_left_split_witness_on_of_trivial_event_and_phase_compatibilit
     (hphase : OrbitHasCofinalGapLongPhaseReturns m t U) :
     CanonicalNextLeftSplitWitnessOn hphase :=
   { eventAdmissible := fun _ _ => True
+    choiceAdmissible := CanonicalNextLeftPhaseCompatibleOn hphase
+    selfChoice := canonical_next_left_self_phase_compatible_on hphase }
+
+/-- Stronger diagnostic split witness: use the old phase-compatible criterion on
+both the event side and the comparison side. This is not proposed as the final
+semantic interface; it is the sharpest obvious test of whether the current
+phase-compatible language can already see the canonical boundary successor even
+before any richer event-side redesign. -/
+def canonical_next_left_split_witness_on_of_phase_compatibility
+    {m t U : ℕ}
+    (hphase : OrbitHasCofinalGapLongPhaseReturns m t U) :
+    CanonicalNextLeftSplitWitnessOn hphase :=
+  { eventAdmissible := CanonicalNextLeftPhaseCompatibleOn hphase
     choiceAdmissible := CanonicalNextLeftPhaseCompatibleOn hphase
     selfChoice := canonical_next_left_self_phase_compatible_on hphase }
 
@@ -2289,6 +3174,83 @@ theorem sample_gap_long_phase_returns_15_0_0_not_phase_compatible_boundary_promo
         CanonicalNextLeftPhaseCompatibleOn, sample_gap_long_phase_returns_15_0_0]
       using hbridge hevent
   norm_num [sample_gap_long_phase_returns_15_0_0, selected_phase_period, gap_long, Q_t] at hbad
+
+/-- The same sample witness already refutes the obvious next lower candidate as
+well: even when one asks only for admission of the fixed canonical successor
+index `rightIdx 0 + 1 = 3` on the event side, the old phase-compatible language
+still rejects it. Thus the current frontier is not merely an artifact of the
+generic certificate bridge; the mismatch persists already at the fixed-index
+successor seam. -/
+theorem sample_gap_long_phase_returns_15_0_0_not_phase_compatible_canonical_successor_index_admissible :
+    GapLongPhaseReturnsBoundaryCanonicalSuccessorIndexAdmissibleOn
+      sample_gap_long_phase_returns_15_0_0
+      (canonical_next_left_split_witness_on_of_phase_compatibility
+        sample_gap_long_phase_returns_15_0_0) → False := by
+  intro hadm
+  have hbad :
+      3 % selected_phase_period 0 =
+        sample_gap_long_phase_returns_15_0_0.leftIdx (0 + 1) % selected_phase_period 0 := by
+    simpa
+      [GapLongPhaseReturnsBoundaryCanonicalSuccessorIndexAdmissibleOn,
+        GapLongPhaseReturnsBoundaryPromotedSelectedSuccessorAdmissibilityOn,
+        canonical_next_left_split_witness_on_of_phase_compatibility,
+        CanonicalNextLeftSplitWitnessOn, CanonicalNextLeftPhaseCompatibleOn,
+        sample_gap_long_phase_returns_15_0_0]
+      using hadm 0 sample_iterate_two_15_simple
+  norm_num [sample_gap_long_phase_returns_15_0_0, selected_phase_period, gap_long, Q_t] at hbad
+
+/-- Global impossibility corollary for the previous direct fixed-index sample
+obstruction under the obvious phase-compatible event-language candidate. -/
+theorem not_all_gap_long_phase_returns_have_phase_compatible_canonical_successor_index_admissible :
+    GapLongPhaseReturnsBoundaryCanonicalSuccessorIndexAdmissible
+      15 0 0
+      (fun hphase =>
+        canonical_next_left_split_witness_on_of_phase_compatibility hphase) →
+      False := by
+  intro hall
+  exact
+    sample_gap_long_phase_returns_15_0_0_not_phase_compatible_canonical_successor_index_admissible
+      (hall sample_gap_long_phase_returns_15_0_0)
+
+/-- The same sample witness already refutes the obvious next lower candidate as
+well: even when one asks only for admission of the fixed canonical successor
+index `rightIdx 0 + 1 = 3` on the event side, the old phase-compatible language
+still rejects it. Thus the current frontier is not merely an artifact of the
+generic certificate bridge; the mismatch persists already at the fixed-index
+successor seam. -/
+theorem sample_gap_long_phase_returns_15_0_0_not_phase_compatible_canonical_successor_admissibility_bridge :
+    GapLongPhaseReturnsBoundaryPromotedSelectedCanonicalSuccessorAdmissibilityBridgeOn
+      sample_gap_long_phase_returns_15_0_0
+      (canonical_next_left_split_witness_on_of_phase_compatibility
+        sample_gap_long_phase_returns_15_0_0).eventAdmissible → False := by
+  intro hbridge
+  let hsucc : BoundaryPromotedSelectedCanonicalSuccessorOn
+      sample_gap_long_phase_returns_15_0_0 0 :=
+    boundary_promoted_selected_canonical_successor_on_of_successor_room 0
+      (by simp [sample_gap_long_phase_returns_15_0_0])
+  have hbad :
+      3 % selected_phase_period 0 =
+        sample_gap_long_phase_returns_15_0_0.leftIdx (0 + 1) % selected_phase_period 0 := by
+    simpa
+      [BoundaryPromotedSelectedCanonicalSuccessorOn,
+        canonical_next_left_split_witness_on_of_phase_compatibility,
+        CanonicalNextLeftSplitWitnessOn, CanonicalNextLeftPhaseCompatibleOn,
+        hsucc, sample_gap_long_phase_returns_15_0_0]
+      using hbridge hsucc
+  norm_num [sample_gap_long_phase_returns_15_0_0, selected_phase_period, gap_long, Q_t] at hbad
+
+/-- Global impossibility corollary for the previous fixed-index successor
+obstruction under the obvious phase-compatible event-language candidate. -/
+theorem not_all_gap_long_phase_returns_have_phase_compatible_canonical_successor_admissibility_bridge :
+    GapLongPhaseReturnsBoundaryPromotedSelectedCanonicalSuccessorAdmissibilityBridge
+      15 0 0
+      (fun hphase =>
+        (canonical_next_left_split_witness_on_of_phase_compatibility hphase).eventAdmissible) →
+      False := by
+  intro hall
+  exact
+    sample_gap_long_phase_returns_15_0_0_not_phase_compatible_canonical_successor_admissibility_bridge
+      (hall sample_gap_long_phase_returns_15_0_0)
 
 /-- Global impossibility corollary for the previous bridge obstruction under the
 current phase-compatible witness. -/

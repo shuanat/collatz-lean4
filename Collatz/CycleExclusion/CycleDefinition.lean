@@ -17,9 +17,13 @@ def cycle_edge_valid (c : Cycle) : Prop :=
   (∀ i : ℕ, i < c.len → cycle_node c (i + 1) = Collatz.Foundations.collatz_step (cycle_node c i)) ∧
   cycle_node c 0 = Collatz.Foundations.collatz_step (cycle_node c c.len)
 
-/-- Helper predicate: a mathematically meaningful closed-orbit cycle contract. -/
+/-- Minimal semantic closed-orbit cycle contract. -/
 def is_valid_cycle (c : Cycle) : Prop :=
-  cycle_edge_valid c ∧ cycle_node c 0 = 1
+  cycle_edge_valid c
+
+/-- Optional normalization of a closed cycle at the trivial anchor `1`. -/
+def is_normalized_cycle (c : Cycle) : Prop :=
+  is_valid_cycle c ∧ cycle_node c 0 = 1
 
 /-- Structured orbit-semantic witness for eventual periodicity.
 It keeps the explicit tail entry index and period length that can be consumed
@@ -43,12 +47,15 @@ lemma cycle_node_mod (c : Cycle) (i : ℕ) :
   unfold cycle_node
   simp [Nat.mod_eq_of_lt (Nat.mod_lt _ (Nat.succ_pos _))]
 
-lemma cycle_zero_is_one {c : Cycle} (hvalid : is_valid_cycle c) : cycle_node c 0 = 1 :=
-  hvalid.2
+lemma normalized_cycle_valid {c : Cycle} (hnorm : is_normalized_cycle c) : is_valid_cycle c :=
+  hnorm.1
+
+lemma cycle_zero_is_one {c : Cycle} (hnorm : is_normalized_cycle c) : cycle_node c 0 = 1 :=
+  hnorm.2
 
 lemma cycle_wrap_step {c : Cycle} (hvalid : is_valid_cycle c) :
     cycle_node c 0 = Collatz.Foundations.collatz_step (cycle_node c c.len) :=
-  hvalid.1.2
+  hvalid.2
 
 lemma orbit_periodic_tail_period_one_or_gt_one
     {m : ℕ} (hw : OrbitPeriodicTailWitness m) :

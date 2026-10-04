@@ -1,44 +1,28 @@
-# Collatz Lean4 - Formal Verification
+# Collatz Lean4 Notes
 
-## Technology Stack
+Short working note for agent/tooling sessions in this repository.
 
-- **Lean 4** theorem prover
-- **Lake** package manager
-- **Mathematical proofs** in formal logic
+## Build
 
-## Project Structure
-
-```
-Collatz/
-├── Convergence/           # Convergence proofs
-├── CycleExclusion/        # Cycle exclusion proofs
-├── Epochs/                # Epoch structure
-├── SEDT/                  # SEDT formalization
-└── Documentation/        # Lean documentation
+```bash
+lake build Collatz
 ```
 
-## Key Commands
+## Main Entry Points
 
-- `lean --run`: Run Lean verification
-- `lake build`: Build project
-- `lake test`: Run tests
+- `Collatz.lean`
+- `Collatz/Production.lean`
+- `Collatz/Convergence/MainTheorem.lean`
 
-## Important Files
+## Documentation To Prefer
 
-- `Collatz.lean`: Main module
-- `lakefile.lean`: Project configuration
-- `lean-toolchain`: Lean version
+- `README.md`
+- `ACTIVE_FRONTIER.md`
+- `SEMANTIC_HARDENING_PLAN.md`
+- `Collatz/Documentation/PaperCodeMapping.lean`
+- `../docs/reports/collatz-lean4/`
 
-## Development Notes
+## Important Semantic Note
 
-- Formal mathematical proofs
-- Dependent type theory
-- Proof automation where possible
-- Integration with paper proofs
-
-## Verification Goals
-
-- Formalize SEDT theorem
-- Prove convergence properties
-- Verify cycle exclusion
-- Bridge with paper mathematics
+- `collatz_step` is the odd-step map used by the current Lean formalization.
+  It is not the full mixed even/odd Collatz step.

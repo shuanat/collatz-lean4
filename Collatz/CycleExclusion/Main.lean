@@ -14,19 +14,19 @@ def Cycle.is_trivial (c : Cycle) : Prop :=
 def exclusion_premises (t : ℕ) (c : Cycle) : Prop :=
   period_sum c = 0 ∧ period_sum c = repeat_gap t c ∧ R0 t ≤ c.len
 
-/-- A nontrivial cycle candidate must be valid, nonempty, and classified pure or mixed. -/
+/-- Minimal nontrivial cycle contract for the H-level consumer: a genuine closed
+cycle of positive length. Downstream pure/mixed classification, when needed,
+should be supplied separately rather than built into the base object. -/
 def Cycle.is_nontrivial (c : Cycle) : Prop :=
-  is_valid_cycle c ∧ c.len > 0 ∧ (c.is_pure_e1 ∨ c.is_mixed)
+  is_valid_cycle c ∧ c.len > 0
 
-lemma nontrivial_has_positive_length {c : Cycle} (h : c.is_nontrivial) : c.len > 0 := h.2.1
+lemma nontrivial_has_positive_length {c : Cycle} (h : c.is_nontrivial) : c.len > 0 := h.2
 
 lemma trivial_cycle_not_nontrivial (c : Cycle) (htriv : c.is_trivial) : ¬ c.is_nontrivial := by
   intro hnon
   have hlen0 : c.len = 0 := htriv.1
   have hpos : c.len > 0 := nontrivial_has_positive_length hnon
   omega
-
-lemma pure_or_mixed_witness {c : Cycle} (h : c.is_nontrivial) : c.is_pure_e1 ∨ c.is_mixed := h.2.2
 
 lemma exclusion_from_period_repeat (t : ℕ) (c : Cycle)
     (hprem : exclusion_premises t c) :
@@ -130,7 +130,7 @@ theorem periodic_tail_contradiction_from_bridge (m : ℕ)
   rcases hbridge hw hgt with ⟨c, hnon, hprem⟩
   exact main_cycle_exclusion c hnon hprem
 
-theorem cycle_elements_odd (c : Cycle) (hvalid : is_valid_cycle c) :
+theorem cycle_elements_odd (c : Cycle) (hvalid : is_normalized_cycle c) :
     Odd (cycle_node c 0) := by
   have h0 : cycle_node c 0 = 1 := cycle_zero_is_one hvalid
   simp [h0]
