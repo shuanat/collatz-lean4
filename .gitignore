@@ -25,3 +25,6 @@ logs/
 EXPERT_QUESTION_*.md
 
 RESTRUCTURE/
+
+# Local build markers
+baseline-build.*
