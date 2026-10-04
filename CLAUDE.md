@@ -9,8 +9,9 @@ working on files here). This file adds repository specifics.
   identities (`SEDT/OrbitDepth.lean`, `SEDT/OrbitBridge.lean`), log-growth bounds
   (`Foundations/Core.lean`), bounded ⇒ eventually periodic, and the honest top-level equivalence
   `collatz_iff_no_cycles_and_bounded` (`Convergence/MainTheorem.lean`).
-- Formal refutations: `false_of_orbit_epoch_sedt_envelope` (the former SEDT envelope fails on
-  every long-epoch stream); `Tests/VacuityRegression.lean` documents the earlier vacuous
+- Formal refutations: `false_of_orbit_epoch_sedt_envelope` (the former SEDT envelope, with the
+  Lean constants, fails on every long-epoch stream of contiguous blocks; this is the "every orbit
+  segment" reading, not E.2 under the paper's Definition 2.6 — see the paper errata, item 4); `Tests/VacuityRegression.lean` documents the earlier vacuous
   hypotheses.
 - Not formalized: any proof of the Collatz conjecture (none exists).
 
