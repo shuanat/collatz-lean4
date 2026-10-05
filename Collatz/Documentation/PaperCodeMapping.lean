@@ -29,6 +29,43 @@ OPEN hypotheses, all of whose hypotheses hold for `n = 1`
 Paper label → Lean status:
 
 - B.2 (`ord_{2^t}(3) = 2^{t−2}`): proved, `Collatz.OrdFact.orderOf_three_eq_pow_two`.
+- Exact odd step `3m + 1 = 2^{e(m)} T(m)` and its converse: proved,
+  `Foundations.two_pow_step_type_mul_collatz_step`,
+  `Foundations.step_type_eq_of_three_mul_add_one_eq`,
+  `Foundations.collatz_step_eq_of_three_mul_add_one_eq` (`Foundations/OddPart.lean`).
+- §2 Def. 2.3 / 2.5 and §3 (preimage layers `S_n`, `k₀(n)`, `m(n,t)`): proved,
+  `Collatz/Layers/PreimageLayers.lean` (`preimage_layer`, `layer_base_exp`,
+  `layer_elem`). Prop. 3.1: `Layers.existsUnique_preimage_layer`,
+  `Layers.not_three_dvd_collatz_step`; Lemma 3.4:
+  `Layers.preimage_layer_eq_empty_iff`, `Layers.preimage_layer_infinite`;
+  Lemma 3.5.a: `Layers.two_pow_mul_mod_three_eq_one_iff`; Prop. 3.5:
+  `Layers.odd_layer_elem`, `Layers.collatz_step_layer_elem`,
+  `Layers.step_type_layer_elem`, `Layers.layer_elem_succ`,
+  `Layers.layer_elem_bijOn`; Cor. 3.5.b: `Layers.layer_elem_pair_bijOn`,
+  `Layers.layer_elem_collatz_step`. Lemma 3.5.d: (a)
+  `Layers.collatz_step_mod_three_eq_two_iff` (`T m ≡ 2 mod 3 ↔ e(m)` odd, all
+  `m : ℕ`); (b) first sentence `Layers.step_type_layer_elem_eq_one_iff`
+  (`e(m(n,t)) = 1 ↔ t = 0 ∧ n ≡ 2 mod 3`), second sentence
+  `Layers.layer_elem_mod_four` (`m(n,t) ≡ 1 mod 4`, `t ≥ 1`); (c) (touches in
+  layer coordinates): not formalized; (d)
+  `Layers.layer_base_exp_add_two_mul_eq_step_type` (`e(m) = k₀(n) + 2t`,
+  `t = (e(m) − k₀(n))/2`).
+- Lemma 2.13 (block step), positive odd `x` only: proved,
+  `Collatz/Blocks/BlockStep.lean` — (a) `Blocks.iterate_add_one_of_lt`,
+  `Blocks.step_type_iterate_eq_one`; (b) `Blocks.iterate_pred_add_one`,
+  `Blocks.depth_minus_iterate_pred`, `Blocks.step_type_iterate_pred`,
+  `Blocks.one_le_block_sigma`; (c) `Blocks.iterate_block_length`;
+  (d) `Blocks.iterate_lt_iterate_succ`; converse
+  `Blocks.depth_minus_eq_of_block_exponents`.
+- H.7 (block form of the cycle equation), positive case: proved parts in
+  `Collatz/CycleExclusion/BlockEquation.lean` — (H.7.2)
+  `CycleExclusion.block_start_equation`; (a) for `k` blocks
+  `CycleExclusion.realizesBlockPattern_block_equation` (`y₁ D = C(w)`, `D > 0`,
+  `D ∣ C(w)`); (c) `CycleExclusion.exists_realizesOneBlock_iff`,
+  `CycleExclusion.realizesOneBlock_add_one_mul`,
+  `CycleExclusion.realizesOneBlock_unique`. Not formalized: the converse
+  of (b) for `k ≥ 2` (rotations), and (d) (negative integers). H.7 is an
+  equivalent reformulation of the cycle condition; it excludes no cycle.
 - C.4 / depth dynamics: proved on the orbit —
   `SEDT.OrbitBridge.step_type_ge_two_iff_depth_eq_one`,
   `SEDT.OrbitBridge.depth_minus_collatz_step_of_step_type_one`,

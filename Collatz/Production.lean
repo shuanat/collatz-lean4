@@ -6,6 +6,9 @@ import Collatz.Foundations.Core
 import Collatz.Foundations.Basic
 import Collatz.Foundations.StepClassification
 import Collatz.Foundations.TwoAdicDepth
+import Collatz.Foundations.OddPart
+import Collatz.Layers.PreimageLayers
+import Collatz.Blocks.BlockStep
 import Collatz.Epochs.Core
 import Collatz.Epochs.OrdFact
 import Collatz.Epochs.LongEpochs
@@ -29,6 +32,7 @@ import Collatz.CycleExclusion.PureE1Cycles
 import Collatz.CycleExclusion.MixedCycles
 import Collatz.CycleExclusion.Main
 import Collatz.CycleExclusion.PeriodicTailBridge
+import Collatz.CycleExclusion.BlockEquation
 import Collatz.Convergence.Coercivity
 import Collatz.Convergence.FixedPoints
 import Collatz.Convergence.NoAttractors

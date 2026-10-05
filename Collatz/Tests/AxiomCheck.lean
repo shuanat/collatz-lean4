@@ -86,3 +86,65 @@ open Collatz.Convergence
 #print axioms Collatz.Mixing.orbit_aggregate_touch_count_lower_of_residual
 #print axioms Collatz.Mixing.orbit_aggregate_touch_count_zero
 #print axioms Collatz.Mixing.orbit_aggregate_touch_count_mono
+
+-- 4. Elementary proved results (2026-10): exact odd step, preimage layers
+--    (paper §3: Prop. 3.1, Lemma 3.4, Lemma 3.5.a, Prop. 3.5, Cor. 3.5.b), block step
+--    (Lemma 2.13) and the block form of the cycle equation (Prop. H.7(a),(c)).
+--    None of them is a hypothesis or ingredient of a convergence endpoint; H.7 is
+--    an equivalent reformulation of the cycle condition and excludes no cycle.
+#print axioms Collatz.Foundations.factorization_two_pow_mul_of_odd
+#print axioms Collatz.Foundations.two_pow_factorization_mul_odd_part
+#print axioms Collatz.Foundations.two_pow_step_type_mul_collatz_step
+#print axioms Collatz.Foundations.step_type_eq_of_three_mul_add_one_eq
+#print axioms Collatz.Foundations.collatz_step_eq_of_three_mul_add_one_eq
+#print axioms Collatz.Foundations.depth_minus_eq_of_add_one_eq
+#print axioms Collatz.Foundations.exists_odd_add_one_eq_two_pow_depth_mul
+#print axioms Collatz.Layers.two_pow_mod_three
+#print axioms Collatz.Layers.one_le_layer_base_exp
+#print axioms Collatz.Layers.two_pow_mul_mod_three_eq_one_iff
+#print axioms Collatz.Layers.two_pow_layer_mul_mod_three
+#print axioms Collatz.Layers.three_mul_layer_elem_add_one
+#print axioms Collatz.Layers.odd_layer_elem
+#print axioms Collatz.Layers.layer_elem_pos
+#print axioms Collatz.Layers.collatz_step_layer_elem
+#print axioms Collatz.Layers.step_type_layer_elem
+#print axioms Collatz.Layers.layer_elem_succ
+#print axioms Collatz.Layers.layer_elem_mod_four
+#print axioms Collatz.Layers.layer_elem_strictMono
+#print axioms Collatz.Layers.not_three_dvd_collatz_step
+#print axioms Collatz.Layers.collatz_step_mod_three_eq_two_iff
+#print axioms Collatz.Layers.layer_base_exp_add_two_mul_eq_step_type
+#print axioms Collatz.Layers.layer_elem_collatz_step
+#print axioms Collatz.Layers.existsUnique_preimage_layer
+#print axioms Collatz.Layers.preimage_layer_eq_empty_of_three_dvd
+#print axioms Collatz.Layers.range_layer_elem
+#print axioms Collatz.Layers.layer_elem_bijOn
+#print axioms Collatz.Layers.preimage_layer_eq_empty_iff
+#print axioms Collatz.Layers.preimage_layer_infinite
+#print axioms Collatz.Layers.layer_elem_pair_bijOn
+#print axioms Collatz.Layers.step_type_layer_elem_eq_one_iff
+#print axioms Collatz.Blocks.step_of_add_one_eq_two_pow_mul
+#print axioms Collatz.Blocks.iterate_add_one_of_lt
+#print axioms Collatz.Blocks.step_type_iterate_eq_one
+#print axioms Collatz.Blocks.iterate_lt_iterate_succ
+#print axioms Collatz.Blocks.iterate_pred_add_one
+#print axioms Collatz.Blocks.depth_minus_iterate_pred
+#print axioms Collatz.Blocks.three_mul_iterate_pred_add_one
+#print axioms Collatz.Blocks.one_le_block_sigma
+#print axioms Collatz.Blocks.three_mul_iterate_pred_add_one_eq_two_pow_mul
+#print axioms Collatz.Blocks.step_type_iterate_pred
+#print axioms Collatz.Blocks.iterate_block_length
+#print axioms Collatz.Blocks.two_pow_sigma_mul_iterate_block_length
+#print axioms Collatz.Blocks.depth_minus_eq_of_block_exponents
+#print axioms Collatz.CycleExclusion.block_start_equation
+#print axioms Collatz.CycleExclusion.realizesOneBlock_odd_part
+#print axioms Collatz.CycleExclusion.realizesOneBlock_add_one_mul
+#print axioms Collatz.CycleExclusion.exists_realizesOneBlock_iff
+#print axioms Collatz.CycleExclusion.blockPatternC_succ
+#print axioms Collatz.CycleExclusion.blockPatternC_pos
+#print axioms Collatz.CycleExclusion.block_telescope
+#print axioms Collatz.CycleExclusion.realizesBlockPattern_two_pow_mul
+#print axioms Collatz.CycleExclusion.realizesBlockPattern_block_equation
+#print axioms Collatz.CycleExclusion.realizesBlockPattern_one_iff
+#print axioms Collatz.CycleExclusion.blockPatternC_one
+#print axioms Collatz.CycleExclusion.realizesOneBlock_unique

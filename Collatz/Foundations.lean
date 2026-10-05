@@ -12,6 +12,7 @@ import Collatz.Foundations.Basic
 import Collatz.Foundations.Arithmetic
 import Collatz.Foundations.TwoAdicDepth
 import Collatz.Foundations.StepClassification
+import Collatz.Foundations.OddPart
 
 -- This module aggregates all foundational definitions and properties from Section 2
 -- All definitions are available through their respective modules:
